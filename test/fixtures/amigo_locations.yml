@@ -1,0 +1,33 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  amigo: one
+  address: MyString
+  address_type: MyString
+  apartment_number: MyString
+  street_number: MyString
+  street_name: MyString
+  street_suffix: MyString
+  city: MyString
+  county: MyString
+  state_abbreviation: MyString
+  country_code: MyString
+  postal_code: MyString
+  latitude: 9.99
+  longitude: 9.99
+
+two:
+  amigo: two
+  address: MyString
+  address_type: MyString
+  apartment_number: MyString
+  street_number: MyString
+  street_name: MyString
+  street_suffix: MyString
+  city: MyString
+  county: MyString
+  state_abbreviation: MyString
+  country_code: MyString
+  postal_code: MyString
+  latitude: 9.99
+  longitude: 9.99

@@ -1,0 +1,21 @@
+# app/views/api/v1/amigo_locations/_location.json.jbuilder
+
+json.extract! location,
+:id,
+:address,
+:address_type,
+:floor,
+:building,
+:apartment_number,
+:street_number,
+:street_name,
+:street_suffix,
+:city,
+:county,
+:state_abbreviation,
+:country_code,
+:postal_code,
+:latitude,
+:longitude,
+:created_at,
+:updated_at
