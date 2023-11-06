@@ -9,6 +9,7 @@ class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
       t.string :secondary_email, default: "", limit: 50
       t.string :phone_1, limit: 20
       t.string :phone_2, limit: 20
+      t.date   :date_of_birth
       t.string :encrypted_password, null: false, default: ""
 
       ## Recoverable

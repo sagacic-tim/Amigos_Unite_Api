@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   # Define routes for Devise authentication
-  devise_for :mucho_amigos, controllers: {
+  devise_for :amigos, controllers: {
     sessions: 'amigos/sessions',
     registrations: 'amigos/registrations'
   }
