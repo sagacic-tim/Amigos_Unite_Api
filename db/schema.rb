@@ -16,21 +16,26 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_04_005453) do
 
   create_table "amigo_locations", force: :cascade do |t|
     t.bigint "amigo_id", null: false
-    t.string "address", limit: 250
-    t.string "address_type", limit: 10
+    t.string "address", limit: 256
+    t.string "address_type", limit: 12
     t.string "floor", limit: 10
-    t.string "building", limit: 10
-    t.string "apartment_number", limit: 15
-    t.string "street_number", limit: 15
-    t.string "street_name", limit: 50
-    t.string "street_suffix", limit: 15
-    t.string "city", limit: 50
-    t.string "county", limit: 50
-    t.string "state_abbreviation", limit: 5
+    t.string "building", limit: 16
+    t.string "street_predirection", limit: 16
+    t.string "street_number", limit: 30
+    t.string "street_name", limit: 64
+    t.string "street_postdirection", limit: 16
+    t.string "street_suffix", limit: 16
+    t.string "apartment_number", limit: 32
+    t.string "city", limit: 64
+    t.string "county", limit: 64
+    t.string "state_abbreviation", limit: 2
     t.string "country_code", limit: 5
-    t.string "postal_code", limit: 10
+    t.string "postal_code", limit: 12
+    t.string "plus4_code", limit: 4
     t.decimal "latitude", precision: 9, scale: 6
     t.decimal "longitude", precision: 9, scale: 6
+    t.string "time_zone", limit: 48
+    t.string "congressional_district", limit: 2
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["amigo_id"], name: "index_amigo_locations_on_amigo_id"
@@ -44,6 +49,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_04_005453) do
     t.string "secondary_email", limit: 50, default: ""
     t.string "phone_1", limit: 20
     t.string "phone_2", limit: 20
+    t.date "date_of_birth"
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"

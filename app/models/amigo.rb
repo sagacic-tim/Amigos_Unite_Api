@@ -1,4 +1,6 @@
 class Amigo < ApplicationRecord
+  before_validation :remove_code_from_personal_bio
+
   # Include all devise modules.
   devise  :database_authenticatable,
           :registerable,
@@ -26,5 +28,21 @@ class Amigo < ApplicationRecord
     elsif conditions.has_key?(:user_name) || conditions.has_key?(:primary_email)
       where(conditions.to_h).first
     end
+  end
+  validates :first_name, presence: true, length: { maximum: 50 }
+  validates :last_name, presence: true, length: { maximum: 50 }
+  validates :user_name, presence: true, length: { maximum: 50 }, uniqueness: { case_sensitive: false }
+  validates :personal_bio, length: { maximum: 650 }
+  # email validation
+  validates :primary_email, email: true
+  validates :secondary_email, email: true, allow_blank: true
+  #$ phone validation
+  validates :phone_1, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line] }
+  validates :phone_2, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line] }
+
+  private
+
+  def remove_code_from_personal_bio
+    self.personal_bio = Sanitize.fragment(self.personal_bio)
   end
 end

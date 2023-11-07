@@ -43,6 +43,11 @@ gem 'blind_index', '~> 2.4'
   # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
+# Faker, a port of Data::Faker from Perl, is used to easily
+# generate fake data: names, addresses, phone numbers, etc.
+
+gem 'faker', '~> 3.2', '>= 3.2.2'
+
 # Devise and related authentication gems
   # Devise is a flexible authentication solution for Rails
   # based on Warden. It:
@@ -98,13 +103,17 @@ gem 'smartystreets_ruby_sdk'
 gem 'activerecord-postgis-adapter'
 
 # Email and Phone Validation
-gem 'email_validator', '~> 2.0'
+gem 'email_validator', '~> 2.2', '>= 2.2.4'
 gem 'phonelib', '~> 0.7.0'
 
 # Additional Gems for Country and State Data
 gem 'countries', '~> 5.6', require: 'countries/global'
 gem 'bigdecimal', require: true
 
+# Sanitize is an allowlist-based HTML and CSS sanitizer. It
+# removes all HTML and/or CSS from a string except the
+# elements, attributes, and properties you choose to allow.
+gem 'sanitize', '~> 6.1'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
