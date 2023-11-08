@@ -25,4 +25,4 @@ Things you may want to cover:
 
 * Deployment instructions
 
-* This application permits the creation of amigos allows amigos to register for community action meetngs, allows amigos to be notified of meetings in their area, alllows amigos to register as hosts for meetings and assign a location for the meeting.
+* This application permits the creation of amigos. Allows amigos to register for community action meetngs, allows amigos to be notified of meetings in their area, allows amigos to register as hosts for meetings and assign a location for the meeting.

@@ -2,8 +2,6 @@
 # your database with more than a couple of records while you're
 # doing development.
 
-# db/seeds.rb
-
 require 'faker'
 require 'json'
 

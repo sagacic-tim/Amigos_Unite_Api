@@ -103,7 +103,6 @@ gem 'smartystreets_ruby_sdk'
 gem 'activerecord-postgis-adapter'
 
 # Email and Phone Validation
-gem 'email_validator', '~> 2.2', '>= 2.2.4'
 gem 'phonelib', '~> 0.7.0'
 
 # Additional Gems for Country and State Data

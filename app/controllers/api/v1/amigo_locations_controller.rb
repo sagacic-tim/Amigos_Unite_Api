@@ -55,17 +55,22 @@ class Api::V1::AmigoLocationsController < ApplicationController
         :address_type,
         :floor,
         :building,
-        :apartment_number,
         :street_number,
+        :street_predirection,
         :street_name,
         :street_suffix,
+        :street_postdirection,
+        :apartment_number,
         :city,
         :county,
         :state_abbreviation,
         :country_code,
         :postal_code,
+        :plus4_code,
         :latitude,
-        :longitude
+        :longitude,
+        :time_zone,
+        :congressional_district
       )
     end
 end
