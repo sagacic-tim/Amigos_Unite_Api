@@ -15,7 +15,7 @@ class Api::V1::AmigoLocationsController < ApplicationController
   end
 
   # POST /amigos/:amigo_id/amigo_locations
-  def create
+  def create!
     @location = @amigo.locations.build(location_params)
 
     if @location.save

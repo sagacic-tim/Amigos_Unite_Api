@@ -45,7 +45,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_04_005453) do
     t.string "first_name", limit: 50
     t.string "last_name", limit: 50
     t.string "user_name", limit: 50, default: "", null: false
-    t.string "primary_email", limit: 50, default: "", null: false
+    t.string "email", limit: 50, default: "", null: false
     t.string "secondary_email", limit: 50, default: ""
     t.string "phone_1", limit: 20
     t.string "phone_2", limit: 20
@@ -73,7 +73,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_04_005453) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["confirmation_token"], name: "index_amigos_on_confirmation_token", unique: true
-    t.index ["primary_email"], name: "index_amigos_on_primary_email", unique: true
+    t.index ["email"], name: "index_amigos_on_email", unique: true
     t.index ["reset_password_token"], name: "index_amigos_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_amigos_on_unlock_token", unique: true
     t.index ["user_name"], name: "index_amigos_on_user_name", unique: true

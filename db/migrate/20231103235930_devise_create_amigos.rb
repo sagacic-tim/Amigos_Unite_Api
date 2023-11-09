@@ -5,7 +5,7 @@ class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
       t.string :first_name, limit: 50
       t.string :last_name, limit: 50
       t.string :user_name, null: false, default: "", limit: 50
-      t.string :primary_email, null: false, default: "", limit: 50
+      t.string :email, null: false, default: "", limit: 50
       t.string :secondary_email, default: "", limit: 50
       t.string :phone_1, limit: 20
       t.string :phone_2, limit: 20
@@ -47,7 +47,7 @@ class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
     end
 
     add_index :amigos, :user_name,            unique: true
-    add_index :amigos, :primary_email,        unique: true
+    add_index :amigos, :email,        unique: true
     add_index :amigos, :reset_password_token, unique: true
     add_index :amigos, :confirmation_token,   unique: true
     add_index :amigos, :unlock_token,         unique: true
