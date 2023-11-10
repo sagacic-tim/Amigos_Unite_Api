@@ -40,7 +40,7 @@ class Amigo < ApplicationRecord
   
   # Phone validation
   validates :phone_1, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line, :personal_number] }
-  validates :phone_2, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line, :personal_number] }
+  validates :phone_2, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line, :personal_number] }  
 
   validates :personal_bio, length: { maximum: 650 }
 

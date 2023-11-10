@@ -1,2 +1,2 @@
-Phonelib.default_country = ["US", "CA"]
-Phonelib.ignore_plus = true
+Phonelib.default_country = 'US'
+Phonelib.strict_check = false
