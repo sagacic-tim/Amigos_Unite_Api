@@ -1,5 +1,6 @@
 class Amigo < ApplicationRecord
   # Virtual attribute for authenticating by either user_name or email
+  has_many :amigo_locations, dependent: :destroy
   attr_accessor :login
   before_validation :remove_code_from_personal_bio
   before_validation :normalize_phone_numbers
