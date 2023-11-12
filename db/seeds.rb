@@ -9,7 +9,7 @@ require 'json'
 Faker::UniqueGenerator.clear
 
 # Load addresses from JSON file and shuffle them
-address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json')).shuffle
+address_pool = JSON.parse(File.read('db/migrate/Random_Residential_Addresses.json')).shuffle
 
 # Open a file to write the user credentials
 File.open('tmp/dev_user_passwords.txt', 'w') do |file|
@@ -48,46 +48,42 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
 
     # Assign a random address to amigo, popping it off the array
     # to avoid duplicates
-    address = address_pool.pop
-    amigo_location = AmigoLocation.new(
-      amigo: amigo,
-      # ... set the address fields using the popped address ...
-      address: address["address"],
-      address_type: address["address_type"],
-      building: address["building"],
-      floor: address["floor"],
-      street_number: address["street_number"],
-      street_name: address["street_name"],
-      street_predirection: address["street_predirection"],
-      street_suffix: address["street_suffix"],
-      street_postdirection: address["street_postdirection"],
-      apartment_number: address["apartment_number"], 
-      city: address["city"],
-      county: address["county"],
-      state_abbreviation: address["state_abbreviation"],
-      country_code: address["country_code"],
-      postal_code: address["postal_code"],
-      plus4_code: address["plus4_code"],
-      latitude: address["latitude"],
-      longitude: address["longitude"],
-      time_zone: address["time_zone"],
-      congressional_district: address["congressional_district"]
-    )
+    2.times do |j|
+      address = address_pool.pop
+      amigo_location = AmigoLocation.new(
+        amigo: amigo,
+        # ... set the address fields using the popped address ...
+        building: address["building"].presence,
+        floor: address["floor"].presence,
+        street_number: address["street_number"],
+        street_name: address["street_name"],
+        street_predirection: address["street_predirection"].presence,
+        street_suffix: address["street_suffix"].presence,
+        street_postdirection: address["street_postdirection"].presence,
+        apartment_suite_number: address["apartment_suite_number"].presence, 
+        city: address["city"],
+        state_abbreviation: address["state_abbreviation"],
+        country_code: address["country_code"],
+        postal_code: address["postal_code"]
+      )
 
-    begin
-      puts amigo_location.inspect
-      amigo_location.save!
-    rescue => e # Catches any StandardError
-      puts "AmigoLocation could not be saved: #{e.message}"
+      begin
+        puts amigo_location.inspect
+        amigo_location.save!
+      rescue => e # Catches any StandardError
+        puts "AmigoLocation could not be saved: #{e.message}"
+      end
+
+      puts "Address #{j + 1} for Amigo #{i + 1}"
+      
+
+      # Write the user credentials to the file
+      file.puts "Amigo #{i + 1}:"
+      file.puts "Username: #{amigo.user_name}"
+      file.puts "Email: #{amigo.email}"
+      file.puts "Password: #{password}"
+      file.puts "\n"
     end
-    
-
-    # Write the user credentials to the file
-    file.puts "Amigo #{i + 1}:"
-    file.puts "Username: #{amigo.user_name}"
-    file.puts "Email: #{amigo.email}"
-    file.puts "Password: #{password}"
-    file.puts "\n"
   end
 end
 

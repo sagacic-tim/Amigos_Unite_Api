@@ -25,7 +25,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_04_005453) do
     t.string "street_name", limit: 64
     t.string "street_postdirection", limit: 16
     t.string "street_suffix", limit: 16
-    t.string "apartment_number", limit: 32
+    t.string "apartment_suite_number", limit: 32
     t.string "city", limit: 64
     t.string "county", limit: 64
     t.string "state_abbreviation", limit: 2
