@@ -10,9 +10,50 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_04_005453) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_16_052942) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "amigo_details", force: :cascade do |t|
+    t.date "date_of_birth"
+    t.boolean "member_in_good_standing"
+    t.boolean "available_to_host"
+    t.boolean "willing_to_help"
+    t.boolean "willing_to_donate"
+    t.text "personal_bio"
+    t.bigint "amigo_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["amigo_id"], name: "index_amigo_details_on_amigo_id"
+  end
 
   create_table "amigo_locations", force: :cascade do |t|
     t.bigint "amigo_id", null: false
@@ -49,7 +90,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_04_005453) do
     t.string "secondary_email", limit: 50, default: ""
     t.string "phone_1", limit: 20
     t.string "phone_2", limit: 20
-    t.date "date_of_birth"
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
@@ -66,10 +106,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_04_005453) do
     t.integer "failed_attempts", default: 0, null: false
     t.string "unlock_token"
     t.datetime "locked_at"
-    t.boolean "member_in_good_standing"
-    t.boolean "available_to_host"
-    t.boolean "willing_to_donate"
-    t.text "personal_bio"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["confirmation_token"], name: "index_amigos_on_confirmation_token", unique: true
@@ -79,13 +115,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_04_005453) do
     t.index ["user_name"], name: "index_amigos_on_user_name", unique: true
   end
 
-  create_table "jwt_denylists", force: :cascade do |t|
-    t.string "jti", null: false
-    t.datetime "exp", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["jti"], name: "index_jwt_denylists_on_jti", unique: true
-  end
-
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "amigo_details", "amigos"
   add_foreign_key "amigo_locations", "amigos"
 end

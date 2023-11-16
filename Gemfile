@@ -19,7 +19,7 @@ gem 'puma', '~> 6.3'
 # Systrem gems
   # Shim to load environment variables from .env into ENV in
   # development.
-gem 'dotenv', '~> 2.8', '>= 2.8.1', groups: [:development, :test]
+gem 'dotenv-rails', groups: [:development, :test]
   # Rack::Cors provides support for Cross-Origin Resource
   # Sharing (CORS)for Rack compatible web applications.
   # The CORS spec allows web applications to make cross domain
@@ -57,7 +57,7 @@ gem 'faker', '~> 3.2', '>= 3.2.2'
   #    same time;
   # 4. Is based on a modularity concept: use only what you
   #    really need.
-gem 'devise', '~> 4.8'
+gem 'devise', '~> 4.9', '>= 4.9.3'
   # devise-jwt is a Devise extension which uses JWT tokens
   # for user authentication. It follows secure by default principle.
 gem 'devise-jwt', '~> 0.11.0'
@@ -66,7 +66,7 @@ gem 'devise-jwt', '~> 0.11.0'
   # that leverages Devise's ease of use while also being flexible
   # enough to accommodate various frontend technologies and
   # architectures.
-gem 'jwt', '~> 2.2', '>= 2.2.1'
+gem 'jwt', '~> 2.7', '>= 2.7.1'
   # OmniAuth is a library that standardizes multi-provider
   # authentication for web applications.
 gem 'omniauth', '~> 2.1', '>= 2.1.1'
@@ -93,7 +93,7 @@ gem 'jbuilder', '~> 2.11'
 gem 'jsonapi-serializer', '~> 2.2'
 
 # Address Validation
-gem 'smartystreets_ruby_sdk'
+gem 'smartystreets_ruby_sdk', '5.15.2'
 #The activerecord-postgis-adapter provides access to features
 # of the PostGIS geospatial database from ActiveRecord. It
 # extends the standard postgresql adapter to provide support

@@ -44,6 +44,6 @@ class Api::V1::AmigosController < ApplicationController
     end
 
     def amigo_params
-      params.require(:amigo).permit(:first_name, :last_name, :user_name, :email, :secondary_email, :phone_1, :phone_2, :date_of_birth, :member_in_good_standing, :available_to_host, :willing_to_donate, :personal_bio)
+      params.require(:amigo).permit(:first_name, :last_name, :user_name, :email, :secondary_email, :phone_1, :phone_2, :date_of_birth, :member_in_good_standing, :available_to_host, :willing_to_help, :willing_to_donate, :personal_bio)
     end
 end

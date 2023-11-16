@@ -30,6 +30,7 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       date_of_birth: Faker::Date.birthday(min_age: 18, max_age: 100),
       member_in_good_standing: [true, false].sample,
       available_to_host: [true, false].sample,
+      willing_to_help: [true, false].sample,
       willing_to_donate: [true, false].sample,
       personal_bio: Faker::Lorem.paragraph(sentence_count: 2),
       confirmed_at: Time.current

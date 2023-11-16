@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  member_in_good_standing: false
+  available_to_host: false
+  willing_to_help: false
+  willing_to_donate: false
+  personal_bio: MyText
+  amigo: one
+
+two:
+  member_in_good_standing: false
+  available_to_host: false
+  willing_to_help: false
+  willing_to_donate: false
+  personal_bio: MyText
+  amigo: two

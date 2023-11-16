@@ -9,7 +9,6 @@ class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
       t.string :secondary_email, default: "", limit: 50
       t.string :phone_1, limit: 20
       t.string :phone_2, limit: 20
-      t.date   :date_of_birth
       t.string :encrypted_password, null: false, default: ""
 
       ## Recoverable
@@ -36,12 +35,6 @@ class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
       t.integer  :failed_attempts, default: 0, null: false
       t.string   :unlock_token
       t.datetime :locked_at
-
-      # Personal Information
-      t.boolean :member_in_good_standing
-      t.boolean :available_to_host
-      t.boolean :willing_to_donate
-      t.text :personal_bio
 
       t.timestamps null: false
     end
