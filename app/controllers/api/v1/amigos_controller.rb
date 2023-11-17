@@ -17,7 +17,11 @@ class Api::V1::AmigosController < ApplicationController
   def create
     @amigo = Amigo.new(amigo_params)
     if @amigo.save
-      render json: @amigo, status: :created, location: @amigo
+      @amigo.avatar.attach(params[:avatar]) if params[:avatar].present?
+      render json: { 
+        amigo: @amigo, 
+        avatar_url: url_for(@amigo.avatar) if @amigo.avatar.attached? 
+      }, status: :created
     else
       render json: @amigo.errors, status: :unprocessable_entity
     end
@@ -26,7 +30,12 @@ class Api::V1::AmigosController < ApplicationController
   # PATCH/PUT /amigos/1
   def update
     if @amigo.update(amigo_params)
-      render json: @amigo
+      @amigo.avatar.attach(params[:avatar]) if params[:avatar].present?
+
+      render json: {
+        amigo: @amigo.as_json(include: { avatar_attachment: { only: :id }}),
+        avatar_url: @amigo.avatar.attached? ? url_for(@amigo.avatar) : nil
+      }
     else
       render json: @amigo.errors, status: :unprocessable_entity
     end
@@ -44,6 +53,14 @@ class Api::V1::AmigosController < ApplicationController
     end
 
     def amigo_params
-      params.require(:amigo).permit(:first_name, :last_name, :user_name, :email, :secondary_email, :phone_1, :phone_2, :date_of_birth, :member_in_good_standing, :available_to_host, :willing_to_help, :willing_to_donate, :personal_bio)
+      params.require(:amigo).permit(
+        :first_name,
+        :last_name,
+        :user_name,
+        :email,
+        :secondary_email,
+        :phone_1,
+        :phone_2,
+        :avatar)
     end
 end

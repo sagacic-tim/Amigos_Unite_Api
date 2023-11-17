@@ -4,15 +4,18 @@
 
 require 'faker'
 require 'json'
+require 'open-uri'
 
 # Ensure Faker generates unique data by resetting its seed
 Faker::UniqueGenerator.clear
 
 # Load addresses from JSON file and shuffle them
-address_pool = JSON.parse(File.read('db/migrate/Random_Residential_Addresses.json')).shuffle
+address_pool = JSON.parse(File.read('db/Random_Residential_Addresses.json')).shuffle
 
 # Open a file to write the user credentials
 File.open('tmp/dev_user_passwords.txt', 'w') do |file|
+  avatars_dir = Rails.root.join('lib', 'seeds', 'avatars')
+  num_avatars = 15  # Assuming there are 15 avatars in lib/seeds/avatars
 
   # Creating a bunch of Amigo records
   8.times do |i|
@@ -27,12 +30,6 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       password_confirmation: password,
       phone_1: Faker::PhoneNumber.unique.cell_phone,
       phone_2: Faker::PhoneNumber.unique.cell_phone,
-      date_of_birth: Faker::Date.birthday(min_age: 18, max_age: 100),
-      member_in_good_standing: [true, false].sample,
-      available_to_host: [true, false].sample,
-      willing_to_help: [true, false].sample,
-      willing_to_donate: [true, false].sample,
-      personal_bio: Faker::Lorem.paragraph(sentence_count: 2),
       confirmed_at: Time.current
     )
 
@@ -45,7 +42,32 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
     puts "Phone 1: #{amigo.phone_1}"
     puts "Phone 2: #{amigo.phone_2}"
     puts "Normalized Phone 1: #{Phonelib.parse(amigo.phone_1).e164}"
-    puts "Normalized Phone 2: #{Phonelib.parse(amigo.phone_2).e164}"    
+    puts "Normalized Phone 2: #{Phonelib.parse(amigo.phone_2).e164}"
+
+    # Write the user credentials to the file
+    file.puts "Amigo #{i + 1}:"
+    file.puts "Username: #{amigo.user_name}"
+    file.puts "Email: #{amigo.email}"
+    file.puts "Password: #{password}"
+    file.puts "\n"
+
+    # Add amigo details
+    amigo_detail = AmigoDetail.new(
+      amigo: amigo,
+      member_in_good_standing: [true, false].sample,
+      available_to_host: [true, false].sample,
+      willing_to_help: [true, false].sample,
+      willing_to_donate: [true, false].sample,
+      personal_bio: Faker::Lorem.paragraph(sentence_count: 2),
+      date_of_birth: Faker::Date.birthday(min_age: 18, max_age: 100)
+    )
+
+    begin
+      amigo_detail.save!
+      puts "AmigoDetail for Amigo #{i + 1} created"
+    rescue => e
+      puts "AmigoDetail could not be saved: #{e.message}"
+    end
 
     # Assign a random address to amigo, popping it off the array
     # to avoid duplicates
@@ -76,18 +98,22 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       end
 
       puts "Address #{j + 1} for Amigo #{i + 1}"
-      
+    end
 
-      # Write the user credentials to the file
-      file.puts "Amigo #{i + 1}:"
-      file.puts "Username: #{amigo.user_name}"
-      file.puts "Email: #{amigo.email}"
-      file.puts "Password: #{password}"
-      file.puts "\n"
+    # Sequential avatar assignment
+    file_name = "avatar#{i % num_avatars + 1}.jpg"
+    file_path = avatars_dir.join(file_name)
+    
+    if File.exist?(file_path)
+      File.open(file_path) do |file|
+        amigo.avatar.attach(io: file, filename: file_name)
+        puts "Avatar #{file_name} attached to Amigo #{i + 1}"
+      end
     end
   end
 end
 
 puts "#{Amigo.count} amigos created"
 puts "#{AmigoLocation.count} amigo locations created"
+puts "#{AmigoDetail.count} amigo details created"
 puts 'User passwords stored in tmp/dev_user_passwords.txt'

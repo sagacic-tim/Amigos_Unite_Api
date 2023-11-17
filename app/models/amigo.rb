@@ -1,9 +1,11 @@
 class Amigo < ApplicationRecord
+  include Devise::JWT::RevocationStrategies::JTIMatcher
   # Virtual attribute for authenticating by either user_name or email
   attr_accessor :login_attribute
 
   has_many :amigo_locations, dependent: :destroy
   has_one :amigo_detail, dependent: :destroy
+  has_one_attached :avatar
   before_validation :normalize_phone_numbers
 
   # Include all devise modules.
