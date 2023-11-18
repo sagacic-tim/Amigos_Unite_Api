@@ -1,29 +1,34 @@
 class Api::V1::Amigos::SessionsController < Devise::SessionsController
+  include RackSessionsFix
   respond_to :json
-
-  # POST /resource/sign_in
-  def create
-    self.resource = warden.authenticate!(auth_options)
-    if resource.persisted?
-      sign_in(resource_name, resource)
-      render 'api/v1/amigos/create' # This will use your jbuilder template
-    else
-      render 'api/v1/sessions/new' # This will use your jbuilder template for errors
-    end
-  end
-
-  # DELETE /resource/sign_out
-  def destroy
-    super
-  end
 
   private
 
   def respond_with(resource, _opts = {})
-    render 'api/v1/amigos/create' # This will use your jbuilder template
+    render json: {
+      status: { 
+        code: 200, message: 'Logged in successfully.',
+        data: { amigo: AmigoSerializer.new(resource).serializable_hash[:data][:attributes] }
+      }
+    }, status: :ok
   end
 
   def respond_to_on_destroy
-    head :no_content
+    if request.headers['Authorization'].present?
+      jwt_payload = JWT.decode(request.headers['Authorization'].split(' ').last, Rails.application.credentials.devise_jwt_secret_key!).first
+      resource = Amigo.find(jwt_payload['sub'])
+    end
+    
+    if resource
+      render json: {
+        status: 200,
+        message: 'Logged out successfully.'
+      }, status: :ok
+    else
+      render json: {
+        status: 401,
+        message: "Couldn't find an active session."
+      }, status: :unauthorized
+    end
   end
 end

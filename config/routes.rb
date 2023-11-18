@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   # Define routes for Devise authentication
-
+  
   devise_for :amigos, path: '', path_names: {
     sign_in: 'login',
     sign_out: 'logout',
@@ -14,7 +14,7 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
-      resources :amigos, only: [:index, :show, :update] do
+      resources :amigos, only: [:index, :show, :create, :update] do
         resources :amigo_locations, only: [:index, :show, :create, :update, :destroy]
         resource :amigo_details, only: [:index, :show, :create, :update, :destroy]
       end

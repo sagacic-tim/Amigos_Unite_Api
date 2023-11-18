@@ -13,4 +13,4 @@ json.extract! amigo,
 :created_at,
 :updated_at
 
-json.avatar_url(url_for(amigo.avatar)) if amigo.avatar.attached?
+json.avatar_url url_for(amigo.avatar) if amigo.avatar.attached?

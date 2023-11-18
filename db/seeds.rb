@@ -33,16 +33,7 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       confirmed_at: Time.current
     )
 
-    begin
-      amigo.save!
-    rescue ActiveRecord::RecordInvalid => e
-      puts e.record.errors.full_messages
-    end
-    
-    puts "Phone 1: #{amigo.phone_1}"
-    puts "Phone 2: #{amigo.phone_2}"
-    puts "Normalized Phone 1: #{Phonelib.parse(amigo.phone_1).e164}"
-    puts "Normalized Phone 2: #{Phonelib.parse(amigo.phone_2).e164}"
+    puts amigo.inspect
 
     # Write the user credentials to the file
     file.puts "Amigo #{i + 1}:"
@@ -50,6 +41,25 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
     file.puts "Email: #{amigo.email}"
     file.puts "Password: #{password}"
     file.puts "\n"
+
+    begin
+      amigo.save!
+    rescue ActiveRecord::RecordInvalid => e
+      puts e.record.errors.full_messages
+    end
+
+    # Sequential avatar assignment
+    num_avatars = 15
+    file_name = "avatar#{i % num_avatars + 1}.svg"
+    file_path = avatars_dir.join(file_name)
+    puts "Avatar file path = #{file_path}"
+
+    if File.exist?(file_path)
+      avatar_file = File.open(file_path)
+      amigo.avatar.attach(io: avatar_file, filename: file_name)
+      puts "Avatar #{file_name} attached to Amigo #{i + 1}"
+      avatar_file.close
+    end
 
     # Add amigo details
     amigo_detail = AmigoDetail.new(
@@ -65,6 +75,7 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
     begin
       amigo_detail.save!
       puts "AmigoDetail for Amigo #{i + 1} created"
+      puts amigo_detail.inspect
     rescue => e
       puts "AmigoDetail could not be saved: #{e.message}"
     end
@@ -91,24 +102,11 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       )
 
       begin
-        puts amigo_location.inspect
         amigo_location.save!
       rescue => e # Catches any StandardError
         puts "AmigoLocation could not be saved: #{e.message}"
       end
-
       puts "Address #{j + 1} for Amigo #{i + 1}"
-    end
-
-    # Sequential avatar assignment
-    file_name = "avatar#{i % num_avatars + 1}.jpg"
-    file_path = avatars_dir.join(file_name)
-    
-    if File.exist?(file_path)
-      File.open(file_path) do |file|
-        amigo.avatar.attach(io: file, filename: file_name)
-        puts "Avatar #{file_name} attached to Amigo #{i + 1}"
-      end
     end
   end
 end

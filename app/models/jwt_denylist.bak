@@ -1,4 +1,0 @@
-class JwtDenylist < ApplicationRecord
-  puts "JwtDenylist has loaded yeah!"
-  include Devise::JWT::RevocationStrategies::Denylist
-end

@@ -5,8 +5,8 @@ class Api::V1::AmigosController < ApplicationController
   # GET /amigos
   def index
     @amigos = Amigo.all
-    render json: @amigos
-  end
+    render :index, formats: :json, status: :ok
+  end  
 
   # GET /amigos/1
   def show
@@ -16,16 +16,19 @@ class Api::V1::AmigosController < ApplicationController
   # POST /amigos
   def create
     @amigo = Amigo.new(amigo_params)
+  
     if @amigo.save
-      @amigo.avatar.attach(params[:avatar]) if params[:avatar].present?
-      render json: { 
-        amigo: @amigo, 
-        avatar_url: url_for(@amigo.avatar) if @amigo.avatar.attached? 
-      }, status: :created
+      response_hash = {
+        amigo: @amigo
+      }
+  
+      response_hash[:avatar_url] = url_for(@amigo.avatar) if @amigo.avatar.attached?
+  
+      render json: response_hash, status: :created
     else
       render json: @amigo.errors, status: :unprocessable_entity
     end
-  end
+  end  
 
   # PATCH/PUT /amigos/1
   def update
@@ -58,6 +61,7 @@ class Api::V1::AmigosController < ApplicationController
         :last_name,
         :user_name,
         :email,
+        :password,
         :secondary_email,
         :phone_1,
         :phone_2,

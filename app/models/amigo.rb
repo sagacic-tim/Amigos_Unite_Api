@@ -10,17 +10,17 @@ class Amigo < ApplicationRecord
 
   # Include all devise modules.
   devise  :database_authenticatable,
-          :registerable
-          # :recoverable,
+          :registerable,
+          :recoverable,
           # :rememberable,
-          # :validatable,
+          :validatable,
           # :confirmable,
           # :lockable,
           # :timeoutable,
           # :trackable,
           # :omniauthable,
-          # :jwt_authenticatable,
-          # jwt_revocation_strategy: JwtDenylist
+          :jwt_authenticatable,
+          jwt_revocation_strategy: self
 
   # login method is used to access the virtual attribute for authentication
   def login_attrtibute
