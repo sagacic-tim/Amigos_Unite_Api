@@ -42,7 +42,6 @@ class Amigo < ApplicationRecord
   validates :last_name, presence: true, length: { maximum: 50 }
   validates :user_name, presence: true, length: { maximum: 50 }, uniqueness: { case_sensitive: false }
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }, uniqueness: { case_sensitive: false }
-  validates :password, presence: true, length: { within: Devise.password_length }, confirmation: true
   validates :secondary_email, allow_blank: true, format: { with: URI::MailTo::EMAIL_REGEXP }, uniqueness: { case_sensitive: false }
   
   # Phone validation
