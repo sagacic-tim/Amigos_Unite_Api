@@ -45,9 +45,17 @@ class Api::V1::AmigosController < ApplicationController
   end
 
   # DELETE /amigos/1
+  # def destroy
+  #   @amigo.destroy
+  #   head :no_content
+  # end
+
   def destroy
-    @amigo.destroy
-    head :no_content
+    if @amigo.destroy
+      render json: { message: 'Amigo successfully deleted.' }, status: :ok
+    else
+      render json: { errors: @amigo.errors.full_messages }, status: :unprocessable_entity
+    end
   end
 
   private

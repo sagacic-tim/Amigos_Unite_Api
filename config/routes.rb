@@ -15,8 +15,9 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :amigos, only: [:index, :show, :create, :update, :destroy] do
         resources :amigo_locations, only: [:index, :show, :create, :update, :destroy]
-        resource :amigo_details, only: [:index, :show, :create, :update, :destroy]
+        resource :amigo_details, only: [:show, :create, :update, :destroy] # Singular resource
       end
     end
   end
 end
+  
