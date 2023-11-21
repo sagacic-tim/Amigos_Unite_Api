@@ -13,11 +13,13 @@ class AmigoLocation < ApplicationRecord
     puts "Validating address: #{raw_address}"
     puts Rails.application.credentials.dig(:smarty_streets, :auth_id)
     puts Rails.application.credentials.dig(:smarty_streets, :auth_token)
-    app_auth_id = Rails.application.credentials.dig(:smarty_streets, :auth_id)
-    app_auth_token = Rails.application.credentials.dig(:smarty_streets, :auth_token)
-    puts "Auth ID: #{app_auth_id}, Auth Token: #{app_auth_token}"
-    credentials = SmartyStreets::StaticCredentials.new(app_auth_id, app_auth_token)
-    client = SmartyStreets::ClientBuilder.new(credentials).build_us_street_api_client
+    smarty_streets_credentials = Rails.application.credentials.smarty_streets
+    auth_id = smarty_streets_credentials[:auth_id]
+    auth_token = smarty_streets_credentials[:auth_token]
+    puts "Auth ID: #{auth_id}, Auth Token: #{auth_token}"
+    client = SmartyStreets::ClientBuilder.new(
+      SmartyStreets::StaticCredentials.new(credentials[:auth_id], credentials[:auth_token])
+    ).build_us_street_api_client
     lookup = SmartyStreets::USStreet::Lookup.new(raw_address) # Pass the address string as an argument
     lookup.match = :strict # Indicates an exact address match.
 

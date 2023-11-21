@@ -50,6 +50,27 @@ class Api::V1::AmigoLocationsController < ApplicationController
   end    
 
   def location_params
-    # your parameters here
-  end
+    params.require(:location).permit(
+      :address,
+      :address_type,
+      :floor,
+      :building,
+      :street_number,
+      :street_predirection,
+      :street_name,
+      :street_suffix,
+      :street_postdirection,
+      :apartment_suite_number,
+      :city,
+      :county,
+      :state_abbreviation,
+      :country_code,
+      :postal_code,
+      :plus4_code,
+      :latitude,
+      :longitude,
+      :time_zone,
+      :congressional_district
+    )
+  end  
 end

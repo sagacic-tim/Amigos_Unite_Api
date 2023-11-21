@@ -1,0 +1,45 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  event: one
+  address: MyString
+  address_type: MyString
+  floor: MyString
+  building: MyString
+  street_predirection: MyString
+  street_number: MyString
+  street_name: MyString
+  street_postdirection: MyString
+  street_suffix: MyString
+  apartment_suite_number: MyString
+  city: MyString
+  county: MyString
+  state_abbreviation: MyString
+  country_code: MyString
+  postal_code: MyString
+  plus4_code: MyString
+  latitude: 9.99
+  longitude: 9.99
+  time_zone: MyString
+
+two:
+  event: two
+  address: MyString
+  address_type: MyString
+  floor: MyString
+  building: MyString
+  street_predirection: MyString
+  street_number: MyString
+  street_name: MyString
+  street_postdirection: MyString
+  street_suffix: MyString
+  apartment_suite_number: MyString
+  city: MyString
+  county: MyString
+  state_abbreviation: MyString
+  country_code: MyString
+  postal_code: MyString
+  plus4_code: MyString
+  latitude: 9.99
+  longitude: 9.99
+  time_zone: MyString
