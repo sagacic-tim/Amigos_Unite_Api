@@ -1,6 +1,7 @@
 class EventLocation < ApplicationRecord
   
   belongs_to :event
+
   before_save :validate_address_with_smartystreets
 
   def validate_address_with_smartystreets

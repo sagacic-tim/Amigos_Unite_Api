@@ -2,17 +2,14 @@ class Event < ApplicationRecord
   # Events are related to a event_location_id which is a foreign
   # key to EventLocation
   belongs_to :event_location, class_name: 'EventLocation', foreign_key: 'event_location_id', optional: false
-  # Events are related to a event_coorddinator_id which is a foreign key
-  # to Amigo.
-  belongs_to :event_coordinator, class_name: 'Amigo', foreign_key: 'event_coordinator_id'
-  # Each event can have many attendees
-  # Explicitly specify the foreign key here
-  has_many :event_attendees, foreign_key: 'event_id' 
-  # Each Event can have many attendees (EventAttendees),
-  # through the EventAttendees join table
-  has_many :amigos, through: :event_attendees, source: :amigo
   # Each event is associated with one event location
   has_one :event_location
+  # Direct association to an Amigo as the coordinator of the event
+  belongs_to :coordinator, class_name: 'Amigo', foreign_key: 'event_coordinator_id'
+  # Each event can have many participants
+  has_many :event_participants
+  # Each participant is associated with an amigo
+  has_many :participants, through: :event_participants, source: :amigo
 
   # Ensure no duplicate event names at the same date and time
   validates :event_name, uniqueness: { 

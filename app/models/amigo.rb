@@ -6,6 +6,16 @@ class Amigo < ApplicationRecord
   has_many :amigo_locations, dependent: :destroy
   has_one :amigo_detail, dependent: :destroy
   has_one_attached :avatar
+
+  # Amigo has many coordinator roles (as EventCoordinators)
+  has_many :event_coordinator_roles, class_name: 'EventCoordinator', foreign_key: 'amigo_id'
+
+  # Through the EventCoordinator join model, Amigo is connected to many Events that they coordinate
+  has_many :coordinated_events, through: :event_coordinator_roles, source: :event
+
+  has_many :event_participants
+  has_many :event_registrations, through: :event_participants, source: :event
+  
   before_validation :normalize_phone_numbers
 
   # Include all devise modules.
@@ -35,6 +45,13 @@ class Amigo < ApplicationRecord
     else
       where(conditions.to_h).first
     end
+  end
+
+  # Method to retrieve unique locations coordinated by an Amigo
+  def coordinated_locations
+    EventLocation.joins(:events)
+                 .where(events: { event_coordinator_id: self.id })
+                 .distinct
   end
 
   # Validations

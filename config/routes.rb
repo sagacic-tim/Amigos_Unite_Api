@@ -19,5 +19,20 @@ Rails.application.routes.draw do
       end
     end
   end
+  namespace :api do
+    namespace :v1 do
+      resources :events do
+        # Nested routes for EventLocations under a specific Event
+        resources :event_locations
+
+        # Nested routes for EventParticipants under a specific Event
+        resources :event_participants
+
+        # Nested routes for EventCoordinators under a specific Event
+        # Assuming EventCoordinators are scoped under Events
+        resources :event_coordinators
+      end
+    end
+  end
 end
   
