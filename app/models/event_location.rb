@@ -1,7 +1,6 @@
 class EventLocation < ApplicationRecord
   
   belongs_to :event
-
   before_save :validate_address_with_smartystreets
 
   def validate_address_with_smartystreets
@@ -39,7 +38,7 @@ class EventLocation < ApplicationRecord
     end
 
     def update_location_attributes(candidate)
-      self.address = "#{candidate.components.primary_number} #{first_candidate.components.street_predirection} #{first_candidate.components.street_name} #{first_candidate.components.street_suffix} #{first_candidate.components.street_postdirection} #{first_candidate.components.secondary_number} #{first_candidate.components.city_name}, #{first_candidate.components.state_abbreviation} US #{first_candidate.components.zipcode}-#{first_candidate.components.plus4_code}"
+      self.address = "#{candidate.components.primary_number} #{candidate.components.street_predirection} #{candidate.components.street_name} #{candidate.components.street_suffix} #{candidate.components.street_postdirection} #{candidate.components.secondary_number} #{candidate.components.city_name}, #{candidate.components.state_abbreviation} US #{candidate.components.zipcode}-#{candidate.components.plus4_code}"
       self.address_type = candidate.metadata.rdi
       self.building = candidate.components.extra_secondary_number
       self.street_number = candidate.components.primary_number

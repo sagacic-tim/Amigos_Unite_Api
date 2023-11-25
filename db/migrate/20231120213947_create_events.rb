@@ -7,7 +7,7 @@ class CreateEvents < ActiveRecord::Migration[7.0]
       t.date :event_date
       t.time :event_time
       t.references :event_coordinator, null: false, foreign_key: { to_table: :amigos }
-      t.references :event_location, null: false, foreign_key: { to_table: :amigo_locations }
+      t.references :event_location, null: false, foreign_key: true
 
       t.timestamps
     end

@@ -41,9 +41,17 @@ class Api::V1::AmigoLocationsController < ApplicationController
 
   private
 
+  ## This will be for production so that Amigos
+  ## can only see their own records. Right now using the other
+  ## method to be able to test CRUD
+  # def set_amigo 
+  #   @amigo = current_amigo
+  # end
+
   def set_amigo
-    @amigo = current_amigo
+    @amigo = Amigo.find(params[:amigo_id])
   end
+  
 
   def set_amigo_location
     @amigo_location = @amigo.amigo_locations.find_by(id: params[:id])

@@ -4,8 +4,7 @@ Rails.application.routes.draw do
     sign_in: 'login',
     sign_out: 'logout',
     registration: 'signup'
-  },
-  controllers: {
+  }, controllers: {
     sessions: 'api/v1/amigos/sessions',
     registrations: 'api/v1/amigos/registrations'
   }
@@ -13,26 +12,19 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
-      resources :amigos, only: [:index, :show, :create, :update, :destroy] do
-        resources :amigo_locations, only: [:index, :show, :create, :update, :destroy]
-        resource :amigo_details, only: [:show, :create, :update, :destroy] # Singular resource
+      resources :amigos, except: [:new, :edit] do
+        resources :amigo_locations, except: [:new, :edit]
+        resource :amigo_details, except: [:new, :edit]
       end
-    end
-  end
-  namespace :api do
-    namespace :v1 do
-      resources :events do
-        # Nested routes for EventLocations under a specific Event
-        resources :event_locations
 
-        # Nested routes for EventParticipants under a specific Event
-        resources :event_participants
-
-        # Nested routes for EventCoordinators under a specific Event
-        # Assuming EventCoordinators are scoped under Events
-        resources :event_coordinators
+      resources :events, except: [:new, :edit] do
+        resources :event_locations, except: [:new, :edit]
+        resources :event_participants, except: [:new, :edit]
+        resources :event_coordinators, except: [:new, :edit] do
+          member do
+            get 'locations_of_host'
+          end
       end
     end
   end
 end
-  

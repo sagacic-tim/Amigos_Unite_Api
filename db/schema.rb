@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_23_043125) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_24_221738) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -168,9 +168,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_23_043125) do
     t.string "event_speakers_performers", default: [], array: true
     t.date "event_date"
     t.datetime "event_time"
-    t.bigint "event_location_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "event_coordinator_id", null: false
+    t.bigint "event_location_id", null: false
+    t.index ["event_coordinator_id"], name: "index_events_on_event_coordinator_id"
     t.index ["event_location_id"], name: "index_events_on_event_location_id"
   end
 
@@ -206,5 +208,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_23_043125) do
   add_foreign_key "event_locations", "events"
   add_foreign_key "event_participants", "amigos"
   add_foreign_key "event_participants", "events"
-  add_foreign_key "events", "amigo_locations", column: "event_location_id"
+  add_foreign_key "events", "amigos", column: "event_coordinator_id"
+  add_foreign_key "events", "event_locations"
 end

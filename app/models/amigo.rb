@@ -8,10 +8,10 @@ class Amigo < ApplicationRecord
   has_one_attached :avatar
 
   # Amigo has many coordinator roles (as EventCoordinators)
-  has_many :event_coordinator_roles, class_name: 'EventCoordinator', foreign_key: 'amigo_id'
+  has_many :registered_coordinators, class_name: 'EventCoordinator', foreign_key: 'amigo_id'
 
   # Through the EventCoordinator join model, Amigo is connected to many Events that they coordinate
-  has_many :coordinated_events, through: :event_coordinator_roles, source: :event
+  has_many :coordinated_events, through: :registered_coordinators, source: :event
 
   has_many :event_participants
   has_many :event_registrations, through: :event_participants, source: :event

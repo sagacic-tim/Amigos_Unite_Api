@@ -44,12 +44,6 @@ class Api::V1::AmigosController < ApplicationController
     end
   end
 
-  # DELETE /amigos/1
-  # def destroy
-  #   @amigo.destroy
-  #   head :no_content
-  # end
-
   def destroy
     if @amigo.destroy
       render json: { message: 'Amigo successfully deleted.' }, status: :ok
