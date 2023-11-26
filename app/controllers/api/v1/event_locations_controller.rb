@@ -52,6 +52,8 @@ class Api::V1::EventLocationsController < ApplicationController
 
   def event_location_params
     params.require(:event_location).permit(
+      :business_name,
+      :phone,
       :address,
       :address_type,
       :floor,
@@ -70,8 +72,7 @@ class Api::V1::EventLocationsController < ApplicationController
       :plus4_code,
       :latitude,
       :longitude,
-      :time_zone,
-      :congressional_district
+      :time_zone
     )
   end
 end

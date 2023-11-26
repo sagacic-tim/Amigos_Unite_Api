@@ -15,7 +15,6 @@ address_pool = JSON.parse(File.read('db/Random_Residential_Addresses.json')).shu
 # Open a file to write the user credentials
 File.open('tmp/dev_user_passwords.txt', 'w') do |file|
   avatars_dir = Rails.root.join('lib', 'seeds', 'avatars')
-  num_avatars = 15  # Assuming there are 15 avatars in lib/seeds/avatars
 
   # Creating a bunch of Amigo records
   8.times do |i|
@@ -49,7 +48,7 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
     end
 
     # Sequential avatar assignment
-    num_avatars = 15
+    num_avatars = 15 #assuming that thefre are 15 avatars available.
     file_name = "avatar#{i % num_avatars + 1}.svg"
     file_path = avatars_dir.join(file_name)
     puts "Avatar file path = #{file_path}"
@@ -89,6 +88,7 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
         # ... set the address fields using the popped address ...
         building: address["building"].presence,
         floor: address["floor"].presence,
+        room: address["room"].presence,
         street_number: address["street_number"],
         street_name: address["street_name"],
         street_predirection: address["street_predirection"].presence,
@@ -111,7 +111,70 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
   end
 end
 
+8.times do |k|
+  event_coordinator = Amigo.all.sample # Randomly pick an existing Amigo as the coordinator
+  event = Event.new(
+    event_name: Faker::Lorem.sentence(word_count: 3),
+    event_type: ["Conference", "Seminar", "Workshop", "Concert", "Festival"].sample,
+    event_date: Faker::Date.forward(days: 365), # Random date within the next year
+    event_time: Faker::Time.forward(days: 365, period: :evening),
+    event_speakers_performers: Array.new(3) { Faker::Name.name },
+    coordinator: event_coordinator
+  )
+
+  if event.save
+    puts "Event #{k + 1} created: #{event.event_name}"
+
+    # Assign a random business address to event_location
+    address = business_address_pool.pop
+    event_location = EventLocation.new(
+      event: event,
+      # ... set the address fields using the popped address ...
+      business_name: address["business_name"]
+      phone: address["phone"].presence
+      building: address["building"].presence,
+      floor: address["floor"].presence,
+      street_number: address["street_number"],
+      street_name: address["street_name"],
+      street_predirection: address["street_predirection"].presence,
+      street_suffix: address["street_suffix"].presence,
+      street_postdirection: address["street_postdirection"].presence,
+      apartment_suite_number: address["apartment_suite_number"].presence,
+      city: address["city"],
+      state_abbreviation: address["state_abbreviation"],
+      country_code: address["country_code"],
+      postal_code: address["postal_code"]
+    )
+
+    if event_location.save
+      puts "EventLocation for Event #{k + 1} created: #{event_location.address}"
+    else
+      puts "EventLocation could not be created: #{event_location.errors.full_messages.join(", ")}"
+    end
+
+    # Add random participants to the event
+    number_of_participants = rand(3..7) # Random number of participants
+    number_of_participants.times do |l|
+      participant = Amigo.all.sample
+      event_participant = EventParticipant.new(
+        event: event,
+        amigo: participant
+      )
+      if event_participant.save
+        puts "Participant #{participant.user_name} added to Event #{event.event_name}"
+      else
+        puts "Could not add participant: #{event_participant.errors.full_messages.join(", ")}"
+      end
+    end
+  else
+    puts "Event could not be created: #{event.errors.full_messages.join(", ")}"
+  end
+end
+
 puts "#{Amigo.count} amigos created"
 puts "#{AmigoLocation.count} amigo locations created"
 puts "#{AmigoDetail.count} amigo details created"
+puts "#{Event.count} events created"
+puts "#{EventLocation.count} event locations created"
+puts "#{EventParticipant.count} event participants created"
 puts 'User passwords stored in tmp/dev_user_passwords.txt'

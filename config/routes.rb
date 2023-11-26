@@ -24,6 +24,7 @@ Rails.application.routes.draw do
           member do
             get 'locations_of_host'
           end
+        end
       end
     end
   end

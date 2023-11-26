@@ -3,6 +3,9 @@ class EventLocation < ApplicationRecord
   belongs_to :event
   before_save :validate_address_with_smartystreets
 
+  validates :phone, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line] }
+  validates :business_name, allow_blank: true, length: { maximum: 64 }, uniqueness: { case_sensitive: false }
+
   def validate_address_with_smartystreets
     raw_address = "#{self.street_number} #{self.street_name} #{self.street_suffix} #{self.city}, #{self.state_abbreviation} #{self.postal_code}"
     # Call SmartyStreets API to validate the address
@@ -56,7 +59,6 @@ class EventLocation < ApplicationRecord
       self.latitude = candidate.metadata.latitude
       self.longitude = candidate.metadata.longitude
       self.time_zone = candidate.metadata.time_zone
-      self.congressional_district = candidate.metadata.congressional_district
     end
   end
 end
