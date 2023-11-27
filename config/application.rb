@@ -22,4 +22,11 @@ class Application < Rails::Application
   # Middleware like session, flash, cookies can be added back manually.
   # Skip views, helpers and assets when generating a new resource.
   config.api_only = true
+
+  # Active Job is a framework for declaring jobs and making them
+  # run on a variety of queuing backends. These jobs can be
+  # everything from regularly scheduled clean-ups, to billing
+  # charges, to mailings. Anything that can be chopped up into
+  # small units of work and run in parallel, rea
+  config.active_job.queue_adapter = :async
 end

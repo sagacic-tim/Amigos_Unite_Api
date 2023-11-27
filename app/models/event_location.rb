@@ -1,10 +1,17 @@
 class EventLocation < ApplicationRecord
   
   belongs_to :event
+  has_one_attached :location_image
   before_save :validate_address_with_smartystreets
+  before_save :scan_for_viruses
+  # Trigger the job after commit (i.e., after the record and its image have been saved)
+  after_commit :process_location_image, on: [:create, :update]
 
   validates :phone, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line] }
   validates :business_name, allow_blank: true, length: { maximum: 64 }, uniqueness: { case_sensitive: false }
+  validates :location_image, attached: true, 
+  content_type: ['image/png', 'image/jpg', 'image/jpeg'],
+  size: { less_than: 5.megabytes }
 
   def validate_address_with_smartystreets
     raw_address = "#{self.street_number} #{self.street_name} #{self.street_suffix} #{self.city}, #{self.state_abbreviation} #{self.postal_code}"
@@ -43,6 +50,7 @@ class EventLocation < ApplicationRecord
     def update_location_attributes(candidate)
       self.address = "#{candidate.components.primary_number} #{candidate.components.street_predirection} #{candidate.components.street_name} #{candidate.components.street_suffix} #{candidate.components.street_postdirection} #{candidate.components.secondary_number} #{candidate.components.city_name}, #{candidate.components.state_abbreviation} US #{candidate.components.zipcode}-#{candidate.components.plus4_code}"
       self.address_type = candidate.metadata.rdi
+      self.room_suite_no = candidate.components.secondary
       self.building = candidate.components.extra_secondary_number
       self.street_number = candidate.components.primary_number
       self.street_predirection = candidate.components.street_predirection
@@ -60,5 +68,22 @@ class EventLocation < ApplicationRecord
       self.longitude = candidate.metadata.longitude
       self.time_zone = candidate.metadata.time_zone
     end
+  end
+
+  private
+
+  def scan_for_viruses
+    return unless location_image.attached?
+
+    unless Clamby.safe?(location_image.path)
+      location_image.purge
+      errors.add(:location_image, "Virus detected in file.")
+      throw :abort
+    end
+  end
+
+  def process_location_image
+    # Enqueue the job only if the location_image is attached
+    ProcessLocationImageJob.perform_later(self) if location_image.attached?
   end
 end

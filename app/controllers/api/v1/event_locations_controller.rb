@@ -10,20 +10,22 @@ class Api::V1::EventLocationsController < ApplicationController
 
   # GET /api/v1/events/:event_id/event_locations/:id
   def show
-    render json: @event_location
+    @event_location = EventLocation.find(params[:id])
   end
 
   # POST /api/v1/events/:event_id/event_locations
+
   def create
     @event_location = EventLocation.new(event_location_params)
-    @event_location.event = @event
 
     if @event_location.save
+      ProcessImageJob.perform_later(@event_location.id)
       render json: @event_location, status: :created
     else
       render json: @event_location.errors, status: :unprocessable_entity
     end
   end
+  
 
   # PATCH/PUT /api/v1/events/:event_id/event_locations/:id
   def update
@@ -52,10 +54,13 @@ class Api::V1::EventLocationsController < ApplicationController
 
   def event_location_params
     params.require(:event_location).permit(
+      :other, :attributes, :location_image,
       :business_name,
+      :location_image,
       :phone,
       :address,
       :address_type,
+      :room_suite_no,
       :floor,
       :building,
       :street_number,

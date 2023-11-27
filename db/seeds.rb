@@ -86,9 +86,11 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       amigo_location = AmigoLocation.new(
         amigo: amigo,
         # ... set the address fields using the popped address ...
+        business_name: address["busisness_name"],
+        phone: address["phone"],
         building: address["building"].presence,
         floor: address["floor"].presence,
-        room: address["room"].presence,
+        room_suite_no: address["room"].presence,
         street_number: address["street_number"],
         street_name: address["street_name"],
         street_predirection: address["street_predirection"].presence,

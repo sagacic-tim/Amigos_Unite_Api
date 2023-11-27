@@ -1,7 +1,10 @@
 json.extract! event_location, 
-  :id, 
+  :id,
+  :business_name,
+  :phone,
   :address, 
   :address_type, 
+  :room_suite_no,
   :floor, 
   :building, 
   :street_predirection, 
@@ -18,7 +21,13 @@ json.extract! event_location,
   :plus4_code, 
   :latitude, 
   :longitude, 
-  :time_zone
+  :time_zone,
+  :other_attributes
+
+  if event_location.location_image.attached?
+    resized_image = event_location.location_image.variant(resize: "640x480").processed
+    json.location_image_url rails_representation_url(resized_image, only_path: true)
+  end
 
 json.created_at event_location.created_at
 json.updated_at event_location.updated_at
