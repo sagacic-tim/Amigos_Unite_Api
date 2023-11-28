@@ -11,6 +11,9 @@ class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
       t.string :phone_2, limit: 20
       t.string :encrypted_password, null: false, default: ""
 
+      ## Add JTI - Jason Web Token Index
+      t.string :jti, null: false
+
       ## Recoverable
       t.string   :reset_password_token
       t.datetime :reset_password_sent_at
@@ -40,9 +43,10 @@ class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
     end
 
     add_index :amigos, :user_name,            unique: true
-    add_index :amigos, :email,        unique: true
+    add_index :amigos, :email,                unique: true
     add_index :amigos, :reset_password_token, unique: true
     add_index :amigos, :confirmation_token,   unique: true
     add_index :amigos, :unlock_token,         unique: true
+    add_index :amigos, :jti,                  unique: true
   end
 end

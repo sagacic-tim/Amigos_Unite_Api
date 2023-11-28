@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_26_174334) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_27_214115) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -91,6 +91,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_26_174334) do
     t.string "phone_1", limit: 20
     t.string "phone_2", limit: 20
     t.string "encrypted_password", default: "", null: false
+    t.string "jti", null: false
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
@@ -108,7 +109,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_26_174334) do
     t.datetime "locked_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "jti", null: false
     t.index ["confirmation_token"], name: "index_amigos_on_confirmation_token", unique: true
     t.index ["email"], name: "index_amigos_on_email", unique: true
     t.index ["jti"], name: "index_amigos_on_jti", unique: true
@@ -118,17 +118,19 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_26_174334) do
   end
 
   create_table "event_coordinators", force: :cascade do |t|
-    t.bigint "event_id", null: false
     t.bigint "amigo_id", null: false
     t.boolean "is_active"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "event_id", null: false
     t.index ["amigo_id"], name: "index_event_coordinators_on_amigo_id"
     t.index ["event_id"], name: "index_event_coordinators_on_event_id"
   end
 
   create_table "event_locations", force: :cascade do |t|
-    t.bigint "event_id", null: false
+    t.string "business_name", limit: 128
+    t.string "phone", limit: 20
+    t.string "room_suite_no", limit: 32
     t.string "address", limit: 256
     t.string "address_type", limit: 12
     t.string "floor", limit: 10
@@ -150,9 +152,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_26_174334) do
     t.string "time_zone", limit: 48
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "business_name"
-    t.string "room_suite_no", limit: 64
-    t.string "phone", limit: 20
+    t.bigint "event_id", null: false
     t.index ["event_id"], name: "index_event_locations_on_event_id"
   end
 
@@ -170,11 +170,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_26_174334) do
     t.string "event_type"
     t.string "event_speakers_performers", default: [], array: true
     t.date "event_date"
-    t.datetime "event_time"
+    t.time "event_time"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "event_coordinator_id", null: false
     t.bigint "event_location_id", null: false
+    t.bigint "event_coordinator_id", null: false
     t.index ["event_coordinator_id"], name: "index_events_on_event_coordinator_id"
     t.index ["event_location_id"], name: "index_events_on_event_location_id"
   end
@@ -211,6 +211,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_26_174334) do
   add_foreign_key "event_locations", "events"
   add_foreign_key "event_participants", "amigos"
   add_foreign_key "event_participants", "events"
-  add_foreign_key "events", "amigos", column: "event_coordinator_id"
+  add_foreign_key "events", "event_coordinators"
   add_foreign_key "events", "event_locations"
 end

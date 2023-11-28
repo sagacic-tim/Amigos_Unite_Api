@@ -22,7 +22,6 @@ json.extract! event_location,
   :latitude, 
   :longitude, 
   :time_zone,
-  :other_attributes
 
   if event_location.location_image.attached?
     resized_image = event_location.location_image.variant(resize: "640x480").processed

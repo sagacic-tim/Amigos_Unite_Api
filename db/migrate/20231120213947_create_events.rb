@@ -6,8 +6,6 @@ class CreateEvents < ActiveRecord::Migration[7.0]
       t.string :event_speakers_performers, array: true, default: []
       t.date :event_date
       t.time :event_time
-      t.references :event_coordinator, null: false, foreign_key: { to_table: :amigos }
-      t.references :event_location, null: false, foreign_key: true
 
       t.timestamps
     end

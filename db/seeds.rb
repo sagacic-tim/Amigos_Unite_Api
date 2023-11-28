@@ -9,8 +9,8 @@ require 'open-uri'
 # Ensure Faker generates unique data by resetting its seed
 Faker::UniqueGenerator.clear
 
-# Load addresses from JSON file and shuffle them
-address_pool = JSON.parse(File.read('db/Random_Residential_Addresses.json')).shuffle
+# Load random residential addresses
+residential_address_pool = JSON.parse(File.read('db/Random_Residential_Addresses.json')).shuffle
 
 # Open a file to write the user credentials
 File.open('tmp/dev_user_passwords.txt', 'w') do |file|
@@ -82,15 +82,12 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
     # Assign a random address to amigo, popping it off the array
     # to avoid duplicates
     2.times do |j|
-      address = address_pool.pop
+      address = residential_address_pool.pop
       amigo_location = AmigoLocation.new(
         amigo: amigo,
         # ... set the address fields using the popped address ...
-        business_name: address["busisness_name"],
-        phone: address["phone"],
         building: address["building"].presence,
         floor: address["floor"].presence,
-        room_suite_no: address["room"].presence,
         street_number: address["street_number"],
         street_name: address["street_name"],
         street_predirection: address["street_predirection"].presence,
@@ -113,6 +110,9 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
   end
 end
 
+# Load random business addresses
+business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json')).shuffle
+
 8.times do |k|
   event_coordinator = Amigo.all.sample # Randomly pick an existing Amigo as the coordinator
   event = Event.new(
@@ -129,11 +129,12 @@ end
 
     # Assign a random business address to event_location
     address = business_address_pool.pop
-    event_location = EventLocation.new(
+      event_location = EventLocation.new(
       event: event,
       # ... set the address fields using the popped address ...
-      business_name: address["business_name"]
-      phone: address["phone"].presence
+      business_name: address["business_name"],
+      phone: address["phone"].presence,
+      room_suite_no: address["room_suite_no"].presence,
       building: address["building"].presence,
       floor: address["floor"].presence,
       street_number: address["street_number"],
