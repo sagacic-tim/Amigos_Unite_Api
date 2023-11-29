@@ -129,8 +129,7 @@ business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json'
 
     # Assign a random business address to event_location
     address = business_address_pool.pop
-      event_location = EventLocation.new(
-      event: event,
+    event_location = EventLocation.new(
       # ... set the address fields using the popped address ...
       business_name: address["business_name"],
       phone: address["phone"].presence,
@@ -151,6 +150,18 @@ business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json'
 
     if event_location.save
       puts "EventLocation for Event #{k + 1} created: #{event_location.address}"
+
+      # Create the connector between Event and EventLocation
+      event_location_connector = EventLocationConnector.new(
+        event: event,
+        event_location: event_location
+      )
+
+      if event_location_connector.save
+        puts "EventLocationConnector created for Event #{k + 1}"
+      else
+        puts "EventLocationConnector could not be created: #{event_location_connector.errors.full_messages.join(", ")}"
+      end
     else
       puts "EventLocation could not be created: #{event_location.errors.full_messages.join(", ")}"
     end
@@ -180,4 +191,5 @@ puts "#{AmigoDetail.count} amigo details created"
 puts "#{Event.count} events created"
 puts "#{EventLocation.count} event locations created"
 puts "#{EventParticipant.count} event participants created"
+puts "#{EventLocationConnector.count} event location connectors created"
 puts 'User passwords stored in tmp/dev_user_passwords.txt'

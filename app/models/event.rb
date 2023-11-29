@@ -1,12 +1,10 @@
 class Event < ApplicationRecord
-  # Events are related to a event_location_id which is a foreign
-  # key to EventLocation
-  
-  belongs_to :event_location, class_name: 'EventLocation', foreign_key: 'event_location_id', optional: false
-  # Direct association to an Amigo as the coordinator of the event
+
+  # Each event is connect to a coordinagtor whio is drawn from Amigos
   belongs_to :coordinator, class_name: 'Amigo', foreign_key: 'event_coordinator_id'
-  # Each event is associated with one event location
-  has_one :event_location
+  # Each event is associated with one or more event locations
+  has_many :event_location_connectors
+  has_many :event_locations, through: :event_location_connectors
   # Each event can have many participants
   has_many :event_participants
   # Each participant is associated with an amigo

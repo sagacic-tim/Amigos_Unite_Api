@@ -18,6 +18,7 @@ Rails.application.routes.draw do
       end
 
       resources :events, except: [:new, :edit] do
+        resources :event_location_connectors, only: [:create, :index]
         resources :event_locations, except: [:new, :edit]
         resources :event_participants, except: [:new, :edit]
         resources :event_coordinators, except: [:new, :edit] do

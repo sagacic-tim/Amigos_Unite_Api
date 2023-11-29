@@ -1,14 +1,23 @@
 class EventLocation < ApplicationRecord
   
-  belongs_to :event
+  # Each event location can b e associagted with one or more events.
+  # These associations are handle via the EventLocationConnector model
+  has_many :event_location_connectors
+  has_many :events, through: :event_location_connectors
+  # each locaiton can have onbe attached image
   has_one_attached :location_image
+  # validate with SmartyStreets. This will be swapped for Google Places.
   before_save :validate_address_with_smartystreets
+  # Images will be scanned for viruses
   before_save :scan_for_viruses
-  # Trigger the job after commit (i.e., after the record and its image have been saved)
+  # Trigger the job after commit (i.e., after the record and its
+  # image have been saved to scale adn crop it to 640 x 480 pixels)
   after_commit :process_location_image, on: [:create, :update]
 
   validates :business_name, allow_blank: true, length: { maximum: 64 }, uniqueness: { case_sensitive: false }
   validates :phone, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line] }
+  # Make sure the image upload is an image file and not something else
+  # and not some hemnongous gigabyte sized image.
   validates :location_image, attached: true, 
   content_type: ['image/png', 'image/jpg', 'image/jpeg'],
   size: { less_than: 5.megabytes }
