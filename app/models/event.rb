@@ -1,15 +1,15 @@
 class Event < ApplicationRecord
 
-  # Each event is connect to a coordinagtor whio is drawn from Amigos
-  belongs_to :coordinator, class_name: 'Amigo', foreign_key: 'event_coordinator_id'
   # Each event is associated with one or more event locations
   has_many :event_location_connectors
   has_many :event_locations, through: :event_location_connectors
-  # Each event can have many participants
+
+  # Each event is connected to a coordinator who is drawn from Amigos
+  belongs_to :coordinator, class_name: 'Amigo', foreign_key: 'event_coordinator_id'
+
+  # Each event can have many participants through event_participants
   has_many :event_participants
-  # Each participant is associated with an amigo
   has_many :participants, through: :event_participants, source: :amigo
-  # Ensure no duplicate event names at the same date and time
 
   validates :event_name, uniqueness: { 
     scope: [:event_date, :event_time], 

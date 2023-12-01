@@ -27,3 +27,9 @@ json.extract! location,
     resized_image = event_location.location_image.variant(resize: "640x480").processed
     json.location_image_url rails_representation_url(resized_image, only_path: true)
   end
+  
+  # Include events at this location
+  json.events event_location.events do |event|
+    json.extract! event, :id, :event_name, :event_date, :event_time
+    json.coordinator event.coordinator.user_name
+  end

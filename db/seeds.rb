@@ -151,12 +151,7 @@ business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json'
     if event_location.save
       puts "EventLocation for Event #{k + 1} created: #{event_location.address}"
 
-      # Create the connector between Event and EventLocation
-      event_location_connector = EventLocationConnector.new(
-        event: event,
-        event_location: event_location
-      )
-
+      event_location_connector = EventLocationConnector.new(event: event, event_location: event_location)
       if event_location_connector.save
         puts "EventLocationConnector created for Event #{k + 1}"
       else

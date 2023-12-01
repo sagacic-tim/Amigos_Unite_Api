@@ -1,6 +1,8 @@
 class Api::V1::EventLocationsController < ApplicationController
+
   before_action :set_event, only: [:index, :create]
-  before_action :set_event_location, only: [:show, :update, :destroy]
+  before_action :set_event_location, only: [:show, :update, :destroy]  
+
 
   # GET /api/v1/events/:event_id/event_locations
   def index
@@ -17,11 +19,21 @@ class Api::V1::EventLocationsController < ApplicationController
   def create
     EventLocation.transaction do
       @event_location = EventLocation.new(event_location_params)
+
       if @event_location.save
         EventLocationConnector.create!(event: @event, event_location: @event_location)
         render json: @event_location, status: :created
       else
-        render json: @event_location.errors, status: :unprocessable_entity
+        # Log the error for internal review
+        Rails.logger.error "EventLocation creation failed: #{@event_location.errors.full_messages}, an event may have been scheduled for this location"
+
+        # Provide a more detailed error message for the API consumer
+        render json: { 
+          status: 'error', 
+          message: 'Failed to create event location, an event may have been scheduled for this location.', 
+          errors: @event_location.errors.full_messages 
+        }, status: :unprocessable_entity
+
         raise ActiveRecord::Rollback
       end
     end
@@ -38,8 +50,13 @@ class Api::V1::EventLocationsController < ApplicationController
 
   # DELETE /api/v1/event_locations/:id
   def destroy
-    @event_location.destroy
-    head :no_content
+    # Check if there are any connectors associated with this event location
+    if EventLocationConnector.exists?(event_location_id: @event_location.id)
+      render json: { error: "You cannot delete this location while events are scheduled to be held at this location." }, status: :unprocessable_entity
+    else
+      @event_location.destroy
+      head :no_content
+    end
   end
 
   private

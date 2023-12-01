@@ -6,16 +6,15 @@ class Amigo < ApplicationRecord
   has_many :amigo_locations, dependent: :destroy
   has_one :amigo_detail, dependent: :destroy
   has_one_attached :avatar
+  # As a coordinator, an Amigo can coordinate many events
+  has_many :event_coordinators
+  # An Amigo can coordinate many events
+  has_many :coordinated_events, class_name: 'Event', foreign_key: 'event_coordinator_id'
 
-  # Amigo has many coordinator roles (as EventCoordinators)
-  has_many :registered_coordinators, class_name: 'EventCoordinator', foreign_key: 'amigo_id'
-
-  # Through the EventCoordinator join model, Amigo is connected to many Events that they coordinate
-  has_many :coordinated_events, through: :registered_coordinators, source: :event
-
+  # As a participant, an Amigo can participate in many events
   has_many :event_participants
-  has_many :event_registrations, through: :event_participants, source: :event
-  
+  has_many :participated_events, through: :event_participants, source: :event
+
   before_validation :normalize_phone_numbers
 
   # Include all devise modules.

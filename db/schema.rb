@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_27_214115) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -117,14 +117,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_214115) do
     t.index ["user_name"], name: "index_amigos_on_user_name", unique: true
   end
 
-  create_table "event_coordinators", force: :cascade do |t|
-    t.bigint "amigo_id", null: false
-    t.boolean "is_active"
+  create_table "event_location_connectors", force: :cascade do |t|
+    t.bigint "event_id", null: false
+    t.bigint "event_location_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "event_id", null: false
-    t.index ["amigo_id"], name: "index_event_coordinators_on_amigo_id"
-    t.index ["event_id"], name: "index_event_coordinators_on_event_id"
+    t.index ["event_id"], name: "index_event_location_connectors_on_event_id"
+    t.index ["event_location_id"], name: "index_event_location_connectors_on_event_location_id"
   end
 
   create_table "event_locations", force: :cascade do |t|
@@ -152,8 +151,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_214115) do
     t.string "time_zone", limit: 48
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "event_id", null: false
-    t.index ["event_id"], name: "index_event_locations_on_event_id"
   end
 
   create_table "event_participants", force: :cascade do |t|
@@ -171,12 +168,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_214115) do
     t.string "event_speakers_performers", default: [], array: true
     t.date "event_date"
     t.time "event_time"
+    t.bigint "event_coordinator_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "event_location_id", null: false
-    t.bigint "event_coordinator_id", null: false
-    t.index ["event_coordinator_id"], name: "index_events_on_event_coordinator_id"
-    t.index ["event_location_id"], name: "index_events_on_event_location_id"
   end
 
   create_table "login_activities", force: :cascade do |t|
@@ -206,11 +200,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_214115) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "amigo_details", "amigos"
   add_foreign_key "amigo_locations", "amigos"
-  add_foreign_key "event_coordinators", "amigos"
-  add_foreign_key "event_coordinators", "events"
-  add_foreign_key "event_locations", "events"
+  add_foreign_key "event_location_connectors", "event_locations"
+  add_foreign_key "event_location_connectors", "events"
   add_foreign_key "event_participants", "amigos"
   add_foreign_key "event_participants", "events"
-  add_foreign_key "events", "event_coordinators"
-  add_foreign_key "events", "event_locations"
+  add_foreign_key "events", "amigos", column: "event_coordinator_id"
 end
