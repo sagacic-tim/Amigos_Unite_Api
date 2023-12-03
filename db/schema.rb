@@ -57,16 +57,16 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
 
   create_table "amigo_locations", force: :cascade do |t|
     t.bigint "amigo_id", null: false
+    t.string "business_name", limit: 128
+    t.string "phone", limit: 20
     t.string "address", limit: 256
     t.string "address_type", limit: 12
     t.string "floor", limit: 10
-    t.string "building", limit: 16
-    t.string "street_predirection", limit: 16
     t.string "street_number", limit: 30
     t.string "street_name", limit: 64
-    t.string "street_postdirection", limit: 16
-    t.string "street_suffix", limit: 16
+    t.string "room_no", limit: 32
     t.string "apartment_suite_number", limit: 32
+    t.string "sublocality", limit: 64
     t.string "city", limit: 64
     t.string "county", limit: 64
     t.string "state_abbreviation", limit: 2
@@ -76,7 +76,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
     t.decimal "latitude", precision: 9, scale: 6
     t.decimal "longitude", precision: 9, scale: 6
     t.string "time_zone", limit: 48
-    t.string "congressional_district", limit: 2
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["amigo_id"], name: "index_amigo_locations_on_amigo_id"
@@ -129,17 +128,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
   create_table "event_locations", force: :cascade do |t|
     t.string "business_name", limit: 128
     t.string "phone", limit: 20
-    t.string "room_suite_no", limit: 32
     t.string "address", limit: 256
     t.string "address_type", limit: 12
     t.string "floor", limit: 10
-    t.string "building", limit: 16
-    t.string "street_predirection", limit: 16
     t.string "street_number", limit: 30
     t.string "street_name", limit: 64
-    t.string "street_postdirection", limit: 16
-    t.string "street_suffix", limit: 16
+    t.string "room_no", limit: 32
     t.string "apartment_suite_number", limit: 32
+    t.string "sublocality", limit: 64
     t.string "city", limit: 64
     t.string "county", limit: 64
     t.string "state_abbreviation", limit: 2

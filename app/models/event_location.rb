@@ -25,12 +25,13 @@ class EventLocation < ApplicationRecord
   # size: { less_than: 5.megabytes }
 
   def validate_address_with_google_maps
-    raw_address = "#{self.street_number} #{self.street_name} #{self.street_suffix} #{self.city}, #{self.state_abbreviation} #{self.postal_code}"
+    raw_address = "#{self.street_number} #{self.street_name} #{self.city}, #{self.state_abbreviation} #{self.postal_code}"
     # Call SmartyStreets API to validate the address
     puts "Validating address: #{raw_address}"
     # Fetching credentials
     api_key = Rails.application.credentials.google_maps[:api_key]
-    url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=#{URI.encode(raw_address)}&inputtype=textquery&key=#{api_key}"
+    url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=#{URI.encode_www_form_component(raw_address)}&inputtype=textquery&key=#{api_key}"
+
   
     response = HTTParty.get(url)
     if response.success?
@@ -62,10 +63,12 @@ class EventLocation < ApplicationRecord
           self.street_name = component['long_name']
         when 'subpremise'
           self.apartment_suite_number = component['long_name']
-        when 'locality'
-          self.city = component['long_name']
+        when 'room'
+          self.room_no = component['long_name']
         when 'sublocality'
           self.sublocality = component['long_name']
+        when 'locality'
+          self.city = component['long_name']
         when 'administrative_area_level_2'
           self.county = component['long_name']
         when 'administrative_area_level_1'
@@ -80,8 +83,6 @@ class EventLocation < ApplicationRecord
           self.address_type = component['long_name']
         when 'floor'
           self.floor = component['long_name']
-        when 'room'
-          self.room_no = component['long_name']
         when 'post_box'
           self.po_box = component['long_name']
       end

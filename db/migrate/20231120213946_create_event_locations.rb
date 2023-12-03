@@ -3,17 +3,14 @@ class CreateEventLocations < ActiveRecord::Migration[7.0]
     create_table :event_locations do |t|
       t.string :business_name, limit: 128
       t.string :phone, limit: 20
-      t.string :room_suite_no, limit: 32
       t.string :address, limit: 256
       t.string :address_type, limit: 12
       t.string :floor, limit: 10
-      t.string :building, limit: 16
-      t.string :street_predirection, limit: 16
       t.string :street_number, limit: 30
       t.string :street_name, limit: 64
-      t.string :street_postdirection, limit: 16
-      t.string :street_suffix, limit: 16
+      t.string :room_no, limit: 32
       t.string :apartment_suite_number, limit: 32
+      t.string :sublocality, limit: 64
       t.string :city, limit: 64
       t.string :county, limit: 64
       t.string :state_abbreviation, limit: 2

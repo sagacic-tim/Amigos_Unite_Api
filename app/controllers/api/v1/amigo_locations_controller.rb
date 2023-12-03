@@ -62,13 +62,11 @@ class Api::V1::AmigoLocationsController < ApplicationController
       :address,
       :address_type,
       :floor,
-      :building,
       :street_number,
-      :street_predirection,
       :street_name,
-      :street_suffix,
-      :street_postdirection,
+      :room_no,
       :apartment_suite_number,
+      :sublocality,
       :city,
       :county,
       :state_abbreviation,
@@ -77,8 +75,7 @@ class Api::V1::AmigoLocationsController < ApplicationController
       :plus4_code,
       :latitude,
       :longitude,
-      :time_zone,
-      :congressional_district
+      :time_zone
     )
   end  
 end

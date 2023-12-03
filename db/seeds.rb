@@ -86,18 +86,22 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       amigo_location = AmigoLocation.new(
         amigo: amigo,
         # ... set the address fields using the popped address ...
-        building: address["building"].presence,
+        address_type: address["address_type"].presence,
+        room_no: address["room_no"].presence,
         floor: address["floor"].presence,
         street_number: address["street_number"],
         street_name: address["street_name"],
-        street_predirection: address["street_predirection"].presence,
-        street_suffix: address["street_suffix"].presence,
-        street_postdirection: address["street_postdirection"].presence,
-        apartment_suite_number: address["apartment_suite_number"].presence, 
+        apartment_suite_number: address["apartment_suite_number"].presence,
         city: address["city"],
+        sublocality: address["sublocality"].presence,
+        county: address["county"],
         state_abbreviation: address["state_abbreviation"],
         country_code: address["country_code"],
-        postal_code: address["postal_code"]
+        postal_code: address["postal_code"],
+        plus4_code: address["plus4_code"].presence,
+        latitude: address["latitude"].presence,
+        longitude: address["longitude"].presence,
+        time_zone: address["time_zone"].presence
       )
 
       begin
@@ -133,19 +137,22 @@ business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json'
       # ... set the address fields using the popped address ...
       business_name: address["business_name"],
       phone: address["phone"].presence,
-      room_suite_no: address["room_suite_no"].presence,
-      building: address["building"].presence,
+      address_type: address["address_type"].presence,
+      room_no: address["room_no"].presence,
       floor: address["floor"].presence,
       street_number: address["street_number"],
       street_name: address["street_name"],
-      street_predirection: address["street_predirection"].presence,
-      street_suffix: address["street_suffix"].presence,
-      street_postdirection: address["street_postdirection"].presence,
       apartment_suite_number: address["apartment_suite_number"].presence,
       city: address["city"],
+      sublocality: address["sublocality"].presence,
+      county: address["county"].presence,
       state_abbreviation: address["state_abbreviation"],
       country_code: address["country_code"],
-      postal_code: address["postal_code"]
+      postal_code: address["postal_code"],
+      plus4_code: address["plus4_code"].presence,
+      latitude: address["latitude"].presence,
+      longitude: address["longitude"].presence,
+      time_zone: address["time_zone"].presence
     )
 
     if event_location.save
