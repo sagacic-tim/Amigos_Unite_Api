@@ -1,58 +1,52 @@
+
 class EventLocation < ApplicationRecord
-  
-  # Each event location can b e associagted with one or more events.
-  # These associations are handle via the EventLocationConnector model
+
+  # Associations
   has_many :event_location_connectors
   has_many :events, through: :event_location_connectors
-  # each locaiton can have onbe attached image
 
-  # validate with SmartyStreets. This will be swapped for
-  # Google Places.
-  before_save :validate_address_with_google_maps
-
+  # Validations
   validates :business_name, allow_blank: true, length: { maximum: 64 }, uniqueness: { case_sensitive: false }
   validates :phone, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line] }
-  # has_one_attached :location_image
-  # Images will be scanned for viruses
-  # before_save :scan_for_viruses
-  # Make sure the image upload is an image file and not something else
-  # and not some hemnongous gigabyte sized image.
-  # Trigger the job after commit (i.e., after the record and its
-  # image have been saved to scale adn crop it to 640 x 480 pixels)
-  # after_commit :process_location_image, on: [:create, :update]
-  # validates :location_image, attached: true, 
-  # content_type: ['image/png', 'image/jpg', 'image/jpeg'],
-  # size: { less_than: 5.megabytes }
 
-  def validate_address_with_google_maps
-    raw_address = "#{self.street_number} #{self.street_name} #{self.city}, #{self.state_abbreviation} #{self.postal_code}"
-    # Call SmartyStreets API to validate the address
-    puts "Validating address: #{raw_address}"
-    # Fetching credentials
-    api_key = Rails.application.credentials.google_maps[:api_key]
-    url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=#{URI.encode_www_form_component(raw_address)}&inputtype=textquery&key=#{api_key}"
-
-  
-    response = HTTParty.get(url)
-    if response.success?
-      result = response.parsed_response["candidates"].first
-      if result
-        update_location_attributes_with_google_maps(result)
-      else
-        puts 'No valid address candidates found by Google Maps.'
-        errors.add(:base, 'No valid address candidates found.')
-        throw(:abort)
-      end
-    else
-      puts "Google Maps API call failed with error: #{response.message}"
-      errors.add(:base, "Address validation failed with error: #{response.message}")
-      throw(:abort)
-    end
-  end
+  before_save :validate_address_with_google_maps
 
   private
 
-  def update_location_attributes_with_google_maps(result)
+  # Validate address with Google Maps API
+  def validate_address_with_google_maps
+    gmaps = GoogleMapsService::Client.new
+
+    # Attempt to find the place
+    results = gmaps.find_place(input: build_raw_address, input_type: 'textquery', fields: ['place_id'])
+
+    if results[:status] == 'OK' && results[:candidates].any?
+      place_id = results[:candidates].first[:place_id]
+      
+      # Get detailed place information using the place_id
+      details = gmaps.place(place_id: place_id, fields: ['address_component', 'formatted_address', 'geometry'])
+
+      if details[:status] == 'OK'
+        process_google_maps_response(details[:result])
+      else
+        log_and_add_error("Failed to fetch detailed address information")
+      end
+    else
+      log_and_add_error("No valid address candidates found")
+    end
+  rescue => e
+    log_and_add_error("Google Maps API error: #{e.message}")
+  end
+
+  # Helper method to build the raw address string
+  def build_raw_address
+    "#{street_number} #{street_name} #{city}, #{state_abbreviation} #{postal_code}"
+  end
+
+  # Process the response from Google Maps API
+  def process_google_maps_response(result)
+    # Process the result to update your model's attributes as before
+    # This might include setting the formatted address, latitude, longitude, etc.
     self.address = result["formatted_address"]
     components = result['address_components']
     components.each do |component|
@@ -91,18 +85,10 @@ class EventLocation < ApplicationRecord
     self.longitude = result["geometry"]["location"]["lng"]
   end
 
-  # def scan_for_viruses
-  #   return unless location_image.attached?
-
-  #   unless Clamby.safe?(location_image.path)
-  #     location_image.purge
-  #     errors.add(:location_image, "Virus detected in file.")
-  #     throw :abort
-  #   end
-  # end
-
-  # def process_location_image
-  #   # Enqueue the job only if the location_image is attached
-  #   ProcessLocationImageJob.perform_later(self) if location_image.attached?
-  # end
+  # Log error message and add it to the model's errors
+  def log_and_add_error(message)
+    Rails.logger.error message
+    errors.add(:base, message)
+    throw(:abort)
+  end
 end
