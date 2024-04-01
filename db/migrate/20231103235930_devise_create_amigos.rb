@@ -7,8 +7,8 @@ class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
       t.string :user_name, null: false, default: "", limit: 50
       t.string :email, null: false, default: "", limit: 50
       t.string :secondary_email, default: "", limit: 50
-      t.string :phone_1, limit: 20
-      t.string :phone_2, limit: 20
+      t.string :phone_1, limit: 25
+      t.string :phone_2, limit: 25
       t.string :encrypted_password, null: false, default: ""
 
       ## Add JTI - Jason Web Token Index
@@ -48,5 +48,7 @@ class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
     add_index :amigos, :confirmation_token,   unique: true
     add_index :amigos, :unlock_token,         unique: true
     add_index :amigos, :jti,                  unique: true
+    add_index :amigos, :phone_1, unique: true, where: "phone_1 IS NOT NULL"
+    add_index :amigos, :phone_2, unique: true, where: "phone_2 IS NOT NULL"
   end
 end

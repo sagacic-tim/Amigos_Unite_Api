@@ -1,4 +1,6 @@
 class Api::V1::EventLocationConnectorsController < ApplicationController
+  include ErrorHandling  # For handling common ActiveRecord errors
+  
   before_action :set_event_location_connector, only: [:show, :update, :destroy]
 
   # GET /api/v1/event_location_connectors/:id

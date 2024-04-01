@@ -2,25 +2,25 @@ class CreateAmigoLocations < ActiveRecord::Migration[7.0]
   def change
     create_table :amigo_locations do |t|
       t.references :amigo, null: false, foreign_key: true
-      t.string :business_name, limit: 128
-      t.string :phone, limit: 20
-      t.string :address, limit: 256
-      t.string :address_type, limit: 12
-      t.string :floor, limit: 10
-      t.string :street_number, limit: 30
-      t.string :street_name, limit: 64
-      t.string :room_no, limit: 32
-      t.string :apartment_suite_number, limit: 32
-      t.string :sublocality, limit: 64
-      t.string :city, limit: 64
-      t.string :county, limit: 64
-      t.string :state_abbreviation, limit: 2
-      t.string :country_code, limit: 5
-      t.string :postal_code, limit: 12
-      t.string :plus4_code, limit: 4
-      t.decimal :latitude, precision: 9, scale: 6
-      t.decimal :longitude, precision: 9, scale: 6
-      t.string :time_zone, limit: 48
+      t.string  :address, limit: 256
+      t.string  :floor, limit: 10
+      t.string  :street_number, limit: 32
+      t.string  :street_name, limit: 96
+      t.string  :room_no, limit: 32
+      t.string  :apartment_suite_number, limit: 32
+      t.string  :city_sublocality, limit: 96
+      t.string  :city, limit: 64
+      t.string  :state_province_subdivision, limit: 96
+      t.string  :state_province, limit: 32
+      t.string  :state_province_short, limit: 8
+      t.string  :country, limit: 32
+      t.string  :country_short, limit: 3
+      t.string  :postal_code, limit: 12
+      t.string  :postal_code_suffix, limit: 6
+      t.string  :post_box, limit: 12
+      t.float   :latitude
+      t.float   :longitude
+      t.string  :time_zone, limit: 48
 
       t.timestamps
     end

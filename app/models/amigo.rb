@@ -15,6 +15,10 @@ class Amigo < ApplicationRecord
   has_many :event_participants
   has_many :participated_events, through: :event_participants, source: :event
 
+  validates :phone_1, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { phone_1.present? }
+  validates :phone_2, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { phone_2.present? }
+
+  # Phone validation with uniqueness
   before_validation :normalize_phone_numbers
 
   # Include all devise modules.
@@ -32,19 +36,16 @@ class Amigo < ApplicationRecord
           jwt_revocation_strategy: self
 
   # login method is used to access the virtual attribute for authentication
-  def login_attrtibute
+  def login_attribute
     @login_attribute || user_name || email
   end
 
   # Custom method to allow authentication with user_name or email
   def self.find_for_database_authentication(warden_conditions)
     conditions = warden_conditions.dup
-    if login = conditions.delete(:login_attribute).downcase
-      where(conditions.to_h).find_by(["lower(user_name) = :value OR lower(email) = :value", { value: login }])
-    else
-      where(conditions.to_h).first
-    end
-  end
+    login = conditions.delete(:login_attribute)&.downcase
+    find_by(["lower(user_name) = :value OR lower(email) = :value", { value: login }])
+  end  
 
   # Method to retrieve unique locations coordinated by an Amigo
   def coordinated_locations
@@ -60,9 +61,6 @@ class Amigo < ApplicationRecord
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }, uniqueness: { case_sensitive: false }
   validates :secondary_email, allow_blank: true, format: { with: URI::MailTo::EMAIL_REGEXP }, uniqueness: { case_sensitive: false }
   
-  # Phone validation
-  validates :phone_1, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line, :personal_number] }
-  validates :phone_2, phone: { possible: true, allow_blank: true, types: [:voip, :mobile, :fixed_line, :personal_number] }  
 
   private
 

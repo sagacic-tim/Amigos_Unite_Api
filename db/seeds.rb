@@ -17,7 +17,7 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
   avatars_dir = Rails.root.join('lib', 'seeds', 'avatars')
 
   # Creating a bunch of Amigo records
-  8.times do |i|
+  5.times do |i|
     password = Faker::Internet.password(min_length: 12, max_length: 20, mix_case: true, special_characters: true)
     amigo = Amigo.new(
       first_name: Faker::Name.first_name,
@@ -27,12 +27,10 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       secondary_email: Faker::Internet.email,
       password: password,
       password_confirmation: password,
-      phone_1: Faker::PhoneNumber.unique.cell_phone,
-      phone_2: Faker::PhoneNumber.unique.cell_phone,
+      phone_1: Faker::PhoneNumber.phone_number_with_country_code,
+      phone_2: Faker::PhoneNumber.phone_number_with_country_code,
       confirmed_at: Time.current
     )
-
-    puts amigo.inspect
 
     # Write the user credentials to the file
     file.puts "Amigo #{i + 1}:"
@@ -44,14 +42,12 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
     begin
       amigo.save!
     rescue ActiveRecord::RecordInvalid => e
-      puts e.record.errors.full_messages
     end
 
     # Sequential avatar assignment
     num_avatars = 15 #assuming that thefre are 15 avatars available.
     file_name = "avatar#{i % num_avatars + 1}.svg"
     file_path = avatars_dir.join(file_name)
-    puts "Avatar file path = #{file_path}"
 
     if File.exist?(file_path)
       avatar_file = File.open(file_path)
@@ -73,32 +69,33 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
 
     begin
       amigo_detail.save!
-      puts "AmigoDetail for Amigo #{i + 1} created"
-      puts amigo_detail.inspect
     rescue => e
       puts "AmigoDetail could not be saved: #{e.message}"
     end
 
     # Assign a random address to amigo, popping it off the array
     # to avoid duplicates
-    2.times do |j|
+    1.times do |j|
       address = residential_address_pool.pop
       amigo_location = AmigoLocation.new(
         amigo: amigo,
         # ... set the address fields using the popped address ...
-        address_type: address["address_type"].presence,
+        address: address["address"].presence,
         room_no: address["room_no"].presence,
         floor: address["floor"].presence,
         street_number: address["street_number"],
         street_name: address["street_name"],
-        apartment_suite_number: address["apartment_suite_number"].presence,
+        apartment_suite_number: address["secondary_address"].presence,
+        city_sublocality: address["city_sublocality"].presence,
         city: address["city"],
-        sublocality: address["sublocality"].presence,
-        county: address["county"],
-        state_abbreviation: address["state_abbreviation"],
-        country_code: address["country_code"],
+        state_province_subdivision: address["state_province_subdivision"],
+        state_province: address["state_province"],
+        state_province_short: address["state_province_short"],
+        country: address["country"],
+        country_short: address["country_short"],
         postal_code: address["postal_code"],
-        plus4_code: address["plus4_code"].presence,
+        postal_code_suffix: address["postal_code_suffix"].presence,
+        post_box: address["post_box"].presence,
         latitude: address["latitude"].presence,
         longitude: address["longitude"].presence,
         time_zone: address["time_zone"].presence
@@ -109,7 +106,6 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       rescue => e # Catches any StandardError
         puts "AmigoLocation could not be saved: #{e.message}"
       end
-      puts "Address #{j + 1} for Amigo #{i + 1}"
     end
   end
 end
@@ -117,7 +113,8 @@ end
 # Load random business addresses
 business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json')).shuffle
 
-8.times do |k|
+5.times do |k|
+  debugger
   event_coordinator = Amigo.all.sample # Randomly pick an existing Amigo as the coordinator
   event = Event.new(
     event_name: Faker::Lorem.sentence(word_count: 3),
@@ -128,6 +125,8 @@ business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json'
     coordinator: event_coordinator
   )
 
+  debugger
+
   if event.save
     puts "Event #{k + 1} created: #{event.event_name}"
 
@@ -135,21 +134,25 @@ business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json'
     address = business_address_pool.pop
     event_location = EventLocation.new(
       # ... set the address fields using the popped address ...
+      # amigo_id: amigo.id,
       business_name: address["business_name"],
-      phone: address["phone"].presence,
-      address_type: address["address_type"].presence,
+      business_phone: address["phone"],
+      address: address["address"].presence,
       room_no: address["room_no"].presence,
       floor: address["floor"].presence,
       street_number: address["street_number"],
       street_name: address["street_name"],
       apartment_suite_number: address["apartment_suite_number"].presence,
+      city_sublocality: address["city_sublocality"].presence,
       city: address["city"],
-      sublocality: address["sublocality"].presence,
-      county: address["county"].presence,
-      state_abbreviation: address["state_abbreviation"],
-      country_code: address["country_code"],
+      state_province_subdivision: address["state_province_subdivision"].presence,
+      state_province: address["state_province"],
+      state_province_short: address["state_province_short"],
+      country: address["country"],
+      country_short: address["country_short"],
       postal_code: address["postal_code"],
-      plus4_code: address["plus4_code"].presence,
+      postal_code_suffix: address["postal_code_suffix"].presence,
+      post_box: address["postal_code"].presence,
       latitude: address["latitude"].presence,
       longitude: address["longitude"].presence,
       time_zone: address["time_zone"].presence

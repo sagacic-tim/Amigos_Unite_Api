@@ -57,24 +57,24 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
 
   create_table "amigo_locations", force: :cascade do |t|
     t.bigint "amigo_id", null: false
-    t.string "business_name", limit: 128
-    t.string "phone", limit: 20
     t.string "address", limit: 256
-    t.string "address_type", limit: 12
     t.string "floor", limit: 10
-    t.string "street_number", limit: 30
-    t.string "street_name", limit: 64
+    t.string "street_number", limit: 32
+    t.string "street_name", limit: 96
     t.string "room_no", limit: 32
     t.string "apartment_suite_number", limit: 32
-    t.string "sublocality", limit: 64
+    t.string "city_sublocality", limit: 96
     t.string "city", limit: 64
-    t.string "county", limit: 64
-    t.string "state_abbreviation", limit: 2
-    t.string "country_code", limit: 5
+    t.string "state_province_subdivision", limit: 96
+    t.string "state_province", limit: 32
+    t.string "state_province_short", limit: 8
+    t.string "country", limit: 32
+    t.string "country_short", limit: 3
     t.string "postal_code", limit: 12
-    t.string "plus4_code", limit: 4
-    t.decimal "latitude", precision: 9, scale: 6
-    t.decimal "longitude", precision: 9, scale: 6
+    t.string "postal_code_suffix", limit: 6
+    t.string "post_box", limit: 12
+    t.float "latitude"
+    t.float "longitude"
     t.string "time_zone", limit: 48
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -87,8 +87,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
     t.string "user_name", limit: 50, default: "", null: false
     t.string "email", limit: 50, default: "", null: false
     t.string "secondary_email", limit: 50, default: ""
-    t.string "phone_1", limit: 20
-    t.string "phone_2", limit: 20
+    t.string "phone_1", limit: 25
+    t.string "phone_2", limit: 25
     t.string "encrypted_password", default: "", null: false
     t.string "jti", null: false
     t.string "reset_password_token"
@@ -111,6 +111,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
     t.index ["confirmation_token"], name: "index_amigos_on_confirmation_token", unique: true
     t.index ["email"], name: "index_amigos_on_email", unique: true
     t.index ["jti"], name: "index_amigos_on_jti", unique: true
+    t.index ["phone_1"], name: "index_amigos_on_phone_1", unique: true, where: "(phone_1 IS NOT NULL)"
+    t.index ["phone_2"], name: "index_amigos_on_phone_2", unique: true, where: "(phone_2 IS NOT NULL)"
     t.index ["reset_password_token"], name: "index_amigos_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_amigos_on_unlock_token", unique: true
     t.index ["user_name"], name: "index_amigos_on_user_name", unique: true
@@ -126,27 +128,31 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
   end
 
   create_table "event_locations", force: :cascade do |t|
-    t.string "business_name", limit: 128
-    t.string "phone", limit: 20
+    t.bigint "amigo_id", null: false
+    t.string "business_name", limit: 64
+    t.string "business_phone", limit: 15
     t.string "address", limit: 256
-    t.string "address_type", limit: 12
     t.string "floor", limit: 10
-    t.string "street_number", limit: 30
-    t.string "street_name", limit: 64
+    t.string "street_number", limit: 32
+    t.string "street_name", limit: 96
     t.string "room_no", limit: 32
     t.string "apartment_suite_number", limit: 32
-    t.string "sublocality", limit: 64
+    t.string "city_sublocality", limit: 96
     t.string "city", limit: 64
-    t.string "county", limit: 64
-    t.string "state_abbreviation", limit: 2
-    t.string "country_code", limit: 5
+    t.string "state_province_subdivision", limit: 96
+    t.string "state_province", limit: 32
+    t.string "state_province_short", limit: 8
+    t.string "country", limit: 32
+    t.string "country_short", limit: 3
     t.string "postal_code", limit: 12
-    t.string "plus4_code", limit: 4
-    t.decimal "latitude", precision: 9, scale: 6
-    t.decimal "longitude", precision: 9, scale: 6
+    t.string "postal_code_suffix", limit: 6
+    t.string "post_box", limit: 12
+    t.float "latitude"
+    t.float "longitude"
     t.string "time_zone", limit: 48
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["amigo_id"], name: "index_event_locations_on_amigo_id"
   end
 
   create_table "event_participants", force: :cascade do |t|
@@ -198,6 +204,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
   add_foreign_key "amigo_locations", "amigos"
   add_foreign_key "event_location_connectors", "event_locations"
   add_foreign_key "event_location_connectors", "events"
+  add_foreign_key "event_locations", "amigos"
   add_foreign_key "event_participants", "amigos"
   add_foreign_key "event_participants", "events"
   add_foreign_key "events", "amigos", column: "event_coordinator_id"

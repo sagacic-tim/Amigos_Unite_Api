@@ -95,16 +95,12 @@ gem 'jsonapi-serializer', '~> 2.2'
 # Address Validation
 # gem 'smartystreets_ruby_sdk', '5.15.2'
 
-# The Ruby gem for Google Maps Web Service APIs is a gem
-# for the following Google Maps APIs:
-#    Google Maps Directions API
-#    Google Maps Distance Matrix API
-#    Google Maps Elevation API
-#    Google Maps Geocoding API
-#    Google Maps Places API
-#    Google Maps Time Zone API
-#    Google Maps Roads API
-gem 'google_maps_service_ruby', '~> 0.6.3'
+# Provides object geocoding (by street or IP address),
+# reverse geocoding (coordinates to street address),
+# distance queries for ActiveRecord and Mongoid, result
+# caching, and more. Designed for Rails but works with
+# Sinatra and other Rack frameworks too.
+gem 'geocoder', '~> 1.3', '>= 1.3.7'
 
 # Makes http fun again! Ain't no party like a httparty,
 # because a httparty don't stop.
@@ -141,6 +137,11 @@ gem 'clamby', '~> 1.6', '>= 1.6.10'
 
 # A ruby wrapper for ImageMagick command line.
 gem 'mini_magick', '~> 4.12'
+
+# ruby-vips is a binding for the libvips image processing
+# library. It is fast and it can process large images withou
+# loading the whole image in memory.
+# gem 'ruby-vips', '~> 2.2', '>= 2.2.1'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

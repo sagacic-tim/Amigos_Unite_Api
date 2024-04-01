@@ -1,8 +1,10 @@
+# app/controllers/api/v1/event_locations_controller.rb
+
 class Api::V1::EventLocationsController < ApplicationController
+  include ErrorHandling  # For handling common ActiveRecord errors
 
   before_action :set_event, only: [:index, :create]
-  before_action :set_event_location, only: [:show, :update, :destroy]  
-
+  before_action :set_event_location, only: [:show, :update, :destroy]
 
   # GET /api/v1/events/:event_id/event_locations
   def index
@@ -17,27 +19,20 @@ class Api::V1::EventLocationsController < ApplicationController
 
   # POST /api/v1/events/:event_id/event_locations
   def create
-    EventLocation.transaction do
-      @event_location = EventLocation.new(event_location_params)
+    @event_location = @event.event_locations.build(event_location_params)
 
-      if @event_location.save
-        EventLocationConnector.create!(event: @event, event_location: @event_location)
-        render json: @event_location, status: :created
-      else
-        # Log the error for internal review
-        Rails.logger.error "EventLocation creation failed: #{@event_location.errors.full_messages}, an event may have been scheduled for this location"
-
-        # Provide a more detailed error message for the API consumer
-        render json: { 
-          status: 'error', 
-          message: 'Failed to create event location, an event may have been scheduled for this location.', 
-          errors: @event_location.errors.full_messages 
-        }, status: :unprocessable_entity
-
-        raise ActiveRecord::Rollback
-      end
+    if @event_location.save
+      EventLocationConnector.create!(event: @event, event_location: @event_location)
+      render json: @event_location, status: :created
+    else
+      # Custom error logic for specific create action scenarios
+      render json: { 
+        status: 'error', 
+        message: 'Failed to create event location, an event may have been scheduled for this location.', 
+        errors: @event_location.errors.full_messages 
+      }, status: :unprocessable_entity
     end
-  end
+  end 
 
   # PATCH/PUT /api/v1/event_locations/:id
   def update
@@ -70,23 +65,27 @@ class Api::V1::EventLocationsController < ApplicationController
   end
 
   def event_location_params
-    params.require(:event_location).permit(
+    params.require(:amigo_location).permit(
       :business_name,
-      :phone,
+      :business_phone,
       :address,
-      :address_type,
       :floor,
+      :street_number,
       :street_number,
       :street_name,
       :room_no,
       :apartment_suite_number,
-      :sublocality,
+      :city_sublocality,
       :city,
-      :county,
+      :state_province_subdivision,
       :state_abbreviation,
-      :country_code,
+      :state_province,
+      :state_province_short,
+      :country,
+      :country_short,
       :postal_code,
-      :plus4_code,
+      :postal_code_suffix,
+      :post_box,
       :latitude,
       :longitude,
       :time_zone
