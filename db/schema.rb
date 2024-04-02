@@ -128,7 +128,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
   end
 
   create_table "event_locations", force: :cascade do |t|
-    t.bigint "amigo_id", null: false
     t.string "business_name", limit: 64
     t.string "business_phone", limit: 15
     t.string "address", limit: 256
@@ -152,7 +151,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
     t.string "time_zone", limit: 48
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["amigo_id"], name: "index_event_locations_on_amigo_id"
   end
 
   create_table "event_participants", force: :cascade do |t|
@@ -204,7 +202,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
   add_foreign_key "amigo_locations", "amigos"
   add_foreign_key "event_location_connectors", "event_locations"
   add_foreign_key "event_location_connectors", "events"
-  add_foreign_key "event_locations", "amigos"
   add_foreign_key "event_participants", "amigos"
   add_foreign_key "event_participants", "events"
   add_foreign_key "events", "amigos", column: "event_coordinator_id"

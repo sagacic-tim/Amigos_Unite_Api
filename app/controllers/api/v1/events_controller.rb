@@ -1,4 +1,5 @@
 class Api::V1::EventsController < ApplicationController
+  include ErrorHandling  # For handling common ActiveRecord errors
   before_action :set_event, only: [:show, :update, :destroy]
 
   # GET /api/v1/events
