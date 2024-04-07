@@ -1,0 +1,98 @@
+# Install pundit:
+
+gem 'pundit'
+
+#n Include Pundit in Your ApplicationController
+
+class ApplicationController < ActionController::Base
+  include Pundit::Authorization
+end
+
+# Generate Pundit Policies
+
+rails g pundit:policy event
+
+# Define Authorization Logic
+
+class EventsController < ApplicationController
+    before_action :set_event, only: [:show, :update, :destroy]
+  
+    def update
+        authorize @event
+            if @event.update(event_params)
+            render json: @event
+            else
+            render json: @event.errors, status: :unprocessable_entity
+            end
+        end
+    end
+end
+
+# Handle Unauthorized Access in ApplicationController
+
+rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
+
+private
+
+def user_not_authorized(exception)
+  policy_name = exception.policy.class.to_s.underscore
+  message = t "#{policy_name}.#{exception.query}", scope: "pundit", default: :default
+  render json: { error: message }, status: :forbidden
+end
+
+# Update and Extend Authorization Logic
+
+class EventPolicy < ApplicationPolicy
+    attr_reader :user, :record
+
+    def initialize(user, record)
+        @user = user
+        @record = record
+    end
+
+    # Define who can update an event
+    def update?
+        user.super_amigo? || (user.event_lead_coordinator? && record.created_by == user)
+    end
+
+    # Define who can create an event
+    def create?
+        user.super_amigo? || user.event_lead_coordinator?
+    end
+
+    # Define who can delete an event
+    def destroy?
+        user.super_amigo? || (user.event_lead_coordinator? && record.created_by == user)
+    end
+
+    # Define who can view an event
+    def show?
+        user.super_amigo? || user.amigo? || user.lead_coordinator || user.event_assistant_coordinator? || record.participants.include?(user)
+    end
+
+    # Special permissions for assistant coordinators, like inviting other users
+    def invite?
+        user.super_amigo? || user.event_lead_coordinator? || user.event_assistant_coordinator?
+    end
+
+    # Permission for approving attendance requests
+    def approve?
+        user.super_amigo? || user.event_lead_coordinator?
+    end
+
+    class Scope < Scope
+        def resolve
+            if user.super_amigo?
+                scope.all
+            elsif user.amigo? || user.event_assistant_coordinator?
+                scope.where(public: true) # Assuming there's a public attribute to check visibility
+            else
+                scope.none
+            end
+        end
+    end
+end
+  
+
+
+  

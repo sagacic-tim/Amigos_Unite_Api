@@ -4,16 +4,17 @@ class Amigo < ApplicationRecord
   attr_accessor :login_attribute
 
   has_many :amigo_locations, dependent: :destroy
+
+  # As the lead coordinator for events
+  has_many :lead_coordinator_for_events, class_name: 'Event', foreign_key: 'lead_coordinator_id'
+
+  # As a participant in events, potentially including assistant coordinator roles
+  has_many :event_amigo_connectors
+  has_many :events, through: :event_amigo_connectors
+
   has_one :amigo_detail, dependent: :destroy
   has_one_attached :avatar
   # As a coordinator, an Amigo can coordinate many events
-  has_many :event_coordinators
-  # An Amigo can coordinate many events
-  has_many :coordinated_events, class_name: 'Event', foreign_key: 'event_coordinator_id'
-
-  # As a participant, an Amigo can participate in many events
-  has_many :event_participants
-  has_many :participated_events, through: :event_participants, source: :event
 
   validates :phone_1, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { phone_1.present? }
   validates :phone_2, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { phone_2.present? }
@@ -22,18 +23,25 @@ class Amigo < ApplicationRecord
   before_validation :normalize_phone_numbers
 
   # Include all devise modules.
-  devise  :database_authenticatable,
-          :registerable,
-          :recoverable,
-          # :rememberable,
-          :validatable,
-          # :confirmable,
-          # :lockable,
-          # :timeoutable,
-          # :trackable,
-          # :omniauthable,
-          :jwt_authenticatable,
-          jwt_revocation_strategy: self
+  devise
+    :database_authenticatable,
+    :registerable,
+    :recoverable,
+    :rememberable,
+    :validatable,
+    # :confirmable,
+    # :lockable,
+    # :timeoutable,
+    # :trackable,
+    # :omniauthable,
+    :jwt_authenticatable,
+    jwt_revocation_strategy: self
+
+  def event_roles
+    event_amigo_connectors.includes(:event).map do |connector|
+      { event_id: connector.event_id, role: connector.role }
+    end
+  end          
 
   # login method is used to access the virtual attribute for authentication
   def login_attribute

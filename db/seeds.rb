@@ -17,7 +17,7 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
   avatars_dir = Rails.root.join('lib', 'seeds', 'avatars')
 
   # Creating a bunch of Amigo records
-  5.times do |i|
+  10.times do |i|
     password = Faker::Internet.password(min_length: 12, max_length: 20, mix_case: true, special_characters: true)
     amigo = Amigo.new(
       first_name: Faker::Name.first_name,
@@ -25,10 +25,10 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       user_name: Faker::Internet.username(specifier: 8..16),
       email: Faker::Internet.email,
       secondary_email: Faker::Internet.email,
-      password: password,
-      password_confirmation: password,
       phone_1: Faker::PhoneNumber.phone_number_with_country_code,
       phone_2: Faker::PhoneNumber.phone_number_with_country_code,
+      password: password,
+      password_confirmation: password,
       confirmed_at: Time.current
     )
 
@@ -40,8 +40,11 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
     file.puts "\n"
 
     begin
+      # Attempt to save a record
+      puts "Creating Amigos..."
       amigo.save!
-    rescue ActiveRecord::RecordInvalid => e
+      rescue ActiveRecord::RecordInvalid => e
+        puts "Failed to save Amigo: #{e.record.errors.full_messages.join(", ")}"
     end
 
     # Sequential avatar assignment
@@ -68,6 +71,7 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
     )
 
     begin
+      puts "Creating Amigo Details..."
       amigo_detail.save!
     rescue => e
       puts "AmigoDetail could not be saved: #{e.message}"
@@ -102,6 +106,7 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       )
 
       begin
+        puts "Creating Amigo Locations..."
         amigo_location.save!
       rescue => e # Catches any StandardError
         puts "AmigoLocation could not be saved: #{e.message}"
@@ -115,17 +120,47 @@ business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json'
 
 5.times do |k|
   debugger
-  event_coordinator = Amigo.all.sample # Randomly pick an existing Amigo as the coordinator
+  lead_coordinator = Amigo.order("RANDOM()").first
   event = Event.new(
     event_name: Faker::Lorem.sentence(word_count: 3),
     event_type: ["Conference", "Seminar", "Workshop", "Concert", "Festival"].sample,
     event_date: Faker::Date.forward(days: 365), # Random date within the next year
     event_time: Faker::Time.forward(days: 365, period: :evening),
     event_speakers_performers: Array.new(3) { Faker::Name.name },
-    coordinator: event_coordinator
+    lead_coordinator_id: lead_coordinator.id
   )
 
-  debugger
+  # Creating a lead coordinator role
+  puts "Assigning amigo as lead coordinator..."
+  EventAmigoConnector.create!(
+    event: event,
+    amigo: lead_coordinator,
+    role: 'lead_coordinator'
+  )
+
+  num_participants = rand(3..8)
+  participants = Amigo.where.not(id: lead_coordinator.id).sample(num_participants)
+
+  # number of assistant coordinagtors depends on the number of participants
+  num_assistant_coordinators = case num_participants
+    when 7..8 then 2
+    when 5..6 then 1
+    else 0
+  end
+
+  # randomly assign parfticipants to be assistant coorddinators based on total number of participants
+  assistant_coordinators = participants.sample(num_assistant_coordinators)
+
+  # Assign roles to participants
+  puts "Assigning roles to Amigos..."
+  participants.each do |participant|
+    role = assistant_coordinators.include?(participant) ? 'assistant_coordinator' : 'participant'
+    EventAmigoConnector.create!(
+      event: event,
+      amigo: participant,
+      role: role
+    )
+  end
 
   if event.save
     puts "Event #{k + 1} created: #{event.event_name}"
@@ -190,6 +225,7 @@ business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json'
   end
 end
 
+puts "Seed data creation complete!"
 puts "#{Amigo.count} amigos created"
 puts "#{AmigoLocation.count} amigo locations created"
 puts "#{AmigoDetail.count} amigo details created"

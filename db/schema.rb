@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
+ActiveRecord::Schema[7.0].define(version: 2024_04_06_002100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -118,6 +118,16 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
     t.index ["user_name"], name: "index_amigos_on_user_name", unique: true
   end
 
+  create_table "event_amigo_connectors", force: :cascade do |t|
+    t.bigint "amigo_id", null: false
+    t.bigint "event_id", null: false
+    t.integer "role", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["amigo_id"], name: "index_event_amigo_connectors_on_amigo_id"
+    t.index ["event_id"], name: "index_event_amigo_connectors_on_event_id"
+  end
+
   create_table "event_location_connectors", force: :cascade do |t|
     t.bigint "event_id", null: false
     t.bigint "event_location_id", null: false
@@ -153,22 +163,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "event_participants", force: :cascade do |t|
-    t.bigint "amigo_id", null: false
-    t.bigint "event_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["amigo_id"], name: "index_event_participants_on_amigo_id"
-    t.index ["event_id"], name: "index_event_participants_on_event_id"
-  end
-
   create_table "events", force: :cascade do |t|
     t.string "event_name"
     t.string "event_type"
     t.string "event_speakers_performers", default: [], array: true
     t.date "event_date"
     t.time "event_time"
-    t.bigint "event_coordinator_id", null: false
+    t.bigint "lead_coordinator_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -200,9 +201,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_28_215002) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "amigo_details", "amigos"
   add_foreign_key "amigo_locations", "amigos"
+  add_foreign_key "event_amigo_connectors", "amigos"
+  add_foreign_key "event_amigo_connectors", "events"
   add_foreign_key "event_location_connectors", "event_locations"
   add_foreign_key "event_location_connectors", "events"
-  add_foreign_key "event_participants", "amigos"
-  add_foreign_key "event_participants", "events"
-  add_foreign_key "events", "amigos", column: "event_coordinator_id"
+  add_foreign_key "events", "amigos", column: "lead_coordinator_id"
 end

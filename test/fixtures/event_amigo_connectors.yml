@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  amigo: one
+  event: one
+  role: 1
+
+two:
+  amigo: two
+  event: two
+  role: 1
