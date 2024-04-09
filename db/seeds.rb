@@ -206,18 +206,24 @@ business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json'
       puts "EventLocation could not be created: #{event_location.errors.full_messages.join(", ")}"
     end
 
-    # Add random participants to the event
-    number_of_participants = rand(3..7) # Random number of participants
-    number_of_participants.times do |l|
-      participant = Amigo.all.sample
-      event_participant = EventParticipant.new(
+    puts "Assigning roles to event participants..."
+    participants = Amigo.where.not(id: lead_coordinator.id).sample(num_participants)
+    assistant_coordinators = participants.sample(num_assistant_coordinators)
+  
+    participants.each do |participant|
+      role = assistant_coordinators.include?(participant) ? 'assistant_coordinator' : 'participant'
+  
+      # Create EventAmigoConnector instances for each participant with their respective roles
+      event_amigo_connector = EventAmigoConnector.create!(
         event: event,
-        amigo: participant
+        amigo: participant,
+        role: role
       )
-      if event_participant.save
-        puts "Participant #{participant.user_name} added to Event #{event.event_name}"
+  
+      if event_amigo_connector.persisted?
+        puts "Participant #{participant.user_name} added to Event #{event.event_name} as #{role}"
       else
-        puts "Could not add participant: #{event_participant.errors.full_messages.join(", ")}"
+        puts "Could not add participant: #{event_amigo_connector.errors.full_messages.join(", ")}"
       end
     end
   else
@@ -231,6 +237,25 @@ puts "#{AmigoLocation.count} amigo locations created"
 puts "#{AmigoDetail.count} amigo details created"
 puts "#{Event.count} events created"
 puts "#{EventLocation.count} event locations created"
-puts "#{EventParticipant.count} event participants created"
+puts "#{EventAmigoConnector.count} event participants created"
 puts "#{EventLocationConnector.count} event location connectors created"
 puts 'User passwords stored in tmp/dev_user_passwords.txt'
+puts 'Event Participant Roles:'
+Event.includes(:lead_coordinator, event_amigo_connectors: :amigo).find_each do |event|
+  # Display event name and ID
+  puts "  The coordinators for Event: \"#{event.event_name}\" (ID: #{event.id}), are:"
+  # Display lead coordinator
+  puts "    Lead Coordinator: #{event.lead_coordinator.first_name} #{event.lead_coordinator.last_name}, Amigo ID: #{event.lead_coordinator_id}"
+
+  # Display assistant coordinators, if any
+  puts "    Assistant Coordinator(s), if there is one:"
+  assistant_coordinators = event.event_amigo_connectors.where(role: 'assistant_coordinator')
+  if assistant_coordinators.any?
+    assistant_coordinators.each do |connector|
+      puts "     #{connector.amigo.first_name} #{connector.amigo.last_name}, Amigo ID: #{connector.amigo_id}"
+    end
+  else
+    puts "     There are no Assistant Coordinators for this event"
+  end
+  puts "\n"
+end

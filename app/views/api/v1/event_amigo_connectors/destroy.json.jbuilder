@@ -1,3 +1,3 @@
-# app/views/api/v1/event_participants/destroy.json.jbuilder
+# app/views/api/v1/event_amigo_connectors/destroy.json.jbuilder
 
-json.message "Event participant successfully removed."
+json.message "Event Amigo Connector successfully removed."

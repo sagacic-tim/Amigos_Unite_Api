@@ -4,27 +4,25 @@ class Api::V1::AmigosController < ApplicationController
 
   # GET /amigos
   def index
-    @amigos = Amigo.all
+    @amigos = Amigo.includes(event_amigo_connectors: :event).all
     render :index, formats: :json, status: :ok
   end  
 
   # GET /amigos/1
   def show
-    render json: @amigo
+    render json: @amigo, include: { event_amigo_connectors: { include: :event } }
   end
 
   # POST /amigos
   def create
-    @amigo = Amigo.new(amigo_params)
+    @amigo = Amigo.new(amigo_params.except(:avatar))
+    
+    if params[:amigo][:avatar]
+      @amigo.attach_avatar_by_identifier(params[:amigo][:avatar])
+    end
   
     if @amigo.save
-      response_hash = {
-        amigo: @amigo
-      }
-  
-      response_hash[:avatar_url] = url_for(@amigo.avatar) if @amigo.avatar.attached?
-  
-      render json: response_hash, status: :created
+      render json: @amigo, status: :created, location: @amigo
     else
       render json: @amigo.errors, status: :unprocessable_entity
     end
@@ -33,40 +31,33 @@ class Api::V1::AmigosController < ApplicationController
   # PATCH/PUT /amigos/1
   def update
     if @amigo.update(amigo_params)
-      @amigo.avatar.attach(params[:avatar]) if params[:avatar].present?
-
-      render json: {
-        amigo: @amigo.as_json(include: { avatar_attachment: { only: :id }}),
-        avatar_url: @amigo.avatar.attached? ? url_for(@amigo.avatar) : nil
-      }
+      render json: @amigo
     else
       render json: @amigo.errors, status: :unprocessable_entity
     end
   end
 
   def destroy
-    if @amigo.destroy
-      render json: { message: 'Amigo successfully deleted.' }, status: :ok
-    else
-      render json: { errors: @amigo.errors.full_messages }, status: :unprocessable_entity
-    end
+    @amigo.destroy
+    head :no_content
   end
 
   private
-    def set_amigo
-      @amigo = Amigo.find(params[:id])
-    end
 
-    def amigo_params
-      params.require(:amigo).permit(
-        :first_name,
-        :last_name,
-        :user_name,
-        :email,
-        :password,
-        :secondary_email,
-        :phone_1,
-        :phone_2,
-        :avatar)
-    end
+  def set_amigo
+    @amigo = Amigo.find(params[:id])
+  end
+
+  def amigo_params
+    params.require(:amigo).permit(
+      :first_name,
+      :last_name,
+      :user_name,
+      :email,
+      :password,
+      :secondary_email,
+      :phone_1,
+      :phone_2,
+    )
+  end
 end

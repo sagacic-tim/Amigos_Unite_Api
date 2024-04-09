@@ -23,8 +23,7 @@ class Amigo < ApplicationRecord
   before_validation :normalize_phone_numbers
 
   # Include all devise modules.
-  devise
-    :database_authenticatable,
+  devise :database_authenticatable,
     :registerable,
     :recoverable,
     :rememberable,
@@ -60,6 +59,17 @@ class Amigo < ApplicationRecord
     EventLocation.joins(:events)
                  .where(events: { event_coordinator_id: self.id })
                  .distinct
+  end
+
+  def attach_avatar_by_identifier(avatar_identifier)
+    avatar_filename = "#{avatar_identifier}.svg"
+    avatar_path = Rails.root.join('lib', 'seeds', 'avatars', avatar_filename)
+
+    if File.exist?(avatar_path)
+      avatar.attach(io: File.open(avatar_path), filename: avatar_filename)
+    else
+      errors.add(:avatar, "specified avatar does not exist")
+    end
   end
 
   # Validations

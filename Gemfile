@@ -126,7 +126,7 @@ gem 'bigdecimal', require: true
 # elements, attributes, and properties you choose to allow.
 gem 'sanitize', '~> 6.1'
 
-#This gems doing it for you. Just use attached: true or
+# This gems doing it for you. Just use attached: true or
 # content_type: 'image/png' validation.
 gem 'active_storage_validations', '~> 1.1', '>= 1.1.3'
 

@@ -30,12 +30,16 @@ class Api::V1::EventsController < ApplicationController
 
   # PATCH/PUT /api/v1/events/:id
   def update
-    if @event.update(event_params)
-      render json: @event
+    if params[:new_lead_coordinator_id].present?
+      @event.lead_coordinator_id = params[:new_lead_coordinator_id]
+    end
+  
+    if @event.save
+      render json: @event, status: :ok
     else
       render json: @event.errors, status: :unprocessable_entity
     end
-  end 
+  end
 
   # DELETE /api/v1/events/:id
   def destroy
