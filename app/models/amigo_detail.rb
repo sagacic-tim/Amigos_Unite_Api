@@ -4,9 +4,9 @@ class AmigoDetail < ApplicationRecord
   before_validation :normalize_boolean_fields
   before_validation :remove_code_from_personal_bio
   before_validation :convert_date_of_birth
-  before_validation :validate_date_of_birth
 
   validates :personal_bio, length: { maximum: 650 }
+  validate :date_of_birth_format
 
   private
 
@@ -29,34 +29,54 @@ class AmigoDetail < ApplicationRecord
     nil
   end
 
+  # Attempts to parse the date_of_birth from a string using multiple expected formats
   def convert_date_of_birth
-    Rails.logger.debug { "\"date_of_birth\", at top line of convert_date_of_birth = #{self.date_of_birth.inspect}" }
-    return unless date_of_birth.present? && date_of_birth.is_a?(String)
-    Rails.logger.debug { "\"date_of_birth\", convert_date_of_birth return = #{self.date_of_birth.inspect}" }
-  
-    parsed_date = Date.strptime(date_of_birth, '%m/%d/%Y') rescue nil
+    # Return immediately if date_of_birth is already a Date object or nil
+    return if date_of_birth.is_a?(Date) || date_of_birth.nil?
+
+    date_str = date_of_birth_before_type_cast
+    # Define a list of expected date formats
+    expected_formats = [
+      '%m/%d/%Y', # MM/DD/YYYY
+      '%d/%m/%Y', # DD/MM/YYYY
+      '%Y-%m-%d', # YYYY/MM/DD
+      '%Y-%m-%d', # YYYY-MM-DD
+      '%d-%m-%Y', # DD-MM-YYYY
+      '%d.%m.%Y', # DD.MM.YYYY
+      '%d %B %Y', # DD MMMM YYYY
+      '%B %d, %Y' # MMMM DD, YYYY
+    ]
+
+    # Special handling for 'YYYY年MM月DD日' format
+    if date_str.match(/\A\d{4}年\d{1,2}月\d{1,2}日\z/)
+      date_str = date_str.gsub(/[年月日]/, '年' => '/', '月' => '/', '日' => '')
+      expected_formats << '%Y/%m/%d' # Ensure this format is tried for 'YYYY年MM月DD日'
+    end
+
+    # Try each format in sequence
+    parsed_date = nil
+    expected_formats.each do |format|
+      begin
+        parsed_date = Date.strptime(date_str, format)
+        break if parsed_date # If parsing succeeds, stop trying more formats
+      rescue ArgumentError
+        # Ignore parsing errors and try the next format
+      end
+    end
+
     if parsed_date
-      Rails.logger.debug { "date_of_birth immediately before conversion = #{date_of_birth.inspect}" }
+      # If a valid date was parsed, set it
       self.date_of_birth = parsed_date
-      Rails.logger.debug { "date_of_birth immediately after conversion = #{date_of_birth.inspect}" }
+      Rails.logger.debug { "date_of_birth after assignment: #{date_of_birth.inspect}" }
     else
-      errors.add(:date_of_birth, 'is in an unrecognized format')
+      # If none of the formats worked, add an error
+      errors.add(:date_of_birth, 'is in an unrecognized format. Expected formats: M/DD/YYYY, DD/MM/YYYY, YYYY/MM/DD, YYYY-MM-DD, DD-MM-YYYY, DD.MM.YYYY, DD MMMM YYYY, MMMM DD, YYYY, YYYY年MM月DD日')
     end
   end
 
-  def validate_date_of_birth
-    Rails.logger.debug { "\"date_of_birth\": before validataion = #{date_of_birth.inspect}" }
-    if date_of_birth.present?
-      unless date_of_birth.is_a?(Date) || date_of_birth.match(/\A\d{4}-\d{2}-\d{2}\z/)
-        errors.add(:date_of_birth, 'must be in YYYY-MM-DD format')
-      end
-  
-      # Example range check: no more than 120 years ago, no later than today
-      if date_of_birth < Date.today - 120.years || date_of_birth > Date.today
-        errors.add(:date_of_birth, 'is not in a reasonable range')
-      end
-    else
-      errors.add(:date_of_birth, 'is required')
-    end
+  # Ensure date_of_birth is a valid date object
+  def date_of_birth_format
+    errors.add(:date_of_birth, 'must be a valid date') unless date_of_birth.is_a?(Date)
   end
+
 end

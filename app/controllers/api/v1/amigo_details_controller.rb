@@ -20,15 +20,22 @@ class Api::V1::AmigoDetailsController < ApplicationController
   
   # PATCH/PUT /api/v1/amigos/:amigo_id/amigo_detail
   def update
-    Rails.logger.debug { "Params before update: #{amigo_detail_params.inspect}" }
-    Rails.logger.debug { "date_of_birth from params: #{amigo_detail_params[:date_of_birth]}" }
+    @amigo_detail = @amigo.amigo_detail
     
-    if @amigo_detail.update(amigo_detail_params)
-      render json: @amigo_detail
+    # Check if attributes have changed
+    if unchanged_attributes?(@amigo_detail, amigo_detail_params)
+      render json: { message: "So sorry, but nothing changed, try again when you decide to change something!" }, status: :ok
+    elsif @amigo_detail.update(amigo_detail_params)
+      # Convert to JSON string for logging if needed
+      json_output = @amigo_detail.as_json # Using as_json for more control over the output
+      Rails.logger.debug { "Updated amigo detail: #{json_output.inspect}" }
+
+      # Respond to client with the updated amigo detail
+      render json: json_output, status: :ok
     else
       render json: @amigo_detail.errors, status: :unprocessable_entity
     end
-  end  
+  end
 
   # DELETE /api/v1/amigos/:amigo_id/amigo_detail
   def destroy
@@ -54,6 +61,13 @@ class Api::V1::AmigoDetailsController < ApplicationController
   def set_amigo_detail
     @amigo_detail = @amigo.amigo_detail
   end
+
+# Checks if the attributes of the model have changed compared to the new parameters
+def unchanged_attributes?(model, new_attributes)
+  new_attributes = new_attributes.to_h # Convert Parameters to a hash
+  new_attributes.none? { |attr, value| model.send(attr) != value }
+end
+
 
   def amigo_detail_params
     params.require(:amigo_detail).permit(
