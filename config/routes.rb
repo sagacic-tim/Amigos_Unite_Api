@@ -19,7 +19,6 @@ Rails.application.routes.draw do
 
       resources :events, except: [:new, :edit] do
         resources :event_locations, only: [:index]
-        # Removed event_participants and event_coordinators routes as per your updated configuration
       end
     end
   end

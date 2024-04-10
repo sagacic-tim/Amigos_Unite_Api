@@ -22,7 +22,7 @@ class Api::V1::AmigosController < ApplicationController
     end
   
     if @amigo.save
-      render json: @amigo, status: :created, location: @amigo
+      render json: @amigo, status: :created
     else
       render json: @amigo.errors, status: :unprocessable_entity
     end

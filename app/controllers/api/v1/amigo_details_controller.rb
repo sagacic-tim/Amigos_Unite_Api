@@ -10,7 +10,7 @@ class Api::V1::AmigoDetailsController < ApplicationController
   # POST /api/v1/amigos/:amigo_id/amigo_detail
   def create
     @amigo_detail = @amigo.build_amigo_detail(amigo_detail_params)
-  
+    Rails.logger.debug { "Params after permitting: #{amigo_detail_params.inspect}" }  
     if @amigo_detail.save
       render json: @amigo_detail, status: :created
     else
@@ -20,12 +20,15 @@ class Api::V1::AmigoDetailsController < ApplicationController
   
   # PATCH/PUT /api/v1/amigos/:amigo_id/amigo_detail
   def update
+    Rails.logger.debug { "Params before update: #{amigo_detail_params.inspect}" }
+    Rails.logger.debug { "date_of_birth from params: #{amigo_detail_params[:date_of_birth]}" }
+    
     if @amigo_detail.update(amigo_detail_params)
       render json: @amigo_detail
     else
       render json: @amigo_detail.errors, status: :unprocessable_entity
     end
-  end
+  end  
 
   # DELETE /api/v1/amigos/:amigo_id/amigo_detail
   def destroy
@@ -53,6 +56,13 @@ class Api::V1::AmigoDetailsController < ApplicationController
   end
 
   def amigo_detail_params
-    params.require(:amigo_detail).permit(:date_of_birth, :member_in_good_standing, :available_to_host, :willing_to_help, :willing_to_donate, :personal_bio)
+    params.require(:amigo_detail).permit(
+      :date_of_birth,
+      :member_in_good_standing,
+      :available_to_host,
+      :willing_to_help,
+      :willing_to_donate,
+      :personal_bio
+    )
   end
 end
