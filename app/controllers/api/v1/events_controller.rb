@@ -2,6 +2,7 @@ class Api::V1::EventsController < ApplicationController
   include ErrorHandling  # For handling common ActiveRecord errors
   before_action :set_event, only: [:show, :update, :destroy]
   before_action :authenticate_amigo!, except: [:index, :show] # Assuming you have some authentication
+  before_action :debug_authentication
 
   # GET /api/v1/events
   def index
@@ -14,20 +15,21 @@ class Api::V1::EventsController < ApplicationController
     render json: @event
   end
 
-  # POST /api/v1/events
   def create
+    Rails.logger.info "Received params: #{params.inspect}"
     @event = Event.new(event_params)
-    @event.lead_coordinator = current_amigo # Assuming `current_amigo` is available
+    @event.lead_coordinator = current_amigo # Set the currently logged-in amigo as the lead coordinator.
+    Rails.logger.info "Event to be saved: #{@event.attributes}"
 
     if @event.save
-      # Automatically create a connector for the lead coordinator
-      EventAmigoConnector.create!(event: @event, amigo: current_amigo, role: :lead_coordinator)
-      render json: @event, status: :created
+      # Create a connector for the lead coordinator
+      EventAmigoConnector.create!(event: @event, amigo: current_amigo, role: 'lead_coordinator')
+      render :create, status: :created # Assuming you have a corresponding jbuilder view for `create`
     else
       render json: @event.errors, status: :unprocessable_entity
     end
   end
-
+  
   # PATCH/PUT /api/v1/events/:id
   def update
     if params[:new_lead_coordinator_id].present?
@@ -49,6 +51,11 @@ class Api::V1::EventsController < ApplicationController
 
   private
 
+  def debug_authentication
+    Rails.logger.info "Current User: #{current_amigo.inspect}"
+    Rails.logger.info "Authorization Header: #{request.headers['Authorization']}"
+  end
+
   def set_event
     @event = Event.find(params[:id])
   end
@@ -60,7 +67,6 @@ class Api::V1::EventsController < ApplicationController
       :event_date,
       :event_time,
       event_speakers_performers: []
-      # Note: `:event_coordinator_id` removed from permitted parameters
     )
   end
 end

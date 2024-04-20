@@ -2,6 +2,8 @@ class EventLocation < ApplicationRecord
   require 'net/http'
   require 'json'
 
+  # belongs_to :event
+
   # Associations
   has_many :event_location_connectors
   has_many :events, through: :event_location_connectors

@@ -1,28 +1,20 @@
-# Faker helps you generate realistic test data, and populate
-# your database with more than a couple of records while you're
-# doing development.
-
 require 'faker'
 require 'json'
 require 'open-uri'
 
-# Ensure Faker generates unique data by resetting its seed
 Faker::UniqueGenerator.clear
+residential_address_pool = JSON.parse(File.read('db/random_residential_addresses.json')).shuffle
+business_address_pool = JSON.parse(File.read('db/random_business_addresses.json')).shuffle
+avatars_dir = Rails.root.join('lib', 'seeds', 'avatars')
+password_file = File.open('tmp/dev_user_passwords.txt', 'w')
 
-# Load random residential addresses
-residential_address_pool = JSON.parse(File.read('db/Random_Residential_Addresses.json')).shuffle
-
-# Open a file to write the user credentials
-File.open('tmp/dev_user_passwords.txt', 'w') do |file|
-  avatars_dir = Rails.root.join('lib', 'seeds', 'avatars')
-
-  # Creating a bunch of Amigo records
-  10.times do |i|
-    password = Faker::Internet.password(min_length: 12, max_length: 20, mix_case: true, special_characters: true)
-    amigo = Amigo.new(
+10.times do |i|
+  begin
+    password = Faker::Internet.password(min_length: 12, max_length: 20)
+    amigo = Amigo.create!(
       first_name: Faker::Name.first_name,
       last_name: Faker::Name.last_name,
-      user_name: Faker::Internet.username(specifier: 8..16),
+      user_name: Faker::Internet.username,
       email: Faker::Internet.email,
       secondary_email: Faker::Internet.email,
       phone_1: Faker::PhoneNumber.phone_number_with_country_code,
@@ -31,203 +23,142 @@ File.open('tmp/dev_user_passwords.txt', 'w') do |file|
       password_confirmation: password,
       confirmed_at: Time.current
     )
+    puts "Amigo #{i + 1} created"
 
-    # Write the user credentials to the file
-    file.puts "Amigo #{i + 1}:"
-    file.puts "Username: #{amigo.user_name}"
-    file.puts "Email: #{amigo.email}"
-    file.puts "Password: #{password}"
-    file.puts "\n"
-
-    begin
-      # Attempt to save a record
-      puts "Creating Amigos..."
-      amigo.save!
-      rescue ActiveRecord::RecordInvalid => e
-        puts "Failed to save Amigo: #{e.record.errors.full_messages.join(", ")}"
-    end
-
-    # Sequential avatar assignment
-    num_avatars = 15 #assuming that thefre are 15 avatars available.
-    file_name = "avatar#{i % num_avatars + 1}.svg"
-    file_path = avatars_dir.join(file_name)
-
-    if File.exist?(file_path)
-      avatar_file = File.open(file_path)
-      amigo.avatar.attach(io: avatar_file, filename: file_name)
-      puts "Avatar #{file_name} attached to Amigo #{i + 1}"
-      avatar_file.close
-    end
-
-    # Add amigo details
-    amigo_detail = AmigoDetail.new(
-      amigo: amigo,
-      member_in_good_standing: [true, false].sample,
-      available_to_host: [true, false].sample,
-      willing_to_help: [true, false].sample,
-      willing_to_donate: [true, false].sample,
-      personal_bio: Faker::Lorem.paragraph(sentence_count: 2),
-      date_of_birth: Faker::Date.birthday(min_age: 18, max_age: 100)
-    )
-
-    begin
-      puts "Creating Amigo Details..."
-      amigo_detail.save!
-    rescue => e
-      puts "AmigoDetail could not be saved: #{e.message}"
-    end
-
-    # Assign a random address to amigo, popping it off the array
-    # to avoid duplicates
-    1.times do |j|
-      address = residential_address_pool.pop
-      amigo_location = AmigoLocation.new(
-        amigo: amigo,
-        # ... set the address fields using the popped address ...
-        address: address["address"].presence,
-        room_no: address["room_no"].presence,
-        floor: address["floor"].presence,
-        street_number: address["street_number"],
-        street_name: address["street_name"],
-        apartment_suite_number: address["secondary_address"].presence,
-        city_sublocality: address["city_sublocality"].presence,
-        city: address["city"],
-        state_province_subdivision: address["state_province_subdivision"],
-        state_province: address["state_province"],
-        state_province_short: address["state_province_short"],
-        country: address["country"],
-        country_short: address["country_short"],
-        postal_code: address["postal_code"],
-        postal_code_suffix: address["postal_code_suffix"].presence,
-        post_box: address["post_box"].presence,
-        latitude: address["latitude"].presence,
-        longitude: address["longitude"].presence,
-        time_zone: address["time_zone"].presence
-      )
-
-      begin
-        puts "Creating Amigo Locations..."
-        amigo_location.save!
-      rescue => e # Catches any StandardError
-        puts "AmigoLocation could not be saved: #{e.message}"
+    if amigo.persisted?
+      password_file.puts("Amigo #{i + 1}: Username: #{amigo.user_name}, Email: #{amigo.email}, Password: #{password}")
+      file_name = "avatar#{i % 15 + 1}.svg"
+      file_path = avatars_dir.join(file_name)
+      
+      if File.exist?(file_path)
+        File.open(file_path) do |file|
+          amigo.avatar.attach(io: file, filename: file_name)
+          puts "Avatar #{file_name} attached to Amigo #{i + 1}"
+        end
       end
+
+      AmigoDetail.create!(
+        amigo: amigo,
+        member_in_good_standing: [true, false].sample,
+        available_to_host: [true, false].sample,
+        willing_to_help: [true, false].sample,
+        willing_to_donate: [true, false].sample,
+        personal_bio: Faker::Lorem.paragraph(sentence_count: 2),
+        date_of_birth: Faker::Date.birthday(min_age: 18, max_age: 100)
+      )
+      puts "AmigoDetail #{i + 1} created"
+      
+      amigo_address = residential_address_pool.pop
+      AmigoLocation.create!(
+        amigo: amigo,
+        address: amigo_address["address"],
+        room_no: amigo_address["room_no"],
+        floor: amigo_address["floor"],
+        street_number: amigo_address["street_number"],
+        street_name: amigo_address["street_name"],
+        apartment_suite_number: amigo_address["secondary_address"],
+        city_sublocality: amigo_address["city_sublocality"],
+        city: amigo_address["city"],
+        state_province_subdivision: amigo_address["state_province_subdivision"],
+        state_province: amigo_address["state_province"],
+        state_province_short: amigo_address["state_province_short"],
+        country: amigo_address["country"],
+        country_short: amigo_address["country_short"],
+        postal_code: amigo_address["postal_code"],
+        postal_code_suffix: amigo_address["postal_code_suffix"],
+        post_box: amigo_address["post_box"],
+        latitude: amigo_address["latitude"],
+        longitude: amigo_address["longitude"],
+        time_zone: amigo_address["time_zone"]
+      )
+      puts "AmigoLocation #{i + 1} created"
+    else
+      puts "Failed to create Amigo #{i + 1}"
     end
+  rescue StandardError => e
+    puts "Exception when creating Amigo #{i + 1}: #{e.message}"
   end
 end
 
-# Load random business addresses
-business_address_pool = JSON.parse(File.read('db/Random_Business_Addresses.json')).shuffle
+password_file.close unless password_file.closed?
 
 5.times do |k|
-  debugger
-  lead_coordinator = Amigo.order("RANDOM()").first
-  event = Event.new(
-    event_name: Faker::Lorem.sentence(word_count: 3),
-    event_type: ["Conference", "Seminar", "Workshop", "Concert", "Festival"].sample,
-    event_date: Faker::Date.forward(days: 365), # Random date within the next year
-    event_time: Faker::Time.forward(days: 365, period: :evening),
-    event_speakers_performers: Array.new(3) { Faker::Name.name },
-    lead_coordinator_id: lead_coordinator.id
-  )
-
-  # Creating a lead coordinator role
-  puts "Assigning amigo as lead coordinator..."
-  EventAmigoConnector.create!(
-    event: event,
-    amigo: lead_coordinator,
-    role: 'lead_coordinator'
-  )
-
-  num_participants = rand(3..8)
-  participants = Amigo.where.not(id: lead_coordinator.id).sample(num_participants)
-
-  # number of assistant coordinagtors depends on the number of participants
-  num_assistant_coordinators = case num_participants
-    when 7..8 then 2
-    when 5..6 then 1
-    else 0
-  end
-
-  # randomly assign parfticipants to be assistant coorddinators based on total number of participants
-  assistant_coordinators = participants.sample(num_assistant_coordinators)
-
-  # Assign roles to participants
-  puts "Assigning roles to Amigos..."
-  participants.each do |participant|
-    role = assistant_coordinators.include?(participant) ? 'assistant_coordinator' : 'participant'
-    EventAmigoConnector.create!(
-      event: event,
-      amigo: participant,
-      role: role
-    )
-  end
-
-  if event.save
-    puts "Event #{k + 1} created: #{event.event_name}"
-
-    # Assign a random business address to event_location
-    address = business_address_pool.pop
-    event_location = EventLocation.new(
-      # ... set the address fields using the popped address ...
-      # amigo_id: amigo.id,
-      business_name: address["business_name"],
-      business_phone: address["phone"],
-      address: address["address"].presence,
-      room_no: address["room_no"].presence,
-      floor: address["floor"].presence,
-      street_number: address["street_number"],
-      street_name: address["street_name"],
-      apartment_suite_number: address["apartment_suite_number"].presence,
-      city_sublocality: address["city_sublocality"].presence,
-      city: address["city"],
-      state_province_subdivision: address["state_province_subdivision"].presence,
-      state_province: address["state_province"],
-      state_province_short: address["state_province_short"],
-      country: address["country"],
-      country_short: address["country_short"],
-      postal_code: address["postal_code"],
-      postal_code_suffix: address["postal_code_suffix"].presence,
-      post_box: address["postal_code"].presence,
-      latitude: address["latitude"].presence,
-      longitude: address["longitude"].presence,
-      time_zone: address["time_zone"].presence
+  begin
+    lead_coordinator = Amigo.order(Arel.sql('RANDOM()')).first
+    event = Event.create!(
+      event_name: Faker::Lorem.sentence(word_count: 3),
+      event_type: ["Conference", "Seminar", "Workshop", "Concert", "Festival"].sample,
+      event_date: Faker::Date.forward(days: 365),
+      event_time: Faker::Time.forward(days: 365, period: :evening),
+      lead_coordinator: lead_coordinator
     )
 
-    if event_location.save
-      puts "EventLocation for Event #{k + 1} created: #{event_location.address}"
-
-      event_location_connector = EventLocationConnector.new(event: event, event_location: event_location)
-      if event_location_connector.save
-        puts "EventLocationConnector created for Event #{k + 1}"
+    puts "Event #{k + 1} created"
+    event_address = business_address_pool.pop
+    event_location = EventLocation.create!(
+      business_name: event_address["business_name"],
+      business_phone: event_address["phone"],
+      address: event_address["address"],
+      room_no: event_address["room_no"],
+      floor: event_address["floor"],
+      street_number: event_address["street_number"],
+      street_name: event_address["street_name"],
+      apartment_suite_number: event_address["apartment_suite_number"],
+      city_sublocality: event_address["city_sublocality"],
+      city: event_address["city"],
+      state_province_subdivision: event_address["state_province_subdivision"],
+      state_province: event_address["state_province"],
+      state_province_short: event_address["state_province_short"],
+      country: event_address["country"],
+      country_short: event_address["country_short"],
+      postal_code: event_address["postal_code"],
+      postal_code_suffix: event_address["postal_code_suffix"],
+      post_box: event_address["post_box"],
+      latitude: event_address["latitude"],
+      longitude: event_address["longitude"],
+      time_zone: event_address["time_zone"]
+    )
+    if event_location.persisted?
+      puts "Event Location created for Event ##{k + 1}"
+      # Create EventLocationConnector for each event and location
+      event_location_connector = EventLocationConnector.create!(
+        event_id: event.id,
+        event_location_id: event_location.id
+      )
+      if event_location_connector.persisted?
+        puts "EventLocationConnector created for Event ##{k + 1}"
       else
-        puts "EventLocationConnector could not be created: #{event_location_connector.errors.full_messages.join(", ")}"
+        puts "EventLocationConnector created for Event ##{k + 1}"
+      end
+
+      num_participants = rand(3..10)
+      participants = Amigo.where.not(id: lead_coordinator.id).sample(num_participants)
+      num_assistant_coordinators = case num_participants
+                                   when 8..10 then 3
+                                   when 6..7 then 2
+                                   when 3..5 then 1
+                                   else 0
+                                   end
+
+      assistant_coordinators = participants.sample(num_assistant_coordinators)
+      participants.each do |participant|
+        role = assistant_coordinators.include?(participant) ? 'assistant_coordinator' : 'participant'
+        connector = EventAmigoConnector.create!(
+          event: event,
+          amigo: participant,
+          role: role
+        )
+        if connector.persisted?
+          puts "Role #{role} assigned to #{participant.first_name} #{participant.last_name} for Event #{k + 1}."
+        else
+          puts "Failed to assign role #{role} to #{participant.first_name} #{participant.last_name}: #{connector.errors.full_messages.join(', ')}"
+        end
       end
     else
-      puts "EventLocation could not be created: #{event_location.errors.full_messages.join(", ")}"
+      puts "Failed to create Event #{k + 1}"
     end
-
-    puts "Assigning roles to event participants..."
-    participants = Amigo.where.not(id: lead_coordinator.id).sample(num_participants)
-    assistant_coordinators = participants.sample(num_assistant_coordinators)
-  
-    participants.each do |participant|
-      role = assistant_coordinators.include?(participant) ? 'assistant_coordinator' : 'participant'
-  
-      # Create EventAmigoConnector instances for each participant with their respective roles
-      event_amigo_connector = EventAmigoConnector.create!(
-        event: event,
-        amigo: participant,
-        role: role
-      )
-  
-      if event_amigo_connector.persisted?
-        puts "Participant #{participant.user_name} added to Event #{event.event_name} as #{role}"
-      else
-        puts "Could not add participant: #{event_amigo_connector.errors.full_messages.join(", ")}"
-      end
-    end
-  else
-    puts "Event could not be created: #{event.errors.full_messages.join(", ")}"
+  rescue ActiveRecord::RecordInvalid => e
+    puts "Error during creation for Event #{k + 1}: #{e.message}"
   end
 end
 
@@ -242,20 +173,16 @@ puts "#{EventLocationConnector.count} event location connectors created"
 puts 'User passwords stored in tmp/dev_user_passwords.txt'
 puts 'Event Participant Roles:'
 Event.includes(:lead_coordinator, event_amigo_connectors: :amigo).find_each do |event|
-  # Display event name and ID
   puts "  The coordinators for Event: \"#{event.event_name}\" (ID: #{event.id}), are:"
-  # Display lead coordinator
   puts "    Lead Coordinator: #{event.lead_coordinator.first_name} #{event.lead_coordinator.last_name}, Amigo ID: #{event.lead_coordinator_id}"
-
-  # Display assistant coordinators, if any
-  puts "    Assistant Coordinator(s), if there is one:"
   assistant_coordinators = event.event_amigo_connectors.where(role: 'assistant_coordinator')
   if assistant_coordinators.any?
+    puts "      The Assistant Coordinators are:\n"
     assistant_coordinators.each do |connector|
-      puts "     #{connector.amigo.first_name} #{connector.amigo.last_name}, Amigo ID: #{connector.amigo_id}"
+      puts "        #{connector.amigo.first_name} #{connector.amigo.last_name}, Amigo ID: #{connector.amigo_id}"
     end
   else
-    puts "     There are no Assistant Coordinators for this event"
+    puts "      There are no Assistant Coordinators for this event"
   end
   puts "\n"
 end

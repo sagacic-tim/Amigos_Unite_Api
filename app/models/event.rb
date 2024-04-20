@@ -1,18 +1,19 @@
 class Event < ApplicationRecord
-
+  # Associations
+  # Each event is associated a lead_coordsinator
+  belongs_to :lead_coordinator, class_name: 'Amigo'
   # Each event is associated with one or more event locations
-  belongs_to :lead_coordinator, class_name: 'Amigo', optional: true
-  
   has_many :event_location_connectors
   has_many :event_locations, through: :event_location_connectors
-
+  # Each event is associated wioth a igos as participants
   has_many :event_amigo_connectors
   has_many :amigos, through: :event_amigo_connectors
 
+  # Validations
   validates :event_name, uniqueness: { 
     scope: [:event_date, :event_time], 
     message: "cannot have duplicate event names at the same date and time" 
-  }, unless: :skip_uniqueness_validation?
+  }
 
   public
 

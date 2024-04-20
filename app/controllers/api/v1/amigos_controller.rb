@@ -2,11 +2,12 @@ class Api::V1::AmigosController < ApplicationController
   before_action :authenticate_amigo!, only: [:show, :update, :destroy]
   before_action :set_amigo, only: [:show, :update, :destroy]
 
-  # GET /amigos
+  # Get all amigos
   def index
     @amigos = Amigo.includes(event_amigo_connectors: :event).all
-    render :index, formats: :json, status: :ok
-  end  
+    render :index, status: :ok
+  end
+  
 
   # GET /amigos/1
   def show
@@ -22,7 +23,7 @@ class Api::V1::AmigosController < ApplicationController
     end
   
     if @amigo.save
-      render json: @amigo, status: :created
+      render :create
     else
       render json: @amigo.errors, status: :unprocessable_entity
     end
@@ -31,7 +32,7 @@ class Api::V1::AmigosController < ApplicationController
   # PATCH/PUT /amigos/1
   def update
     if @amigo.update(amigo_params)
-      render json: @amigo
+      render :update
     else
       render json: @amigo.errors, status: :unprocessable_entity
     end

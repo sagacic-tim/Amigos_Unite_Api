@@ -1,15 +1,16 @@
 # app/controllers/api/v1/event_locations_controller.rb
-
 class Api::V1::EventLocationsController < ApplicationController
-  include ErrorHandling  # For handling common ActiveRecord errors
-
-  before_action :set_event, only: [:index, :create]
+  before_action :set_event, only: [:index], if: -> { params[:event_id].present? }
   before_action :set_event_location, only: [:show, :update, :destroy]
 
-  # GET /api/v1/events/:event_id/event_locations
+  # GET /events/:event_id/event_locations or /event_locations
   def index
-    @event_locations = @event.event_locations
-    render json: @event_locations
+    if @event
+      @event_locations = @event.event_locations
+    else
+      @event_locations = EventLocation.all
+    end
+    render :index
   end
 
   # GET /api/v1/event_locations/:id
@@ -17,20 +18,14 @@ class Api::V1::EventLocationsController < ApplicationController
     render json: @event_location
   end
 
-  # POST /api/v1/events/:event_id/event_locations
+  # POST /api/v1/event_locations
   def create
-    @event_location = @event.event_locations.build(event_location_params)
+    @event_location = EventLocation.new(event_location_params)
 
     if @event_location.save
-      EventLocationConnector.create!(event: @event, event_location: @event_location)
       render json: @event_location, status: :created
     else
-      # Custom error logic for specific create action scenarios
-      render json: { 
-        status: 'error', 
-        message: 'Failed to create event location, an event may have been scheduled for this location.', 
-        errors: @event_location.errors.full_messages 
-      }, status: :unprocessable_entity
+      render json: @event_location.errors, status: :unprocessable_entity
     end
   end 
 
@@ -45,19 +40,16 @@ class Api::V1::EventLocationsController < ApplicationController
 
   # DELETE /api/v1/event_locations/:id
   def destroy
-    # Check if there are any connectors associated with this event location
-    if EventLocationConnector.exists?(event_location_id: @event_location.id)
-      render json: { error: "You cannot delete this location while events are scheduled to be held at this location." }, status: :unprocessable_entity
-    else
-      @event_location.destroy
-      head :no_content
-    end
+    @event_location.destroy
+    head :no_content
   end
 
   private
 
   def set_event
     @event = Event.find(params[:event_id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Event not found' }, status: :not_found
   end
 
   def set_event_location
@@ -65,12 +57,11 @@ class Api::V1::EventLocationsController < ApplicationController
   end
 
   def event_location_params
-    params.require(:amigo_location).permit(
+    params.require(:event_location).permit(
       :business_name,
       :business_phone,
       :address,
       :floor,
-      :street_number,
       :street_number,
       :street_name,
       :room_no,
@@ -78,7 +69,6 @@ class Api::V1::EventLocationsController < ApplicationController
       :city_sublocality,
       :city,
       :state_province_subdivision,
-      :state_abbreviation,
       :state_province,
       :state_province_short,
       :country,

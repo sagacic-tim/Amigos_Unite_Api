@@ -72,6 +72,18 @@ class Amigo < ApplicationRecord
     end
   end
 
+  def lead_coordinator_for?(event)
+    event.lead_coordinator_id == self.id
+  end
+
+  def assistant_coordinator_for?(event)
+    event.event_amigo_connectors.exists?(amigo_id: self.id, role: :assistant_coordinator)
+  end
+
+  def can_remove_participant?(event)
+    lead_coordinator_for?(event) || assistant_coordinator_for?(event)
+  end
+
   # Validations
   validates :first_name, presence: true, length: { maximum: 50 }
   validates :last_name, presence: true, length: { maximum: 50 }

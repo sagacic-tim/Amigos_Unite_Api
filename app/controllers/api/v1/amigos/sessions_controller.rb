@@ -2,6 +2,12 @@ class Api::V1::Amigos::SessionsController < Devise::SessionsController
   include RackSessionsFix
   respond_to :json
 
+  def create
+    super do
+      Rails.logger.info "Authorization: #{request.headers['Authorization']}"
+    end
+  end  
+
   private
 
   def respond_with(resource, _opts = {})
