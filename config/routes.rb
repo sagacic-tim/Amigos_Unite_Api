@@ -19,7 +19,7 @@ Rails.application.routes.draw do
       resources :events, except: [:new, :edit] do
         resources :event_amigo_connectors, except: [:new, :edit]
         resources :event_location_connectors, only: [:create]
-        resources :event_locations, only: [:index]  # Ensure this line exists
+        resources :event_locations, only: [:index, :show]  # Ensure this line exists
       end
 
       resources :event_locations, except: [:new, :edit]

@@ -1,8 +1,8 @@
 class Api::V1::EventsController < ApplicationController
   include ErrorHandling  # For handling common ActiveRecord errors
-  before_action :set_event, only: [:show, :update, :destroy]
   before_action :authenticate_amigo!, except: [:index, :show] # Assuming you have some authentication
   before_action :debug_authentication
+  before_action :set_event, only: [:show, :update, :destroy]
 
   # GET /api/v1/events
   def index
@@ -16,10 +16,10 @@ class Api::V1::EventsController < ApplicationController
   end
 
   def create
-    Rails.logger.info "Received params: #{params.inspect}"
+    Rails.logger.info "Current Amigo: #{current_amigo.inspect}"
     @event = Event.new(event_params)
     @event.lead_coordinator = current_amigo # Set the currently logged-in amigo as the lead coordinator.
-    Rails.logger.info "Event to be saved: #{@event.attributes}"
+    Rails.logger.info "Lead Coordinator is: #{@event.event_lead_coordinator}"
 
     if @event.save
       # Create a connector for the lead coordinator
