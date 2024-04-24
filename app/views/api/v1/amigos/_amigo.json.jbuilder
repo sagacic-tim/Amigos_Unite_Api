@@ -3,7 +3,7 @@
 json.extract! amigo,
               :id,
               :first_name,
-              :last_name,
+              :last_name,5
               :user_name,
               :email,
               :secondary_email,
@@ -13,6 +13,3 @@ json.extract! amigo,
               :updated_at
 
 json.avatar_url url_for(amigo.avatar) if amigo.avatar.attached?
-
-# Add event roles
-json.event_roles amigo.event_roles

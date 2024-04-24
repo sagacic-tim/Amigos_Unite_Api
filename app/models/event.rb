@@ -1,7 +1,4 @@
 class Event < ApplicationRecord
-  include Devise::JWT::RevocationStrategies::JTIMatcher
-  # Virtual attribute for authenticating by either user_name or email
-  attr_accessor :login_attribute
   # Associations
   
   # Each event is associated a lead_coordsinator
@@ -18,20 +15,6 @@ class Event < ApplicationRecord
     scope: [:event_date, :event_time], 
     message: "cannot have duplicate event names at the same date and time" 
   }
-
-  # Include all devise modules.
-  devise :database_authenticatable,
-    :registerable,
-    :recoverable,
-    :rememberable,
-    :validatable,
-    # :confirmable,
-    # :lockable,
-    # :timeoutable,
-    # :trackable,
-    # :omniauthable,
-    :jwt_authenticatable,
-    jwt_revocation_strategy: self
 
   public
 

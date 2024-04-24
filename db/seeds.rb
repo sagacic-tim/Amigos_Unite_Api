@@ -26,7 +26,7 @@ password_file = File.open('tmp/dev_user_passwords.txt', 'w')
     puts "Amigo #{i + 1} created"
 
     if amigo.persisted?
-      password_file.puts("Amigo #{i + 1}: Username: #{amigo.user_name}, Email: #{amigo.email}, Password: #{password}")
+      password_file.puts("Amigo #{i + 1}: Username: #{amigo.user_name}, Email: #{amigo.email}, Phone: #{amigo.phone_1}, Password: #{password}")
       file_name = "avatar#{i % 15 + 1}.svg"
       file_path = avatars_dir.join(file_name)
       

@@ -15,7 +15,7 @@ class Api::V1::EventLocationsController < ApplicationController
 
   # GET /api/v1/event_locations/:id
   def show
-    render json: @event_location
+    render :show  # Ensure consistent use of JBuilder
   end
 
   # POST /api/v1/event_locations
@@ -23,7 +23,7 @@ class Api::V1::EventLocationsController < ApplicationController
     @event_location = EventLocation.new(event_location_params)
 
     if @event_location.save
-      render json: @event_location, status: :created
+      render :create, status: :created
     else
       render json: @event_location.errors, status: :unprocessable_entity
     end
@@ -32,7 +32,7 @@ class Api::V1::EventLocationsController < ApplicationController
   # PATCH/PUT /api/v1/event_locations/:id
   def update
     if @event_location.update(event_location_params)
-      render json: @event_location
+      render :update
     else
       render json: @event_location.errors, status: :unprocessable_entity
     end
@@ -40,20 +40,27 @@ class Api::V1::EventLocationsController < ApplicationController
 
   # DELETE /api/v1/event_locations/:id
   def destroy
-    @event_location.destroy
-    head :no_content
+    if @event_location.destroy
+      render :destroy
+    else
+      render json: { error: 'Failed to delete event location.' }, status: :unprocessable_entity
+    end
   end
 
   private
 
   def set_event
-    @event = Event.find(params[:event_id])
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Event not found' }, status: :not_found
+    @event = Event.find_by(id: params[:event_id])
+    unless @event
+      render json: { error: 'Event not found' }, status: :not_found
+    end
   end
 
   def set_event_location
-    @event_location = EventLocation.find(params[:id])
+    @event_location = EventLocation.find_by(id: params[:id])
+    unless @event_location
+      render json: { error: 'Event location not found' }, status: :not_found
+    end
   end
 
   def event_location_params

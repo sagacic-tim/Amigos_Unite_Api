@@ -1,43 +1,52 @@
 class Api::V1::EventsController < ApplicationController
   include ErrorHandling  # For handling common ActiveRecord errors
-  before_action :authenticate_amigo!, except: [:index, :show] # Assuming you have some authentication
+  before_action :authenticate_current_user!, except: [:index, :show, :mission_index]
   before_action :debug_authentication
   before_action :set_event, only: [:show, :update, :destroy]
+  rescue_from StandardError, with: :handle_standard_error
 
   # GET /api/v1/events
   def index
     @events = Event.all
-    render json: @events
+    render :index
+  rescue ActiveRecord::ConnectionNotEstablished => e
+    render json: { error: 'Database connection error.' }, status: :service_unavailable
+  rescue StandardError => e
+    render json: { error: e.message }, status: :internal_server_error
   end
 
   # GET /api/v1/events/:id
   def show
-    render json: @event
-  end
+    @resource = Resource.find(params[:id])
+    if @resource
+      render :show
+    else
+      render :error_template, status: :not_found
+    end
+  end  
 
+  # POST /api/v1/events
   def create
-    Rails.logger.info "Current Amigo: #{current_amigo.inspect}"
     @event = Event.new(event_params)
-    @event.lead_coordinator = current_amigo # Set the currently logged-in amigo as the lead coordinator.
-    Rails.logger.info "Lead Coordinator is: #{@event.event_lead_coordinator}"
-
+    @event.lead_coordinator = current_amigo
     if @event.save
-      # Create a connector for the lead coordinator
       EventAmigoConnector.create!(event: @event, amigo: current_amigo, role: 'lead_coordinator')
-      render :create, status: :created # Assuming you have a corresponding jbuilder view for `create`
+      render :create, status: :created
     else
       render json: @event.errors, status: :unprocessable_entity
     end
+  rescue => e
+    render json: { error: e.message }, status: :internal_server_error
   end
-  
+
   # PATCH/PUT /api/v1/events/:id
   def update
     if params[:new_lead_coordinator_id].present?
       @event.lead_coordinator_id = params[:new_lead_coordinator_id]
     end
-  
+
     if @event.save
-      render json: @event, status: :ok
+      render :update
     else
       render json: @event.errors, status: :unprocessable_entity
     end
@@ -45,8 +54,18 @@ class Api::V1::EventsController < ApplicationController
 
   # DELETE /api/v1/events/:id
   def destroy
-    @event.destroy
-    head :no_content
+    @event = Event.find(params[:id])
+    if @event.destroy
+      render :destroy, status: :ok
+    else
+      render json: { error: 'Failed to delete the event.' }, status: :unprocessable_entity
+    end
+  end  
+
+  # GET /api/v1/events/mission
+  def mission_index
+    # This is a hypothetical action; you'll need to define what data to show
+    render 'api/v1/events/mission_index'
   end
 
   private
@@ -58,6 +77,10 @@ class Api::V1::EventsController < ApplicationController
 
   def set_event
     @event = Event.find(params[:id])
+  end
+
+  def handle_standard_error(e)
+    render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error
   end
 
   def event_params

@@ -1,40 +1,59 @@
-class Api::V1::Amigos::SessionsController < Devise::SessionsController
-  include RackSessionsFix
-  respond_to :json
+module Api
+  module V1
+    module Amigos
+      class SessionsController < Devise::SessionsController
+        include RackSessionsFix
+        respond_to :json
 
-  def create
-    super do
-      Rails.logger.info "Authorization: #{request.headers['Authorization']}"
-    end
-  end  
+        def create
+          super do |resource|
+            @token = current_token
+            # This block only executes if login was successful
+          end
+        end
 
-  private
+        def destroy
+          super do
+            # This block only executes if logout was successful
+          end
+        end
 
-  def respond_with(resource, _opts = {})
-    render json: {
-      status: { 
-        code: 200, message: 'Logged in successfully.',
-        data: { amigo: AmigoSerializer.new(resource).serializable_hash[:data][:attributes] }
-      }
-    }, status: :ok
-  end
+        protected
 
-  def respond_to_on_destroy
-    if request.headers['Authorization'].present?
-      jwt_payload = JWT.decode(request.headers['Authorization'].split(' ').last, Rails.application.credentials.devise_jwt_secret_key!).first
-      resource = Amigo.find(jwt_payload['sub'])
-    end
-    
-    if resource
-      render json: {
-        status: 200,
-        message: 'Logged out successfully.'
-      }, status: :ok
-    else
-      render json: {
-        status: 401,
-        message: "Couldn't find an active session."
-      }, status: :unauthorized
+        def respond_with(resource, _opts = {})
+          if resource.persisted?
+            render json: {
+              status: {
+                code: 200, 
+                message: 'Logged into Amigos Unite successfully.',
+                data: {
+                  amigo: AmigoSerializer.new(resource).serializable_hash[:data][:attributes],
+                  jwt: @token
+                }
+              }
+            }, status: :ok
+          else
+            render json: {
+              status: {
+                code: 401,
+                message: 'Login failed'
+              }
+            }, status: :unauthorized
+          end
+        end
+
+        def respond_to_on_destroy
+          render json: {
+            status: 200,
+            message: 'Logged out of Amigos Unite successfully.'
+          }, status: :ok
+        end
+
+         # Method to fetch the current JWT token from the Warden environment
+        def current_token
+          request.env['warden-jwt_auth.token']
+        end
+      end
     end
   end
 end

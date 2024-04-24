@@ -44,15 +44,19 @@ class Amigo < ApplicationRecord
 
   # login method is used to access the virtual attribute for authentication
   def login_attribute
-    @login_attribute || user_name || email
+    @login_attribute || user_name || email || phone_1
   end
 
-  # Custom method to allow authentication with user_name or email
+  # Custom method to allow authentication with user_name, email, or phone
   def self.find_for_database_authentication(warden_conditions)
     conditions = warden_conditions.dup
     login = conditions.delete(:login_attribute)&.downcase
-    find_by(["lower(user_name) = :value OR lower(email) = :value", { value: login }])
-  end  
+    Rails.logger.debug "Attempting login with: #{login}"  
+    return nil unless login  # Return nil if no login credential was provided
+  
+    # login_identifier.downcase!  # Modify the login string to be all lowercase
+    find_by(["lower(user_name) = :value OR lower(email) = :value OR phone_1 = :value", { value: login }])
+  end
 
   # Method to retrieve unique locations coordinated by an Amigo
   def coordinated_locations

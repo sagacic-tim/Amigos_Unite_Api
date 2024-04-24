@@ -2,17 +2,24 @@ class Api::V1::AmigoDetailsController < ApplicationController
   before_action :set_amigo
   before_action :set_amigo_detail, only: [:show, :update, :destroy]
 
+  # GET /api/v1/amigos/:amigo_id/amigo_details
+  def index
+    # Assuming the association is one-to-many
+    @amigo_details = @amigo.amigo_details
+    # The view app/views/api/v1/amigo_details/index.json.jbuilder will handle the response formatting
+  end
+  
   # GET /api/v1/amigos/:amigo_id/amigo_detail
   def show
-    render json: @amigo_detail
+    @amigo_detail = @amigo.amigo_detail
+    # Assumes show.json.jbuilder renders @amigo_detail
   end
 
   # POST /api/v1/amigos/:amigo_id/amigo_detail
   def create
     @amigo_detail = @amigo.build_amigo_detail(amigo_detail_params)
-    Rails.logger.debug { "Params after permitting: #{amigo_detail_params.inspect}" }  
     if @amigo_detail.save
-      render json: @amigo_detail, status: :created
+      render :create, status: :created
     else
       render json: @amigo_detail.errors, status: :unprocessable_entity
     end
@@ -20,18 +27,10 @@ class Api::V1::AmigoDetailsController < ApplicationController
   
   # PATCH/PUT /api/v1/amigos/:amigo_id/amigo_detail
   def update
-    @amigo_detail = @amigo.amigo_detail
-    
-    # Check if attributes have changed
     if unchanged_attributes?(@amigo_detail, amigo_detail_params)
-      render json: { message: "So sorry, but nothing changed, try again when you decide to change something!" }, status: :ok
+      render json: { message: "No changes detected." }, status: :ok
     elsif @amigo_detail.update(amigo_detail_params)
-      # Convert to JSON string for logging if needed
-      json_output = @amigo_detail.as_json # Using as_json for more control over the output
-      Rails.logger.debug { "Updated amigo detail: #{json_output.inspect}" }
-
-      # Respond to client with the updated amigo detail
-      render json: json_output, status: :ok
+      render :update
     else
       render json: @amigo_detail.errors, status: :unprocessable_entity
     end
@@ -39,18 +38,14 @@ class Api::V1::AmigoDetailsController < ApplicationController
 
   # DELETE /api/v1/amigos/:amigo_id/amigo_detail
   def destroy
-    if @amigo_detail.nil?
-      render json: { error: 'Amigo detail not found' }, status: :not_found
-      return
+    if @amigo_detail.destroy
+      # This will use the app/views/api/v1/amigo_details/destroy.json.jbuilder view to render the JSON
+      render :destroy, status: :ok
+    else
+      # Direct JSON rendering for errors remains appropriate as it is typically straightforward
+      render json: { errors: @amigo_detail.errors.full_messages }, status: :unprocessable_entity
     end
-  
-    begin
-      @amigo_detail.destroy!
-      render json: { message: 'Amigo detail successfully deleted' }, status: :ok
-    rescue ActiveRecord::RecordNotDestroyed => e
-      render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
-    end
-  end  
+  end
   
   private
 

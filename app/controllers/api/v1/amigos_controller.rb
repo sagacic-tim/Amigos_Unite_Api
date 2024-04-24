@@ -2,16 +2,16 @@ class Api::V1::AmigosController < ApplicationController
   before_action :authenticate_amigo!, only: [:show, :update, :destroy]
   before_action :set_amigo, only: [:show, :update, :destroy]
 
-  # Get all amigos
+  # Get all amigos and their avatars
   def index
-    @amigos = Amigo.includes(event_amigo_connectors: :event).all
+    @amigos = Amigo.all.includes(:avatar_attachment) # includes avatar attachment to avoid N+1 queries
     render :index, status: :ok
   end
   
-
   # GET /amigos/1
   def show
-    render json: @amigo, include: { event_amigo_connectors: { include: :event } }
+    # By default, this will look for `show.json.jbuilder` in the `views/api/v1/amigos` directory
+    render :show
   end
 
   # POST /amigos

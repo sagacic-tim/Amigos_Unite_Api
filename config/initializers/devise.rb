@@ -24,13 +24,13 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = 'please-change-me-at-config-initializers-devise@example.com'
+  config.mailer_sender = 'tmichel@ssgacicweb.com'
 
   # Configure the class responsible to send e-mails.
-  # config.mailer = 'Devise::Mailer'
+  config.mailer = 'Devise::Mailer'
 
   # Configure the parent class responsible to send e-mails.
-  # config.parent_mailer = 'ActionMailer::Base'
+  config.parent_mailer = 'ActionMailer::Base'
 
   # ==> ORM configuration
   # Load and configure the ORM. Supports :active_record (default) and
@@ -126,7 +126,7 @@ Devise.setup do |config|
   config.stretches = Rails.env.test? ? 1 : 12
 
   # Set up a pepper to generate the hashed password.
-  # config.pepper = '1a2af7dd9de2c65fa1be56e319b72a46b403ee58bc398fa0cde625f546d957005a4d2cf842857a06ba0816e32ce5eda7bdef59e3b4a7578c71ff08e51f7e5721'
+  config.pepper = '1a2af7dd9de2c65fa1be56e319b72a46b403ee58bc398fa0cde625f546d957005a4d2cf842857a06ba0816e32ce5eda7bdef59e3b4a7578c71ff08e51f7e5721'
 
   # Send a notification to the original email when the user's email is changed.
   # config.send_email_changed_notification = false
@@ -167,20 +167,25 @@ Devise.setup do |config|
 
   config.reset_password_within = 6.hours
 
-  config.navigational_formats = []
+  config.navigational_formats = [:json]
 
   config.sign_out_via = :delete
 
+  config.timeout_in = 12.hours
+
   config.responder.error_status = :unprocessable_entity
+
   config.responder.redirect_status = :see_other
+
+  config.authentication_keys = [:login_attribute]
 
   config.jwt do |jwt|
     jwt.secret = Rails.application.credentials.devise_jwt_secret_key
     jwt.dispatch_requests = [
-      ['POST', %r{^/login$}]
+      ['POST', %r{^/api/v1/login$}]
     ]
     jwt.revocation_requests = [
-      ['DELETE', %r{^/logout$}]
+      ['DELETE', %r{^/api/v1/logout$}]
     ]
     jwt.expiration_time = 1.day.to_i
   end
