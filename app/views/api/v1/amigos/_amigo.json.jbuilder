@@ -3,7 +3,7 @@
 json.extract! amigo,
               :id,
               :first_name,
-              :last_name,5
+              :last_name,
               :user_name,
               :email,
               :secondary_email,

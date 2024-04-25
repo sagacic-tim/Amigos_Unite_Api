@@ -88,6 +88,11 @@ class Amigo < ApplicationRecord
     lead_coordinator_for?(event) || assistant_coordinator_for?(event)
   end
 
+  def can_manage?(amigo)
+    return false unless amigo  # Return false if amigo is nil
+    self.id == amigo.id
+  end
+
   # Validations
   validates :first_name, presence: true, length: { maximum: 50 }
   validates :last_name, presence: true, length: { maximum: 50 }
