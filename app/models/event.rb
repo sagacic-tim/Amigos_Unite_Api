@@ -4,10 +4,10 @@ class Event < ApplicationRecord
   # Each event is associated a lead_coordsinator
   belongs_to :lead_coordinator, class_name: 'Amigo'
   # Each event is associated with one or more event locations
-  has_many :event_location_connectors
+  has_many :event_location_connectors, dependent: :destroy
   has_many :event_locations, through: :event_location_connectors
   # Each event is associated wioth a igos as participants
-  has_many :event_amigo_connectors
+  has_many :event_amigo_connectors, dependent: :destroy
   has_many :amigos, through: :event_amigo_connectors
 
   # Validations

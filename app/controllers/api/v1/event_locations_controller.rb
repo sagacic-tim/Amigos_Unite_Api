@@ -40,12 +40,21 @@ class Api::V1::EventLocationsController < ApplicationController
 
   # DELETE /api/v1/event_locations/:id
   def destroy
-    if @event_location.destroy
-      render :destroy
+    @event_location = EventLocation.find(params[:id])
+
+    if @event_location.event_location_connectors.any?
+      # Assuming you send back a list of events that need to be manually handled or confirmed
+      event_ids = @event_location.events.pluck(:id)
+      render json: { warning: 'This location is currently associated with Event(s) #' + event_ids.join(', ') + ', are you sure you want to delete this location?', event_ids: event_ids }, status: :forbidden
     else
-      render json: { error: 'Failed to delete event location.' }, status: :unprocessable_entity
+      if @event_location.destroy
+        render json: { message: 'Event location successfully deleted.' }, status: :ok
+      else
+        render json: { error: 'Failed to delete event location.' }, status: :unprocessable_entity
+      end
     end
   end
+
 
   private
 

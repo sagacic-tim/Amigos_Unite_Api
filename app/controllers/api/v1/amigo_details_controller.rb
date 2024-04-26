@@ -1,13 +1,17 @@
 class Api::V1::AmigoDetailsController < ApplicationController
-  before_action :set_amigo
+  before_action :set_amigo, only: [:show, :update, :destroy], if: -> { params[:amigo_id].present? }
   before_action :set_amigo_detail, only: [:show, :update, :destroy]
 
-  # GET /api/v1/amigos/:amigo_id/amigo_details
+  # GET /api/v1/amigos/:amigo_id/amigo_details or /api/v1/amigo_details
   def index
-    # Assuming the association is one-to-many
-    @amigo_details = @amigo.amigo_details
-    # The view app/views/api/v1/amigo_details/index.json.jbuilder will handle the response formatting
-  end
+    if params[:amigo_id]
+      set_amigo
+      @amigo_details = [@amigo.amigo_detail].compact  # Ensures no nil entries if no detail exists
+    else
+      @amigo_details = AmigoDetail.all
+    end
+    render :index
+  end  
   
   # GET /api/v1/amigos/:amigo_id/amigo_detail
   def show
@@ -51,17 +55,23 @@ class Api::V1::AmigoDetailsController < ApplicationController
 
   def set_amigo
     @amigo = Amigo.find(params[:amigo_id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Amigo not found' }, status: :not_found
   end
 
   def set_amigo_detail
     @amigo_detail = @amigo.amigo_detail
+    unless @amigo_detail
+      render json: { error: "Amigo detail not found" }, status: :not_found
+      return
+    end
   end
 
-# Checks if the attributes of the model have changed compared to the new parameters
-def unchanged_attributes?(model, new_attributes)
-  new_attributes = new_attributes.to_h # Convert Parameters to a hash
-  new_attributes.none? { |attr, value| model.send(attr) != value }
-end
+  # Checks if the attributes of the model have changed compared to the new parameters
+  def unchanged_attributes?(model, new_attributes)
+    new_attributes = new_attributes.to_h # Convert Parameters to a hash
+    new_attributes.none? { |attr, value| model.send(attr) != value }
+  end
 
 
   def amigo_detail_params

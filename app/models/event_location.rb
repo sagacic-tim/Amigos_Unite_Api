@@ -5,7 +5,7 @@ class EventLocation < ApplicationRecord
   # belongs_to :event
 
   # Associations
-  has_many :event_location_connectors
+  has_many :event_location_connectors, dependent: :destroy
   has_many :events, through: :event_location_connectors
 
   # Validations

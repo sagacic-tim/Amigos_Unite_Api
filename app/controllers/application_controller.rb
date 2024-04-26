@@ -57,6 +57,7 @@ class ApplicationController < ActionController::API
   end
 
   def authenticate_request!
+    Rails.logger.info "Headers: #{request.headers.to_h.select { |k, _| k.match?(/^HTTP_/) }}"
     header = request.headers['Authorization']
     if header.present?
       token = header.split(' ').last

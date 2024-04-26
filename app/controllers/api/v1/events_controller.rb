@@ -15,16 +15,15 @@ class Api::V1::EventsController < ApplicationController
     render json: { error: e.message }, status: :internal_server_error
   end
 
-  # GET /api/v1/events/:id
+  # GET /api/v1/events/:id 
   def show
-    @resource = Resource.find(params[:id])
-    if @resource
+    if @event
       render :show
     else
-      render :error_template, status: :not_found
+      render json: { error: 'Event not found' }, status: :not_found
     end
   end  
-
+  
   # POST /api/v1/events
   def create
     @event = Event.new(event_params)
@@ -44,23 +43,27 @@ class Api::V1::EventsController < ApplicationController
     if params[:new_lead_coordinator_id].present?
       @event.lead_coordinator_id = params[:new_lead_coordinator_id]
     end
-
-    if @event.save
+  
+    if @event.update(event_params)
       render :update
     else
-      render json: @event.errors, status: :unprocessable_entity
+      render json: { error: @event.errors.full_messages }, status: :unprocessable_entity
     end
   end
-
+  
   # DELETE /api/v1/events/:id
   def destroy
     @event = Event.find(params[:id])
     if @event.destroy
-      render :destroy, status: :ok
+      render json: { message: "Event successfully deleted." }, status: :ok
     else
-      render json: { error: 'Failed to delete the event.' }, status: :unprocessable_entity
+      render json: { error: @event.errors.full_messages.to_sentence }, status: :unprocessable_entity
     end
-  end  
+  rescue ActiveRecord::RecordNotFound => e
+    render json: { error: "Event not found." }, status: :not_found
+  rescue => e
+    render json: { error: e.message }, status: :internal_server_error
+  end   
 
   # GET /api/v1/events/mission
   def mission_index
@@ -77,7 +80,7 @@ class Api::V1::EventsController < ApplicationController
 
   def set_event
     @event = Event.find(params[:id])
-  end
+  end  
 
   def handle_standard_error(e)
     render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error

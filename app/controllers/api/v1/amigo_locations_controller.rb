@@ -2,12 +2,16 @@ class Api::V1::AmigoLocationsController < ApplicationController
   include ErrorHandling  # For handling common ActiveRecord errors
 
   before_action :authenticate_amigo!
-  before_action :set_amigo
+  before_action :set_amigo, only: [:index], if: -> { params[:amigo_id].present? }
   before_action :set_amigo_location, only: [:show, :update, :destroy]
 
   def index
-    @amigo_locations = @amigo.amigo_locations
-    # Use JBuilder template for rendering
+    if @amigo
+      @amigo_locations = @amigo.amigo_locations
+    else
+      @amigo_locations = AmigoLocation.all
+    end
+    render :index
   end
 
   def show
@@ -50,6 +54,8 @@ class Api::V1::AmigoLocationsController < ApplicationController
 
   def set_amigo
     @amigo = Amigo.find(params[:amigo_id])
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: 'Amigo not found' }, status: :not_found
   end
 
   def set_amigo_location
