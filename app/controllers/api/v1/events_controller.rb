@@ -3,6 +3,7 @@ class Api::V1::EventsController < ApplicationController
   before_action :authenticate_current_user!, except: [:index, :show, :mission_index]
   before_action :debug_authentication
   before_action :set_event, only: [:show, :update, :destroy]
+  rescue_from ActiveRecord::RecordNotFound, with: :handle_standard_error
   rescue_from StandardError, with: :handle_standard_error
 
   # GET /api/v1/events
@@ -17,12 +18,8 @@ class Api::V1::EventsController < ApplicationController
 
   # GET /api/v1/events/:id 
   def show
-    if @event
-      render :show
-    else
-      render json: { error: 'Event not found' }, status: :not_found
-    end
-  end  
+    render :show  # Assuming @event is set by set_event and exists
+  end 
   
   # POST /api/v1/events
   def create
@@ -80,10 +77,14 @@ class Api::V1::EventsController < ApplicationController
 
   def set_event
     @event = Event.find(params[:id])
-  end  
+  end 
 
   def handle_standard_error(e)
-    render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error
+    if action_name == 'show' && e.is_a?(ActiveRecord::RecordNotFound)
+      render json: { error: "Event with ID #{params[:id]} doesn't exist." }, status: :not_found
+    else
+      render json: { error: e.message }, status: :internal_server_error
+    end
   end
 
   def event_params
