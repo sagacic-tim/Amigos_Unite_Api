@@ -31,25 +31,34 @@ class Api::V1::EventLocationConnectorsController < ApplicationController
 
   # POST /api/v1/events/:event_id/event_location_connectors
   def create
+    # Ensure the event exists
+    @event = Event.find_by(id: params[:event_id])
+    unless @event
+      return render json: { error: 'Event not found' }, status: :not_found
+    end
+
+    # Ensure the event location exists
+    @event_location = EventLocation.find_by(id: event_location_connector_params[:event_location_id])
+    unless @event_location
+      return render json: { error: 'Event location not found' }, status: :not_found
+    end
+
+    # Initialize or find the existing connector
     @event_location_connector = EventLocationConnector.find_or_initialize_by(
-      event_id: params[:event_id],
-      event_location_id: params[:event_location_id]
+      event_id: @event.id,
+      event_location_id: @event_location.id
     )
 
+    # Check if it's a new record and attempt to save it
     if @event_location_connector.new_record?
       if @event_location_connector.save
-        @message = 'Location added to event successfully.'
-        render :create, status: :created
+        render json: @event_location_connector, status: :created
       else
-        @errors = @event_location_connector.errors.full_messages
-        render :create, status: :unprocessable_entity
+        render json: { errors: @event_location_connector.errors.full_messages }, status: :unprocessable_entity
       end
     else
-      @message = 'Location already connected to this event'
-      render :create, status: :ok
+      render json: { message: 'Location already connected to this event' }, status: :ok
     end
-  rescue ActiveRecord::RecordNotFound => e
-    render json: { error: e.message }, status: :not_found
   end
 
   # PATCH/PUT /api/v1/events/:event_id/event_location_connectors/:id
