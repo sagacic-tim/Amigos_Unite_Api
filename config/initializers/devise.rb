@@ -178,16 +178,14 @@ Devise.setup do |config|
   config.responder.redirect_status = :see_other
 
   config.authentication_keys = [:login_attribute]
+  config.case_insensitive_keys = [:login_attribute]
+  config.strip_whitespace_keys = [:login_attribute]
 
-  Devise.setup do |config|
-    config.warden do |manager|
-      manager.failure_app = CustomFailureApp
-    end
-  end
-  
+  # config/initializers/devise.rb
 
   config.jwt do |jwt|
-    jwt.secret = Rails.application.credentials.devise_jwt_secret_key
+    jwt.secret = Rails.application.credentials.dig(:devise_jwt_secret_key)
+    Rails.logger.info "devise.rb - Devise JWT_SECRET_KEY: #{Rails.application.credentials.dig(:devise_jwt_secret_key)}" # Debugging line
     jwt.dispatch_requests = [
       ['POST', %r{^/api/v1/login$}]
     ]
@@ -195,5 +193,10 @@ Devise.setup do |config|
       ['DELETE', %r{^/api/v1/logout$}]
     ]
     jwt.expiration_time = 1.day.to_i
+    jwt.request_formats = { api: [:json] }
+  end
+
+  config.warden do |manager|
+    manager.failure_app = CustomFailureApp
   end
 end

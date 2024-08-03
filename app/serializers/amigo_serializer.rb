@@ -1,4 +1,4 @@
 class AmigoSerializer
   include JSONAPI::Serializer
-  attributes :id, :user_name, :email, :phone_1, :first_name, :last_name
+  attributes :id, :first_name, :last_name, :email, :user_name, :created_at, :updated_at
 end

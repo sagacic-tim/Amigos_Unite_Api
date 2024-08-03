@@ -41,3 +41,4 @@
 /Release/
 /tmp_install/
 /portlock/
+node_modules

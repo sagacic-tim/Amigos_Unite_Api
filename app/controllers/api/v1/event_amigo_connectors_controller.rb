@@ -64,11 +64,13 @@ class Api::V1::EventAmigoConnectorsController < ApplicationController
   end
 
   def authorized_to_assign?
+    Rails.logger.debug "Lead: #{lead}, Assistant: #{assistant}, Current Amigo: #{is_current_amigo}"
     current_amigo.lead_coordinator_for?(@event) || current_amigo.assistant_coordinator_for?(@event) ||
     current_amigo.id == params[:event_amigo_connector][:amigo_id].to_i
   end
 
   def authorized_to_remove?
+    Rails.logger.debug "Is Current Amigo: #{is_current_amigo}, Lead: #{lead}, Assistant: #{assistant}"
     current_amigo.id == @event_amigo_connector.amigo_id ||
     current_amigo.lead_coordinator_for?(@event) ||
     current_amigo.assistant_coordinator_for?(@event)

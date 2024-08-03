@@ -51,11 +51,12 @@ class Amigo < ApplicationRecord
   def self.find_for_database_authentication(warden_conditions)
     conditions = warden_conditions.dup
     login = conditions.delete(:login_attribute)&.downcase
-    Rails.logger.debug "Attempting login with: #{login}"  
-    return nil unless login  # Return nil if no login credential was provided
-  
-    # login_identifier.downcase!  # Modify the login string to be all lowercase
-    find_by(["lower(user_name) = :value OR lower(email) = :value OR phone_1 = :value", { value: login }])
+      Rails.logger.debug "Attempting login with: #{login}"  
+    return nil unless login
+      Rails.logger.debug "Conditions: #{conditions.inspect}"
+    where(conditions.to_h).where(
+      ["lower(user_name) = :value OR lower(email) = :value OR phone_1 = :value", { value: login }]
+    ).first
   end
 
   # Method to retrieve unique locations coordinated by an Amigo
@@ -77,11 +78,11 @@ class Amigo < ApplicationRecord
   end
 
   def lead_coordinator_for?(event)
-    event.lead_coordinator_id == self.id
+    event_amigo_connectors.find_by(event: event, role: 'lead_coordinator').present?
   end
 
   def assistant_coordinator_for?(event)
-    event.event_amigo_connectors.exists?(amigo_id: self.id, role: :assistant_coordinator)
+    event_amigo_connectors.find_by(event: event, role: 'assistant_coordinator').present?
   end
 
   def can_remove_participant?(event)

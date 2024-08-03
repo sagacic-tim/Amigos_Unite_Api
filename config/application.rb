@@ -25,5 +25,22 @@ module AmigosUniteApi
     # Include the `lib` folder in the autoload and eager_load paths
     config.autoload_paths += %W(#{config.root}/app/lib)
     config.eager_load_paths += %W(#{config.root}/app/lib)
+    config.autoload_paths += %W(#{config.root}/app/models)
+
+    # CORS configuration
+    config.middleware.insert_before 0, Rack::Cors do
+      allow do
+        origins 'http://localhost:5173' # Replace with your frontend URL
+        resource '*',
+          headers: :any,
+          methods: [:get, :post, :put, :patch, :delete, :options, :head],
+          credentials: true
+      end
+    end
+    
+    # Include the necessary middleware for handling cookies
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore
+    config.autoload_paths += %W(#{config.root}/lib)
   end
 end
