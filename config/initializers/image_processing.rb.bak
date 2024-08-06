@@ -1,0 +1,7 @@
+# config/initializers/image_processing.rb
+
+require "image_processing/vips" # for libvips
+
+ImageProcessing.configure do |config|
+  config.processor = :vips
+end

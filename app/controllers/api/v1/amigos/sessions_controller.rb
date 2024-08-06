@@ -42,12 +42,11 @@ module Api
         def destroy
           token = cookies.signed[:jwt] || request.headers['Authorization']&.split(' ')&.last
           Rails.logger.info "SessionsController - Token received for logout: #{token}" # Debugging line
-
+        
           decoded_token = JsonWebToken.decode(token)
           if decoded_token[:error].present?
             render json: { status: 401, message: 'Invalid token' }, status: :unauthorized
           else
-            JWTDenylist.add(token)
             cookies.delete(:jwt)
             render json: { status: 200, message: 'Logged out of Amigos Unite successfully.' }, status: :ok
           end

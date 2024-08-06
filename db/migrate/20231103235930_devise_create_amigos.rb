@@ -1,4 +1,4 @@
-class DeviseCreateAmigos < ActiveRecord::Migration[7.0]
+class DeviseCreateAmigos < ActiveRecord::Migration[7.1]
   def change
     create_table :amigos do |t|
       ## Database authenticatable

@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::API
   include RackSessionsFix
   include Devise::Controllers::Helpers
+  include ActionController::Cookies  # Include cookies handling
   helper_method :current_amigo
   respond_to :json
   before_action :authenticate_request!, only: [:show, :update, :destroy]
@@ -9,7 +10,13 @@ class ApplicationController < ActionController::API
 
   attr_reader :current_amigo
 
+  config.middleware.use Warden::JWTAuth::Middleware, ->(request) { 
+    Rails.logger.debug "Warden::JWTAuth::Middleware called"
+    true 
+  }
+
   protected
+
 
   def configure_permitted_parameters
     devise_parameter_sanitizer.permit(:sign_in, keys: [
@@ -61,11 +68,10 @@ class ApplicationController < ActionController::API
   end
 
   def authenticate_request!
-    Rails.logger.info "Application Controller - Headers: #{request.headers.to_h.select { |k, _| k.match?(/^HTTP_/) }}"
-    header = request.headers['Authorization']
-    if header.present?
-      token = header.split(' ').last
-      Rails.logger.info "Application Controller - Token for authentication: #{token}" # Debugging line
+    token = extract_token_from_request
+    Rails.logger.info "Application Controller - Token for authentication: #{token}" # Debugging line
+
+    if token
       begin
         @decoded = JsonWebToken.decode(token)
         Rails.logger.debug "Application Controller - Decoded JWT: #{@decoded}"
@@ -83,8 +89,19 @@ class ApplicationController < ActionController::API
         render json: { errors: 'Token has expired or is invalid' }, status: :unauthorized
       end
     else
-      Rails.logger.error "Application Controller - Authorization header missing" # Debugging line
+      Rails.logger.error "Application Controller - Authorization header and cookie missing" # Debugging line
       render json: { errors: 'Authorization token not found' }, status: :unauthorized
+    end
+  end
+
+  def extract_token_from_request
+    header = request.headers['Authorization']
+    if header.present?
+      return header.split(' ').last
+    elsif cookies.signed[:jwt].present?
+      return cookies.signed[:jwt]
+    else
+      nil
     end
   end
 end

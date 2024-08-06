@@ -1,4 +1,4 @@
-class CreateEventLocations < ActiveRecord::Migration[7.0]
+class CreateEventLocations < ActiveRecord::Migration[7.1]
   def change
     create_table :event_locations do |t|
       t.string :business_name, limit: 64

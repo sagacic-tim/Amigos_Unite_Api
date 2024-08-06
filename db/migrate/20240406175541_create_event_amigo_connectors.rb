@@ -1,4 +1,4 @@
-class CreateEventAmigoConnectors < ActiveRecord::Migration[7.0]
+class CreateEventAmigoConnectors < ActiveRecord::Migration[7.1]
   def change
     create_table :event_amigo_connectors do |t|
       t.references :amigo, null: false, foreign_key: true

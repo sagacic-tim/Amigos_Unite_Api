@@ -35,7 +35,16 @@ Rails.application.routes.draw do
     end
   end
 
-  unless defined?(ActiveStorage::Engine)
+  # Active Storage routes
+  if defined?(ActiveStorage::Engine)
+    ActiveStorage::Engine.routes.draw do
+      get '/rails/active_storage/blobs/:signed_id/*filename', to: 'active_storage/blobs#show', as: :rails_blob
+      get '/rails/active_storage/representations/:signed_blob_id/:variation_key/*filename', to: 'active_storage/representations#show', as: :rails_representation
+      get '/rails/active_storage/disk/:encoded_key/*filename', to: 'active_storage/disk#show', as: :rails_disk
+      put '/rails/active_storage/disk/:encoded_token', to: 'active_storage/disk#update', as: :update_rails_disk
+      post '/rails/active_storage/direct_uploads', to: 'active_storage/direct_uploads#create', as: :rails_direct_uploads
+    end
+  else
     get '/rails/active_storage/blobs/redirect/:signed_id/*filename' => 'active_storage/blobs#redirect', as: :rails_service_blob
     get '/rails/active_storage/blobs/proxy/:signed_id/*filename' => 'active_storage/blobs#proxy', as: :rails_service_blob_proxy
     get '/rails/active_storage/blobs/:signed_id/*filename' => 'active_storage/blobs#show', as: :rails_blob_representation

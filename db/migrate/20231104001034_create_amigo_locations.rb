@@ -1,4 +1,4 @@
-class CreateAmigoLocations < ActiveRecord::Migration[7.0]
+class CreateAmigoLocations < ActiveRecord::Migration[7.1]
   def change
     create_table :amigo_locations do |t|
       t.references :amigo, null: false, foreign_key: true

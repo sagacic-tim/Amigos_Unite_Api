@@ -1,4 +1,4 @@
-class CreateLoginActivities < ActiveRecord::Migration[7.0]
+class CreateLoginActivities < ActiveRecord::Migration[7.1]
   def change
     create_table :login_activities do |t|
       t.string :scope

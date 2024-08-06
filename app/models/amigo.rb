@@ -1,7 +1,9 @@
 class Amigo < ApplicationRecord
   include Devise::JWT::RevocationStrategies::JTIMatcher
+  # has_one_attached :avatar
   # Virtual attribute for authenticating by either user_name or email
   attr_accessor :login_attribute
+  after_commit :process_avatar, if: -> { avatar.attached? }
 
   has_many :amigo_locations, dependent: :destroy
 
@@ -13,8 +15,6 @@ class Amigo < ApplicationRecord
   has_many :events, through: :event_amigo_connectors
 
   has_one :amigo_detail, dependent: :destroy
-  has_one_attached :avatar
-  # As a coordinator, an Amigo can coordinate many events
 
   validates :phone_1, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { phone_1.present? }
   validates :phone_2, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { phone_2.present? }
@@ -100,6 +100,7 @@ class Amigo < ApplicationRecord
   validates :user_name, presence: true, length: { maximum: 50 }, uniqueness: { case_sensitive: false }
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }, uniqueness: { case_sensitive: false }
   validates :secondary_email, allow_blank: true, format: { with: URI::MailTo::EMAIL_REGEXP }, uniqueness: { case_sensitive: false }
+  validates :avatar, content_type: ['image/png', 'image/jpg', 'image/jpeg', 'image/svg+xml']
   
 
   private
@@ -107,5 +108,15 @@ class Amigo < ApplicationRecord
   def normalize_phone_numbers
     self.phone_1 = Phonelib.parse(phone_1).e164 if phone_1.present?
     self.phone_2 = Phonelib.parse(phone_2).e164 if phone_2.present?
+  end
+
+  def process_avatar
+    processed_avatar = ImageProcessing::Vips
+                       .source(avatar.download)
+                       .resize_to_limit(300, 300)
+                       .convert("png")
+                       .call
+
+    avatar.attach(io: File.open(processed_avatar.path), filename: "avatar.png", content_type: "image/png")
   end
 end

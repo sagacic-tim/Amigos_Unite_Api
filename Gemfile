@@ -6,47 +6,48 @@ ruby "3.2.2"
 # Rails is a web-application framework that includes everything
 # needed to create database-backed web applications according
 # to the Model-View-Controller (MVC) pattern.
-gem "rails", "~> 7.0.7"
+gem 'rails', '~> 7.1', '>= 7.1.3.4'
+
+gem 'activestorage', '~> 7.1', '>= 7.1.3.4'
 
 # Database
 # Pg is the Ruby interface to the PostgreSQL RDBMS. It works
 # with PostgreSQL 9.3 and later.
-gem 'pg', '~> 1.5', '>= 1.5.4'
+gem 'pg', '~> 1.5', '>= 1.5.7'
 
 # Puma
-gem 'puma', '~> 6.3'
+gem 'puma', '~> 6.4', '>= 6.4.2'
 
 # Systrem gems
   # Shim to load environment variables from .env into ENV in
   # development.
-gem 'dotenv-rails', groups: [:development, :test]
+gem 'dotenv-rails', '~> 3.1', '>= 3.1.2', groups: [:development, :test]
   # Rack::Cors provides support for Cross-Origin Resource
   # Sharing (CORS)for Rack compatible web applications.
   # The CORS spec allows web applications to make cross domain
   # AJAX calls without using workarounds such as JSONP.
-gem 'rack-cors', '~> 2.0', '>= 2.0.1'
+gem 'rack-cors', '~> 2.0', '>= 2.0.2'
   # A set of responders modules to dry up your Rails 4.2+ app.
-gem 'responders', '~> 3.0', '>= 3.0.1'
+gem 'responders', '~> 3.1', '>= 3.1.1'
   # Modern encryption for Ruby and Rails — Works with database fields,
   # files, and strings — Maximizes compatibility with existing code
   # and libraries — Makes migrating existing data and key rotation easy —
   # Has zero dependencies and many integrations
-gem 'lockbox', '~> 1.3'
+gem 'lockbox', '~> 1.3', '>= 1.3.3'
 
   # To summarize, we compute a keyed hash of the sensitive data and
   # store it in a column. To query, we apply the keyed hash function
   # to the value we’re searching and then perform a database search.
   # This results in performant queries for exact matches. Efficient
   # LIKE queries are not possible, but you can index expressions.
-gem 'blind_index', '~> 2.4'
+gem 'blind_index', '~> 2.5'
 
   # Reduces boot times through caching; required in config/boot.rb
-gem "bootsnap", require: false
+gem 'bootsnap', '~> 1.18', '>= 1.18.4', require: false
 
 # Faker, a port of Data::Faker from Perl, is used to easily
 # generate fake data: names, addresses, phone numbers, etc.
-
-gem 'faker', '~> 3.2', '>= 3.2.2'
+gem 'faker', '~> 3.4', '>= 3.4.2'
 
 # Devise and related authentication gems
   # Devise is a flexible authentication solution for Rails
@@ -57,29 +58,29 @@ gem 'faker', '~> 3.2', '>= 3.2.2'
   #    same time;
   # 4. Is based on a modularity concept: use only what you
   #    really need.
-gem 'devise', '~> 4.9', '>= 4.9.3'
+gem 'devise', '~> 4.9', '>= 4.9.4'
   # devise-jwt is a Devise extension which uses JWT tokens
   # for user authentication. It follows secure by default principle.
-gem 'devise-jwt', '~> 0.11.0'
+gem 'devise-jwt', '~> 0.12.1'
   # using jwt with devise-jwt in a Rails API-only app provides
   # a secure, scalable, and stateless authentication mechanism
   # that leverages Devise's ease of use while also being flexible
   # enough to accommodate various frontend technologies and
   # architectures.
-gem 'jwt', '~> 2.7', '>= 2.7.1'
+gem 'jwt', '~> 2.8', '>= 2.8.2'
   # OmniAuth is a library that standardizes multi-provider
   # authentication for web applications.
-gem 'omniauth', '~> 2.1', '>= 2.1.1'
+gem 'omniauth', '~> 2.1', '>= 2.1.2'
   # This is the official OmniAuth strategy for authenticating
   # with these services
-gem 'omniauth-google-oauth2', '~> 1.1', '>= 1.1.1'
-gem 'omniauth-facebook', '~> 9.0'
-gem 'omniauth-github'
+gem 'omniauth-google-oauth2', '~> 1.1', '>= 1.1.2'
+gem 'omniauth-facebook', '~> 10.0'
+gem 'omniauth-github', '~> 2.0', '>= 2.0.1'
 gem 'omniauth-linkedin-oauth2', '~> 1.0', '>= 1.0.1'
   # This gem provides a mitigation against CVE-2015-9284 by
   # implementing a CSRF token verifier that directly uses
   # ActionController::RequestForgeryProtection code from Rails.
-gem 'omniauth-rails_csrf_protection'
+gem 'omniauth-rails_csrf_protection', '~> 1.0', '>= 1.0.2'
   # A LoginActivity record is created every time a user tries
   # to login. You can then use this information to detect
   # suspicious behavior. 
@@ -88,7 +89,7 @@ gem 'authtrail', '~> 0.5.0'
 # Serialization and JSON DSL
   # Jbuilder gives you a simple DSL for declaring JSON
   # structures that beats manipulating giant hash structures.
-gem 'jbuilder', '~> 2.11'
+gem 'jbuilder', '~> 2.12'
   # A fast JSON:API serializer for Ruby Objects.
 gem 'jsonapi-serializer', '~> 2.2'
 
@@ -100,11 +101,11 @@ gem 'jsonapi-serializer', '~> 2.2'
 # distance queries for ActiveRecord and Mongoid, result
 # caching, and more. Designed for Rails but works with
 # Sinatra and other Rack frameworks too.
-gem 'geocoder', '~> 1.3', '>= 1.3.7'
+gem 'geocoder', '~> 1.8', '>= 1.8.3'
 
 # Makes http fun again! Ain't no party like a httparty,
 # because a httparty don't stop.
-gem 'httparty', '~> 0.21.0'
+gem 'httparty', '~> 0.22.0'
 
 # The activerecord-postgis-adapter provides access to features
 # of the PostGIS geospatial database from ActiveRecord. It
@@ -112,40 +113,37 @@ gem 'httparty', '~> 0.21.0'
 # for the spatial data types and features added by the PostGIS
 # extension. It uses the RGeo library to represent spatial
 # data in Ruby.
-gem 'activerecord-postgis-adapter'
+gem 'activerecord-postgis-adapter', '~> 9.0', '>= 9.0.2'
 
 # Email and Phone Validation
-gem 'phonelib', '~> 0.7.0'
+gem 'phonelib', '~> 0.9.1'
 
 # Additional Gems for Country and State Data
-gem 'countries', '~> 5.6', require: 'countries/global'
-gem 'bigdecimal', require: true
+gem 'countries', '~> 6.0', '>= 6.0.1', require: 'countries/global'
+gem 'bigdecimal', '~> 3.1', '>= 3.1.8', require: true
 
 # Sanitize is an allowlist-based HTML and CSS sanitizer. It
 # removes all HTML and/or CSS from a string except the
 # elements, attributes, and properties you choose to allow.
-gem 'sanitize', '~> 6.1'
+gem 'sanitize', '~> 6.1', '>= 6.1.2'
 
-# This gems doing it for you. Just use attached: true or
-# content_type: 'image/png' validation.
-gem 'active_storage_validations', '~> 1.1', '>= 1.1.3'
+# Validations for Active Storage
+gem 'active_storage_validations', '~> 1.1', '>= 1.1.4'
 
-# Clamby allows users to scan files uploaded with Paperclip
-# or Carrierwave. If a file has a virus, then you can delete
-# this file and discard it without causing harm to other users.
-gem 'clamby', '~> 1.6', '>= 1.6.10'
+# Virus scanning for file uploads
+gem 'clamby', '~> 1.6', '>= 1.6.11'
 
-# A ruby wrapper for ImageMagick command line.
-gem 'mini_magick', '~> 4.12'
+# Image processing with support for libvips
+gem 'image_processing', '~> 1.13'
 
 # ruby-vips is a binding for the libvips image processing
 # library. It is fast and it can process large images withou
 # loading the whole image in memory.
-# gem 'ruby-vips', '~> 2.2', '>= 2.2.1'
+gem 'ruby-vips', '~> 2.2', '>= 2.2.2'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri mingw x64_mingw ]
+  gem 'debug', '~> 1.9', '>= 1.9.2', platforms: %i[ mri mingw x64_mingw ]
 end
 
 group :development do
@@ -156,6 +154,6 @@ group :development do
   # This means you do not need to set up email delivery in your
   # development environment, and you no longer need to worry about
   # accidentally sending a test email to someone else's address.
-  gem 'letter_opener', '~> 1.8', '>= 1.8.1'
+  gem 'letter_opener', '~> 1.10'
 end
 

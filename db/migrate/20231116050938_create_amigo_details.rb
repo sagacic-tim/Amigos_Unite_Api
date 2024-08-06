@@ -1,4 +1,4 @@
-class CreateAmigoDetails < ActiveRecord::Migration[7.0]
+class CreateAmigoDetails < ActiveRecord::Migration[7.1]
   def change
     create_table :amigo_details do |t|
       t.date    :date_of_birth
