@@ -3,6 +3,8 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby "3.2.2"
 
+gem 'bundler', '~> 2.5', '>= 2.5.17'
+
 # Rails is a web-application framework that includes everything
 # needed to create database-backed web applications according
 # to the Model-View-Controller (MVC) pattern.

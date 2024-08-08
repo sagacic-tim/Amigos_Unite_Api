@@ -42,22 +42,66 @@ module Api
         def destroy
           token = cookies.signed[:jwt] || request.headers['Authorization']&.split(' ')&.last
           Rails.logger.info "SessionsController - Token received for logout: #{token}" # Debugging line
-        
-          decoded_token = JsonWebToken.decode(token)
-          if decoded_token[:error].present?
-            render json: { status: 401, message: 'Invalid token' }, status: :unauthorized
+
+          if token.present?
+            begin
+              decoded_token = JWT.decode(token, Rails.application.credentials.dig(:devise_jwt_secret_key)).first
+              Warden::JWTAuth::RevocationStrategies::Denylist.revoke_jwt(token, decoded_token, :amigo)
+              cookies.delete(:jwt)
+              render json: { status: 200, message: 'Logged out of Amigos Unite successfully.' }, status: :ok
+            rescue JWT::DecodeError => e
+              Rails.logger.error "SessionsController - JWT Decode Error: #{e.message}" # Debugging line
+              render json: { status: 401, message: 'Invalid token' }, status: :unauthorized
+            rescue => e
+              Rails.logger.error "SessionsController - Error during token revocation: #{e.message}" # Debugging line
+              render json: { status: 500, message: 'Internal Server Error during logout' }, status: :internal_server_error
+            end
           else
-            cookies.delete(:jwt)
-            render json: { status: 200, message: 'Logged out of Amigos Unite successfully.' }, status: :ok
+            render json: { status: 401, message: 'Authorization header or cookie is missing' }, status: :unauthorized
           end
-        rescue JWT::DecodeError => e
-          render json: { status: 401, message: e.message }, status: :unauthorized
         end
 
-        protected
+        private
+
+        def respond_with(resource, _opts = {})
+          render json: {
+            status: { code: 200, message: 'Logged in successfully.' },
+            data: resource
+          }, status: :ok
+        end
 
         def respond_to_on_destroy
-          # This method can be used if you want to override the default response when destroying a session
+          token = request.headers['Authorization']&.split(' ')&.last || cookies.signed[:jwt]
+          Rails.logger.info "SessionsController - Token received for respond_to_on_destroy: #{token}" # Debugging line
+
+          if token.present?
+            begin
+              jwt_payload = JWT.decode(token, Rails.application.credentials.dig(:devise_jwt_secret_key)).first
+              current_amigo = Amigo.find(jwt_payload['sub'])
+
+              if current_amigo
+                render json: {
+                  status: 200,
+                  message: 'Logged out successfully.'
+                }, status: :ok
+              else
+                render json: {
+                  status: 401,
+                  message: 'User has no active session.'
+                }, status: :unauthorized
+              end
+            rescue JWT::DecodeError => e
+              render json: {
+                status: 401,
+                message: e.message
+              }, status: :unauthorized
+            end
+          else
+            render json: {
+              status: 401,
+              message: 'Authorization header or cookie is missing'
+            }, status: :unauthorized
+          end
         end
       end
     end

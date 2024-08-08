@@ -1,18 +1,14 @@
 # app/models/jwt_denylist.rb
-class JWTDenylist < ApplicationRecord
+class JwtDenylist < ApplicationRecord
+  self.table_name = 'jwt_denylist'
+
   validates :jti, presence: true, uniqueness: true
 
-  def self.add(token)
-    decoded_token = JsonWebToken.decode(token)
-    if decoded_token[:error].blank?
-      jti = decoded_token[:jti]
-      create!(jti: jti) if jti.present?
-    end
+  def self.jwt_revoked?(payload, user)
+    exists?(jti: payload['jti'])
   end
 
-  def self.include?(token)
-    decoded_token = JsonWebToken.decode(token)
-    jti = decoded_token[:jti]
-    exists?(jti: jti)
+  def self.revoke_jwt(payload, user)
+    create!(jti: payload['jti'], exp: Time.at(payload['exp']))
   end
 end

@@ -1,7 +1,20 @@
+# puts "amigo.rb - Loading Amigo Model Top of File..."
+# puts "amigo.rb - Active Storage Loaded if ActriveStorage Defined" if defined?(ActiveStorage::Engine)
+
 class Amigo < ApplicationRecord
   include Devise::JWT::RevocationStrategies::JTIMatcher
-  # has_one_attached :avatar
-  # Virtual attribute for authenticating by either user_name or email
+
+  if defined?(ActiveStorage::Engine)
+    puts "amigo.rb - Active Storage is defined in Amigo before has_one_attached"
+  end
+
+  has_one_attached :avatar
+
+  if defined?(ActiveStorage::Engine)
+    puts "amigo.rb - Active Storage is defined in Amigo after has_one_attached"
+  end
+
+#   # Virtual attribute for authenticating by either user_name or email
   attr_accessor :login_attribute
   after_commit :process_avatar, if: -> { avatar.attached? }
 
@@ -24,17 +37,17 @@ class Amigo < ApplicationRecord
 
   # Include all devise modules.
   devise :database_authenticatable,
-    :registerable,
-    :recoverable,
-    :rememberable,
-    :validatable,
-    # :confirmable,
-    # :lockable,
-    # :timeoutable,
-    # :trackable,
-    # :omniauthable,
-    :jwt_authenticatable,
-    jwt_revocation_strategy: self
+         :registerable,
+         :recoverable,
+         :rememberable,
+         :validatable,
+         # :confirmable,
+         # :lockable,
+         # :timeoutable,
+         # :trackable,
+         # :omniauthable,
+         :jwt_authenticatable,
+         jwt_revocation_strategy: self
 
   def event_roles
     event_amigo_connectors.includes(:event).map do |connector|
@@ -51,9 +64,9 @@ class Amigo < ApplicationRecord
   def self.find_for_database_authentication(warden_conditions)
     conditions = warden_conditions.dup
     login = conditions.delete(:login_attribute)&.downcase
-      Rails.logger.debug "Attempting login with: #{login}"  
+    Rails.logger.debug "Attempting login with: #{login}"  
     return nil unless login
-      Rails.logger.debug "Conditions: #{conditions.inspect}"
+    Rails.logger.debug "Conditions: #{conditions.inspect}"
     where(conditions.to_h).where(
       ["lower(user_name) = :value OR lower(email) = :value OR phone_1 = :value", { value: login }]
     ).first

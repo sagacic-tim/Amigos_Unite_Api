@@ -10,10 +10,10 @@ class ApplicationController < ActionController::API
 
   attr_reader :current_amigo
 
-  config.middleware.use Warden::JWTAuth::Middleware, ->(request) { 
-    Rails.logger.debug "Warden::JWTAuth::Middleware called"
-    true 
-  }
+  # config.middleware.use Warden::JWTAuth::Middleware, ->(request) { 
+  #   Rails.logger.debug "Warden::JWTAuth::Middleware called"
+  #   true 
+  # }
 
   protected
 
