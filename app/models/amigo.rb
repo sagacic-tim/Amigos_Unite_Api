@@ -79,6 +79,11 @@ class Amigo < ApplicationRecord
                  .distinct
   end
 
+  # Method to get the URL of the avatar
+  def avatar_url
+    Rails.application.routes.url_helpers.rails_blob_url(avatar, only_path: true) if avatar.attached?
+  end
+
   def attach_avatar_by_identifier(avatar_identifier)
     avatar_filename = "#{avatar_identifier}.svg"
     avatar_path = Rails.root.join('lib', 'seeds', 'avatars', avatar_filename)

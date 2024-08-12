@@ -10,6 +10,10 @@ gem 'bundler', '~> 2.5', '>= 2.5.17'
 # to the Model-View-Controller (MVC) pattern.
 gem 'rails', '~> 7.1', '>= 7.1.3.4'
 
+# ActiveModel::Serializers allows you to generate your JSON in an
+# object-oriented and convention-driven manner.
+gem 'active_model_serializers', '~> 0.10.14'
+
 gem 'activestorage', '~> 7.1', '>= 7.1.3.4'
 
 # Database
@@ -158,4 +162,3 @@ group :development do
   # accidentally sending a test email to someone else's address.
   gem 'letter_opener', '~> 1.10'
 end
-

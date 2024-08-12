@@ -20,7 +20,6 @@ Rails.application.routes.draw do
 
       resources :events, except: [:new, :edit] do
         resources :event_amigo_connectors, except: [:new, :edit]
-        resources :event_location_connectors, only: [:create]
         resources :event_location_connectors, only: [:index, :show, :create, :update, :destroy] do
           member do
             post 'add_location'
