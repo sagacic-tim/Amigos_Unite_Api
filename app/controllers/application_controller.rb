@@ -4,19 +4,13 @@ class ApplicationController < ActionController::API
   include ActionController::Cookies  # Include cookies handling
   helper_method :current_amigo
   respond_to :json
-  before_action :authenticate_request!, only: [:show, :update, :destroy]
+  before_action :authenticate_amigo!, only: [:show, :update, :destroy]
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :log_request
 
   attr_reader :current_amigo
 
-  # config.middleware.use Warden::JWTAuth::Middleware, ->(request) { 
-  #   Rails.logger.debug "Warden::JWTAuth::Middleware called"
-  #   true 
-  # }
-
   protected
-
 
   def configure_permitted_parameters
     devise_parameter_sanitizer.permit(:sign_in, keys: [
@@ -52,56 +46,55 @@ class ApplicationController < ActionController::API
     ])
   end
 
-  def authenticate_current_user!
-    authenticate_amigo!  # This is a Devise helper method, tailored for the Amigo model
-    Rails.logger.info "Application Controller - Amigo authenticated."
-  end
-
-  def current_amigo
-    @current_amigo ||= warden.authenticate(scope: :amigo)
-  end
-
   private
 
   def log_request
-    Rails.logger.info "Application Controller - Incoming request to #{request.path} with headers: #{request.headers.to_h.except('rack.input', 'action_dispatch.secret_key_base', 'action_dispatch.signed_cookie_salt', 'action_dispatch.encrypted_cookie_salt', 'action_dispatch.encrypted_signed_cookie_salt', 'action_dispatch.authenticated_encrypted_cookie_salt', 'action_dispatch.http_auth_salt', 'action_dispatch.secret_token', 'action_dispatch.cookies_serializer', 'action_dispatch.encrypted_cookie_cipher', 'action_dispatch.signed_cookie_cipher', 'action_dispatch.content_security_policy', 'action_dispatch.content_security_policy_nonce_directives', 'action_dispatch.content_security_policy_report_only')}"
+    Rails.logger.info "Application Controller - Incoming request to #{request.path} with headers: #{filtered_headers}"
   end
 
-  def authenticate_request!
-    token = extract_token_from_request
-    Rails.logger.info "Application Controller - Token for authentication: #{token}" # Debugging line
+  def filtered_headers
+    request.headers.to_h.except(
+      'rack.input', 
+      'action_dispatch.secret_key_base', 
+      'action_dispatch.signed_cookie_salt', 
+      'action_dispatch.encrypted_cookie_salt', 
+      'action_dispatch.encrypted_signed_cookie_salt', 
+      'action_dispatch.authenticated_encrypted_cookie_salt', 
+      'action_dispatch.http_auth_salt', 
+      'action_dispatch.secret_token', 
+      'action_dispatch.cookies_serializer', 
+      'action_dispatch.encrypted_cookie_cipher', 
+      'action_dispatch.signed_cookie_cipher', 
+      'action_dispatch.content_security_policy', 
+      'action_dispatch.content_security_policy_nonce_directives', 
+      'action_dispatch.content_security_policy_report_only'
+    )
+  end
 
-    if token
+  # Authenticate Amigo using only cookies
+  def authenticate_amigo!
+    token = cookies.signed[:jwt] # Only check cookies for the JWT token
+
+    if token.present?
       begin
-        @decoded = JsonWebToken.decode(token)
-        Rails.logger.debug "Application Controller - Decoded JWT: #{@decoded}"
-
-        @current_amigo = Amigo.find_by(id: @decoded['sub'])
+        decoded_token = JsonWebToken.decode(token)
+        Rails.logger.info "Authenticate Amigo - Decoded Token: #{decoded_token}"
+        @current_amigo = Amigo.find(decoded_token[:sub])
+        
         unless @current_amigo
-          Rails.logger.debug "Application Controller - No Amigo found with ID: #{@decoded['sub']}"
-          render json: { errors: 'Invalid token or Amigo not found' }, status: :unauthorized
+          Rails.logger.error "Authenticate Amigo - No Amigo found with ID: #{decoded_token[:sub]}"
+          render json: { error: 'Unauthorized' }, status: :unauthorized
         end
       rescue JWT::DecodeError => e
-        Rails.logger.error "Application Controller - JWT Decode Error: #{e.message}" # Debugging line
-        render json: { errors: 'Invalid token' }, status: :unauthorized
+        Rails.logger.error "JWT Decode Error: #{e.message}" # Debugging line
+        render json: { error: 'Authentication failed.' }, status: :unauthorized
       rescue JWT::ExpiredSignature, JWT::VerificationError => e
-        Rails.logger.error "Application Controller - JWT Verification Error or Expired Signature: #{e.message}" # Debugging line
-        render json: { errors: 'Token has expired or is invalid' }, status: :unauthorized
+        Rails.logger.error "JWT Verification Error or Expired Signature: #{e.message}" # Debugging line
+        render json: { error: 'Token has expired or is invalid' }, status: :unauthorized
       end
     else
-      Rails.logger.error "Application Controller - Authorization header and cookie missing" # Debugging line
-      render json: { errors: 'Authorization token not found' }, status: :unauthorized
-    end
-  end
-
-  def extract_token_from_request
-    header = request.headers['Authorization']
-    if header.present?
-      return header.split(' ').last
-    elsif cookies.signed[:jwt].present?
-      return cookies.signed[:jwt]
-    else
-      nil
+      Rails.logger.error "Authenticate Amigo - No token provided in cookies" # Debugging line
+      render json: { error: 'Authentication failed.' }, status: :unauthorized
     end
   end
 end

@@ -11,12 +11,13 @@ Rails.application.routes.draw do
       end
 
       resources :amigos, except: [:new, :edit] do
+        # Use singular resource for amigo_detail as there is one detail per amigo
         resource :amigo_detail, only: [:show, :create, :update, :destroy]
         resources :amigo_locations, only: [:index, :show, :create, :update, :destroy]
       end
 
       resources :amigo_locations, only: [:index]
-      resources :amigo_details, only: [:index]
+      resources :amigo_details, only: [:index] # This can be used for listing all amigo details, if needed.
 
       resources :events, except: [:new, :edit] do
         resources :event_amigo_connectors, except: [:new, :edit]

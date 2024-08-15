@@ -1,4 +1,6 @@
 class Api::V1::AmigoDetailsController < ApplicationController
+
+  before_action :authenticate_amigo!
   before_action :set_amigo, only: [:show, :create, :update, :destroy]
   before_action :set_amigo_detail, only: [:show, :update, :destroy]
 

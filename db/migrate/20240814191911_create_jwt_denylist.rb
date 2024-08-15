@@ -1,4 +1,3 @@
-# db/migrate/20240808002808_create_jwt_denylist.rb
 class CreateJwtDenylist < ActiveRecord::Migration[7.1]
   def change
     create_table :jwt_denylist do |t|
@@ -7,6 +6,7 @@ class CreateJwtDenylist < ActiveRecord::Migration[7.1]
 
       t.timestamps
     end
+
     add_index :jwt_denylist, :jti, unique: true
   end
 end
