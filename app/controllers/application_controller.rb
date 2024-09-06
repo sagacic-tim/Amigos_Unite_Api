@@ -4,7 +4,8 @@ class ApplicationController < ActionController::API
   include ActionController::Cookies  # Include cookies handling
   helper_method :current_amigo
   respond_to :json
-  before_action :authenticate_amigo!, only: [:show, :update, :destroy]
+  #before_action :authenticate_amigo!, only: [:show, :update, :destroy]
+  before_action :authenticate_amigo!
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :log_request
 
@@ -16,7 +17,7 @@ class ApplicationController < ActionController::API
     devise_parameter_sanitizer.permit(:sign_in, keys: [
       :user_name,
       :email,
-      :phone_1,
+      :unformatted_phone_1,
       :password
     ])
 
@@ -26,8 +27,8 @@ class ApplicationController < ActionController::API
       :user_name,
       :email,
       :secondary_email,
-      :phone_1,
-      :phone_2,
+      :unformatted_phone_1,
+      :unformatted_phone_2,
       :avatar,
       :password,
       :password_confirmation
@@ -38,8 +39,8 @@ class ApplicationController < ActionController::API
       :user_name,
       :email,
       :secondary_email,
-      :phone_1,
-      :phone_2,
+      :unformatted_phone_1,
+      :unformatted_phone_2,
       :avatar,
       :password,
       :current_password
@@ -71,30 +72,35 @@ class ApplicationController < ActionController::API
     )
   end
 
-  # Authenticate Amigo using only cookies
-  def authenticate_amigo!
-    token = cookies.signed[:jwt] # Only check cookies for the JWT token
+  # # Authenticate Amigo using only cookies
+  # def authenticate_amigo!
+  #   token = cookies.signed[:jwt] # Only check cookies for the JWT token
+  #   if token.present?
+  #     begin
+  #       decoded_token = JsonWebToken.decode(token)
+  #       @current_amigo = Amigo.find(decoded_token[:sub])
+  #       unless @current_amigo
+  #         render json: { error: 'Unauthorized' }, status: :unauthorized
+  #       end
+  #     rescue JWT::DecodeError => e
+  #       render json: { error: 'Authentication failed.' }, status: :unauthorized
+  #     rescue JWT::ExpiredSignature, JWT::VerificationError => e
+  #       render json: { error: 'Token has expired or is invalid' }, status: :unauthorized
+  #     end
+  #   else
+  #     render json: { error: 'Authentication failed.' }, status: :unauthorized
+  #   end
+  # end
 
-    if token.present?
-      begin
-        decoded_token = JsonWebToken.decode(token)
-        Rails.logger.info "Authenticate Amigo - Decoded Token: #{decoded_token}"
-        @current_amigo = Amigo.find(decoded_token[:sub])
-        
-        unless @current_amigo
-          Rails.logger.error "Authenticate Amigo - No Amigo found with ID: #{decoded_token[:sub]}"
-          render json: { error: 'Unauthorized' }, status: :unauthorized
-        end
-      rescue JWT::DecodeError => e
-        Rails.logger.error "JWT Decode Error: #{e.message}" # Debugging line
-        render json: { error: 'Authentication failed.' }, status: :unauthorized
-      rescue JWT::ExpiredSignature, JWT::VerificationError => e
-        Rails.logger.error "JWT Verification Error or Expired Signature: #{e.message}" # Debugging line
-        render json: { error: 'Token has expired or is invalid' }, status: :unauthorized
-      end
+  def authenticate_amigo!
+    token = request.headers['Authorization']&.split(' ')&.last
+    if token
+      decoded_token = JsonWebToken.decode(token)
+      @current_amigo = Amigo.find_by(id: decoded_token[:sub])
     else
-      Rails.logger.error "Authenticate Amigo - No token provided in cookies" # Debugging line
-      render json: { error: 'Authentication failed.' }, status: :unauthorized
+      render json: { error: 'Unauthorized' }, status: :unauthorized
     end
+  rescue JWT::DecodeError, JWT::ExpiredSignature
+    render json: { error: 'Unauthorized' }, status: :unauthorized
   end
 end

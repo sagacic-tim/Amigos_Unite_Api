@@ -5,7 +5,7 @@ class JsonWebToken
     Rails.application.config.jwt_secret_key
   end
 
-  def self.encode(payload, exp = 24.hours.from_now)
+  def self.encode(payload, exp = 15.minutes.from_now)
     payload[:exp] = exp.to_i
     payload[:jti] = SecureRandom.uuid # Ensure JTI is unique for each token
     secret = jwt_secret_key

@@ -10,6 +10,8 @@ module AmigosUniteApi
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.1
 
+    ActiveModelSerializers.config.adapter = :json
+
     puts "Loading Application Configuration..."
     require "active_storage/engine"
     puts "Active Storage Loaded"

@@ -6,7 +6,11 @@ class Api::V1::AmigoDetailsController < ApplicationController
 
   # GET /api/v1/amigos/:amigo_id/amigo_detail
   def show
-    render json: @amigo_detail, status: :ok
+    if @amigo_detail
+      render json: @amigo_detail, status: :ok
+    else
+      render json: { message: 'No details information found.' }, status: :ok
+    end
   end
 
   # POST /api/v1/amigos/:amigo_id/amigo_detail
@@ -44,12 +48,32 @@ class Api::V1::AmigoDetailsController < ApplicationController
 
   def set_amigo_detail
     @amigo_detail = @amigo.amigo_detail
-    unless @amigo_detail
-      render json: { error: 'Amigo detail not found' }, status: :not_found
-    end
+    # No need to render an error here; handle it in the `show` action.
   end
 
   def amigo_detail_params
     params.require(:amigo_detail).permit(:date_of_birth, :member_in_good_standing, :available_to_host, :willing_to_help, :willing_to_donate, :personal_bio)
   end
+
+  def authenticate_amigo!
+    # Decode the signed cookie to extract the JWT token
+    token = cookies.signed[:jwt] || cookies.encrypted[:jwt]
+    
+    Rails.logger.debug { "Decoded JWT Token from cookie: #{token.inspect}" }
+    
+    # Now, decode the JWT token itself
+    decoded_token = JsonWebToken.decode(token)
+    Rails.logger.debug { "Decoded Token: #{decoded_token.inspect}" }
+    
+    amigo_id = decoded_token['sub']
+    Rails.logger.debug { "Amigo ID from token: #{amigo_id}" }
+    
+    @current_amigo = Amigo.find(amigo_id)
+  rescue JWT::DecodeError => e
+    Rails.logger.error { "JWT Decode Error: #{e.message}" }
+    render json: { error: 'Unauthorized' }, status: :unauthorized
+  rescue ActiveRecord::RecordNotFound
+    Rails.logger.error { "Amigo not found for ID: #{amigo_id}" }
+    render json: { error: 'Amigo not found' }, status: :unauthorized
+  end  
 end

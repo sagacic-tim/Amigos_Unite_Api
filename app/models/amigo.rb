@@ -29,8 +29,8 @@ class Amigo < ApplicationRecord
 
   has_one :amigo_detail, dependent: :destroy
 
-  validates :phone_1, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { phone_1.present? }
-  validates :phone_2, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { phone_2.present? }
+  validates :unformatted_phone_1, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { unformatted_phone_1.present? }
+  validates :unformatted_phone_2, uniqueness: { case_sensitive: false, allow_blank: true }, if: -> { unformatted_phone_2.present? }
 
   # Phone validation with uniqueness
   before_validation :normalize_phone_numbers
@@ -41,13 +41,8 @@ class Amigo < ApplicationRecord
          :recoverable,
          :rememberable,
          :validatable,
-         # :confirmable,
-         # :lockable,
-         # :timeoutable,
-         # :trackable,
-         # :omniauthable,
          :jwt_authenticatable,
-         jwt_revocation_strategy: self
+         jwt_revocation_strategy: JwtDenylist
 
   def event_roles
     event_amigo_connectors.includes(:event).map do |connector|
@@ -57,7 +52,7 @@ class Amigo < ApplicationRecord
 
   # login method is used to access the virtual attribute for authentication
   def login_attribute
-    @login_attribute || user_name || email || phone_1
+    @login_attribute || user_name || email || unformatted_phone_1
   end
 
   # Custom method to allow authentication with user_name, email, or phone
@@ -68,7 +63,7 @@ class Amigo < ApplicationRecord
     return nil unless login
     Rails.logger.debug "Conditions: #{conditions.inspect}"
     where(conditions.to_h).where(
-      ["lower(user_name) = :value OR lower(email) = :value OR phone_1 = :value", { value: login }]
+      ["lower(user_name) = :value OR lower(email) = :value OR unformatted_phone_1 = :value OR unformatted_phone_2 = :value", { value: login }]
     ).first
   end
 
@@ -112,6 +107,14 @@ class Amigo < ApplicationRecord
     self.id == amigo.id
   end
 
+  # Add these formatted phone numbers to the JSON representation
+  def as_json(options = {})
+    super(options.merge(except: [:jti])).merge(
+      phone_1: Phonelib.parse(unformatted_phone_1).international,
+      phone_2: Phonelib.parse(unformatted_phone_2).international
+    )
+  end
+
   # Validations
   validates :first_name, presence: true, length: { maximum: 50 }
   validates :last_name, presence: true, length: { maximum: 50 }
@@ -124,8 +127,8 @@ class Amigo < ApplicationRecord
   private
 
   def normalize_phone_numbers
-    self.phone_1 = Phonelib.parse(phone_1).e164 if phone_1.present?
-    self.phone_2 = Phonelib.parse(phone_2).e164 if phone_2.present?
+    self.unformatted_phone_1 = Phonelib.parse(unformatted_phone_1).e164 if unformatted_phone_1.present?
+    self.unformatted_phone_2 = Phonelib.parse(unformatted_phone_2).e164 if unformatted_phone_2.present?
   end
 
   def process_avatar

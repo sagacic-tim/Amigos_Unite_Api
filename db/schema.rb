@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_14_191911) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_17_221511) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -87,8 +87,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_14_191911) do
     t.string "user_name", limit: 50, default: "", null: false
     t.string "email", limit: 50, default: "", null: false
     t.string "secondary_email", limit: 50, default: ""
-    t.string "phone_1", limit: 25
-    t.string "phone_2", limit: 25
+    t.string "unformatted_phone_1", limit: 25
+    t.string "unformatted_phone_2", limit: 25
     t.string "encrypted_password", default: "", null: false
     t.string "jti", null: false
     t.string "reset_password_token"
@@ -111,9 +111,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_14_191911) do
     t.index ["confirmation_token"], name: "index_amigos_on_confirmation_token", unique: true
     t.index ["email"], name: "index_amigos_on_email", unique: true
     t.index ["jti"], name: "index_amigos_on_jti", unique: true
-    t.index ["phone_1"], name: "index_amigos_on_phone_1", unique: true, where: "(phone_1 IS NOT NULL)"
-    t.index ["phone_2"], name: "index_amigos_on_phone_2", unique: true, where: "(phone_2 IS NOT NULL)"
     t.index ["reset_password_token"], name: "index_amigos_on_reset_password_token", unique: true
+    t.index ["unformatted_phone_1"], name: "index_amigos_on_unformatted_phone_1", unique: true, where: "(unformatted_phone_1 IS NOT NULL)"
+    t.index ["unformatted_phone_2"], name: "index_amigos_on_unformatted_phone_2", unique: true, where: "(unformatted_phone_2 IS NOT NULL)"
     t.index ["unlock_token"], name: "index_amigos_on_unlock_token", unique: true
     t.index ["user_name"], name: "index_amigos_on_user_name", unique: true
   end

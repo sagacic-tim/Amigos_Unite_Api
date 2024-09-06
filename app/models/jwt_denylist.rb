@@ -1,19 +1,20 @@
 # app/models/jwt_denylist.rb
 class JwtDenylist < ApplicationRecord
+  include Devise::JWT::RevocationStrategies::Denylist
   self.table_name = 'jwt_denylist'
 
   validates :jti, presence: true, uniqueness: true
 
-  def self.jwt_revoked?(payload, user)
+  def self.jwt_revoked?(payload, amigo)
     Rails.logger.debug "JwtDenylist - Checking if JWT is revoked with payload: #{payload}"
     exists?(jti: payload['jti'])
   end
-
-  def self.revoke_jwt(payload, user)
+  
+  def self.revoke_jwt(payload, amigo)
     Rails.logger.debug "JwtDenylist - Revoking JWT with payload: #{payload}"
     jti = payload['jti']
     exp = payload['exp']
-
+  
     if jti && exp
       create!(jti: jti, exp: Time.at(exp))
     else

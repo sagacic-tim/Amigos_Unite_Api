@@ -167,7 +167,9 @@ Devise.setup do |config|
 
   config.reset_password_within = 6.hours
 
-  config.navigational_formats = [:json]
+  config.navigational_formats = ['*/*', :html, :json]
+
+  config.scoped_views = true
 
   config.sign_out_via = :delete
 
@@ -180,6 +182,7 @@ Devise.setup do |config|
   config.authentication_keys = [:login_attribute]
   config.case_insensitive_keys = [:login_attribute]
   config.strip_whitespace_keys = [:login_attribute]
+  
 
   # config/initializers/devise.rb
 
@@ -192,7 +195,7 @@ Devise.setup do |config|
     jwt.revocation_requests = [
       ['DELETE', %r{^/api/v1/logout$}]
     ]
-    jwt.expiration_time = 1.day.to_i
+    jwt.expiration_time = 2.hours.to_i
     jwt.request_formats = { api: [:json] }
   end
 
