@@ -6,11 +6,11 @@ Rails.application.routes.draw do
     namespace :v1, defaults: { format: :json } do
       # Devise custom routes for authentication
       devise_scope :amigo do
-        post 'refresh_token', to: 'amigos/sessions#refresh'
-        post 'login', to: 'amigos/sessions#create', as: :amigo_login
-        delete 'logout', to: 'amigos/sessions#destroy', as: :amigo_logout
-        post 'signup', to: 'amigos/registrations#create', as: :amigo_signup
-        get 'verify_token', to: 'amigos/sessions#verify_token'  # Add the verify_token route here
+        post 'refresh_token', to: 'sessions#refresh'
+        post 'login', to: 'sessions#create', as: :amigo_login
+        delete 'logout', to: 'sessions#destroy', as: :amigo_logout
+        post 'signup', to: 'registrations#create', as: :amigo_signup
+        get 'verify_token', to: 'sessions#verify_token'  # Add the verify_token route here
       end
 
       # Amigo routes with standard RESTful actions

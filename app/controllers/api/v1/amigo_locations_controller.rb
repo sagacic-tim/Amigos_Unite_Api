@@ -2,6 +2,7 @@ class Api::V1::AmigoLocationsController < ApplicationController
   include ErrorHandling  # For handling common ActiveRecord errors
 
   before_action :authenticate_amigo!
+  before_action :verify_csrf_token, only: [:create, :update, :destroy]
   before_action :set_amigo, only: [:index], if: -> { params[:amigo_id].present? }
   before_action :set_amigo_location, only: [:show, :update, :destroy]
 
@@ -61,26 +62,5 @@ class Api::V1::AmigoLocationsController < ApplicationController
 
   def location_params
     params.require(:amigo_location).permit(:address, :floor, :street_number, :street_name, :room_no, :apartment_suite_number, :city_sublocality, :city, :state_province_subdivision, :state_province, :state_province_short, :country, :country_short, :postal_code, :postal_code_suffix, :post_box, :latitude, :longitude, :time_zone)
-  end
-  def authenticate_amigo!
-    # Decode the signed cookie to extract the JWT token
-    token = cookies.signed[:jwt] || cookies.encrypted[:jwt]
-    
-    Rails.logger.debug { "Decoded JWT Token from cookie: #{token.inspect}" }
-    
-    # Now, decode the JWT token itself
-    decoded_token = JsonWebToken.decode(token)
-    Rails.logger.debug { "Decoded Token: #{decoded_token.inspect}" }
-    
-    amigo_id = decoded_token['sub']
-    Rails.logger.debug { "Amigo ID from token: #{amigo_id}" }
-    
-    @current_amigo = Amigo.find(amigo_id)
-  rescue JWT::DecodeError => e
-    Rails.logger.error { "JWT Decode Error: #{e.message}" }
-    render json: { error: 'Unauthorized' }, status: :unauthorized
-  rescue ActiveRecord::RecordNotFound
-    Rails.logger.error { "Amigo not found for ID: #{amigo_id}" }
-    render json: { error: 'Amigo not found' }, status: :unauthorized
   end
 end

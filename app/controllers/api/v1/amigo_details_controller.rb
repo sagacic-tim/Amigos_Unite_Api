@@ -1,6 +1,7 @@
 class Api::V1::AmigoDetailsController < ApplicationController
 
   before_action :authenticate_amigo!
+  before_action :verify_csrf_token, only: [:create, :update, :destroy]
   before_action :set_amigo, only: [:show, :create, :update, :destroy]
   before_action :set_amigo_detail, only: [:show, :update, :destroy]
 
@@ -53,27 +54,5 @@ class Api::V1::AmigoDetailsController < ApplicationController
 
   def amigo_detail_params
     params.require(:amigo_detail).permit(:date_of_birth, :member_in_good_standing, :available_to_host, :willing_to_help, :willing_to_donate, :personal_bio)
-  end
-
-  def authenticate_amigo!
-    # Decode the signed cookie to extract the JWT token
-    token = cookies.signed[:jwt] || cookies.encrypted[:jwt]
-    
-    Rails.logger.debug { "Decoded JWT Token from cookie: #{token.inspect}" }
-    
-    # Now, decode the JWT token itself
-    decoded_token = JsonWebToken.decode(token)
-    Rails.logger.debug { "Decoded Token: #{decoded_token.inspect}" }
-    
-    amigo_id = decoded_token['sub']
-    Rails.logger.debug { "Amigo ID from token: #{amigo_id}" }
-    
-    @current_amigo = Amigo.find(amigo_id)
-  rescue JWT::DecodeError => e
-    Rails.logger.error { "JWT Decode Error: #{e.message}" }
-    render json: { error: 'Unauthorized' }, status: :unauthorized
-  rescue ActiveRecord::RecordNotFound
-    Rails.logger.error { "Amigo not found for ID: #{amigo_id}" }
-    render json: { error: 'Amigo not found' }, status: :unauthorized
-  end  
+  end 
 end
