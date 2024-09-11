@@ -11,6 +11,7 @@ Rails.application.routes.draw do
         delete 'logout', to: 'sessions#destroy', as: :amigo_logout
         post 'signup', to: 'registrations#create', as: :amigo_signup
         get 'verify_token', to: 'sessions#verify_token'  # Add the verify_token route here
+        get 'create_csrf', to: 'sessions#create_csrf'
       end
 
       # Amigo routes with standard RESTful actions

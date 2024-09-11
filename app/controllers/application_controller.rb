@@ -4,11 +4,16 @@ class ApplicationController < ActionController::API
   include ActionController::Cookies  # Include cookies handling
   include ActionController::RequestForgeryProtection # Include CSRF protection
   
-  # Enable CSRF protection
-  protect_from_forgery with: :exception
-  skip_before_action :verify_authenticity_token
-  #skip_before_action :verify_csrf_token, only: [:show]
+  # Enable CSRF protection for state-changing requests (POST, PUT, PATCH, DELETE)
+  protect_from_forgery with: :null_session, if: :api_request?
 
+  # Verify CSRF token for state-changing requests
+  before_action :verify_csrf_token, if: -> { api_request? && request.method.in?(%w[POST PUT PATCH DELETE]) }
+  skip_before_action :verify_csrf_token, only: [:create]
+
+  # Skip CSRF verification for endpoints that don't need it (e.g., GET requests, stateless API calls)
+  skip_before_action :verify_authenticity_token, if: :api_request?
+  # Authenticate requests via JWT tokens
   before_action :authenticate_amigo!
   # Optional: You can skip CSRF verification for API-only paths
   helper_method :current_amigo
@@ -19,6 +24,17 @@ class ApplicationController < ActionController::API
   attr_reader :current_amigo
 
   protected
+
+  # Custom CSRF token verification - exclusively from headers
+  def verify_csrf_token
+    csrf_token_from_request = request.headers['X-CSRF-Token']  # Get CSRF token from request headers
+    csrf_token_from_server = form_authenticity_token  # Generate CSRF token on the server side
+
+    unless csrf_token_from_request.present? && csrf_token_from_request == csrf_token_from_server
+      Rails.logger.error "CSRF token mismatch: Received: #{csrf_token_from_request}, Expected: #{csrf_token_from_server}"
+      render json: { error: 'Invalid CSRF token' }, status: :unauthorized
+    end
+  end
 
   def configure_permitted_parameters
     devise_parameter_sanitizer.permit(:sign_in, keys: [
@@ -57,14 +73,7 @@ class ApplicationController < ActionController::API
   private
 
   def api_request?
-    request.format.json?
-  end
-
-  def verify_csrf_token
-    csrf_token = request.headers['X-CSRF-Token']
-    unless valid_authenticity_token?(session, csrf_token)
-      render json: { error: 'Invalid CSRF token' }, status: :unauthorized
-    end
+    request.format.json? || request.path.start_with?('/api')
   end
 
   def log_request

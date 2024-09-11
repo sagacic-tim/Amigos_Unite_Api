@@ -7,10 +7,12 @@ module Api
 
       before_action :authenticate_amigo!, only: [:show]
 
+      JWT_EXPIRATION_TIME = 24.hours.from_now.to_i
+
       def create
-        Rails.logger.info "SessionsController - Starting login process"
-      
+        # Authenticate the amigo (user)
         amigo = authenticate_amigo(params[:amigo])
+        
         unless amigo
           Rails.logger.error "SessionsController - Authentication failed."
           render json: { error: 'Invalid credentials' }, status: :unauthorized
@@ -19,29 +21,37 @@ module Api
       
         Rails.logger.info "SessionsController - Authentication successful for Amigo ID: #{amigo.id}"
       
+        # Generate and set the JWT token
         token = generate_jwt(amigo)
         set_jwt_cookie(token)
       
         Rails.logger.info "SessionsController - Successfully generated and set JWT cookie."
       
+        # Generate CSRF token (for subsequent requests after login)
         csrf_token = form_authenticity_token  # Generate CSRF token
-      
+
+        response.set_header('X-CSRF-Token', form_authenticity_token)
+        
+        # Respond with both the JWT (in a cookie) and CSRF token in the response body
         render json: {
-          status: {
-            code: 200,
-            message: 'Logged in successfully.',
-            data: {
-              amigo: amigo,
-              jwt: token
-            },
-            csrf_token: csrf_token  # Include CSRF token in the response
-          }
+          status: { code: 200, message: 'Logged in successfully.' },
+          data: { amigo: amigo, csrf_token: csrf_token }  # Send CSRF token to the client
         }, status: :ok
-      rescue => e
-        handle_login_error(e)
-      end            
+      end      
+      
+      # Action to serve CSRF token
+      def create_csrf
+        csrf_token = form_authenticity_token
+        render json: { csrf_token: csrf_token }, status: :ok
+      end
       
       def destroy
+        # Verify CSRF token before processing the logout request
+        csrf_token = request.headers['X-CSRF-Token']
+        unless valid_authenticity_token?(session, csrf_token)
+          render json: { error: 'Invalid CSRF token' }, status: :unauthorized and return
+        end
+      
         super
         token = cookies.signed[:jwt] || request.headers['Authorization']&.split(' ')&.last
         Rails.logger.info "SessionsController - Token received for logout: #{token}"
@@ -64,7 +74,7 @@ module Api
         else
           render json: { status: 401, message: 'Authorization header or cookie is missing' }, status: :unauthorized
         end
-      end 
+      end      
       
       private
       
@@ -87,36 +97,43 @@ module Api
         end
       end
       
+      # Generate JWT for the amigo (user)
       def generate_jwt(amigo)
         payload = {
-          sub: amigo.id,                 # Subject of the token, usually the amigo's ID
-          exp: 24.hours.from_now.to_i,    # Expiration time
-          jti: SecureRandom.uuid,         # Unique identifier for the token
+          sub: amigo.id,                  # Subject of the token (usually the amigo's ID)
+          exp: JWT_EXPIRATION_TIME,       # Expiration time
+          jti: SecureRandom.uuid,         # Unique identifier for the token (used for revocation)
           scp: 'amigo'                    # Scope of the token
         }
         Rails.logger.debug "SessionsController - JWT payload before encoding: #{payload.inspect}"
-      
+
         token = JsonWebToken.encode(payload) # Encodes the payload into a JWT
         Rails.logger.info "SessionsController - Generated token: #{token}"
-      
+
         token # Return the generated JWT token
       end
-      
+
       # Set the JWT token in a secure signed cookie
       def set_jwt_cookie(token)
         cookies.signed[:jwt] = {
-          value: token,
-          httponly: true,                # Ensures the cookie is only accessible by the backend
-          same_site: :lax,               # Controls the cross-site request behavior of the cookie
-          secure: Rails.env.production?, # Only send over HTTPS in production
-          expires: 24.hours.from_now     # Cookie expiration time
+          value: token,                      # Store the JWT token in the cookie
+          httponly: true,                    # Ensure the cookie is only accessible by the backend
+          same_site: :lax,                   # Control the cross-site request behavior of the cookie
+          secure: Rails.env.production?,     # Only send the cookie over HTTPS in production
+          expires: Time.at(JWT_EXPIRATION_TIME)  # Cookie expiration time matches the JWT expiration
         }
         Rails.logger.info "SessionsController - JWT cookie set with value: #{cookies.signed[:jwt]}"
       end
 
       def verify_token
-        if current_amigo
-          render json: { valid: true }, status: :ok
+        token = cookies.signed[:jwt]
+        if token.present?
+          begin
+            decoded_token = JsonWebToken.decode(token)
+            render json: { valid: true }, status: :ok
+          rescue JWT::DecodeError, JWT::ExpiredSignature
+            render json: { valid: false }, status: :unauthorized
+          end
         else
           render json: { valid: false }, status: :unauthorized
         end
@@ -124,32 +141,27 @@ module Api
 
       def refresh
         token = cookies.signed[:jwt] || request.headers['Authorization']&.split(' ')&.last
-
-        begin
-          payload = JsonWebToken.decode(token)
-          amigo = Amigo.find(payload['sub'])
-
-          # Generate a new token
-          new_token = generate_jwt(amigo)
-          set_jwt_cookie(new_token)
-
-          render json: { token: new_token }, status: :ok
-        rescue JWT::DecodeError
-          render json: { error: 'Invalid token' }, status: :unauthorized
-        rescue ActiveRecord::RecordNotFound
-          render json: { error: 'Amigo not found' }, status: :unauthorized
+        if token.present?
+          begin
+            payload = JsonWebToken.decode(token)
+            amigo = Amigo.find(payload['sub'])
+      
+            # Generate a new JWT
+            new_token = generate_jwt(amigo)
+            set_jwt_cookie(new_token)
+      
+            # Generate a new CSRF token
+            csrf_token = form_authenticity_token
+      
+            # Send the new JWT (in the cookie) and CSRF token (in the response)
+            render json: { token: new_token, csrf_token: csrf_token }, status: :ok
+          rescue JWT::DecodeError
+            render json: { error: 'Invalid token' }, status: :unauthorized
+          end
+        else
+          render json: { error: 'Token missing' }, status: :unauthorized
         end
-      end      
-      # def refresh
-      #   refresh_token = request.headers['Authorization']&.split(' ')&.last
-      #   payload = JsonWebToken.decode(refresh_token)
-      #   if payload && Amigo.exists?(id: payload[:sub])
-      #     new_token = JsonWebToken.encode(sub: payload[:sub])
-      #     render json: { token: new_token }
-      #   else
-      #     render json: { error: 'Invalid refresh token' }, status: :unauthorized
-      #   end
-      # end
+      end           
       
       def log_and_render_error(log_message, status_code, response_message)
         Rails.logger.error log_message
