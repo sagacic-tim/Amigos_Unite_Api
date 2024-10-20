@@ -3,21 +3,23 @@
 one:
   event: one
   address: MyString
-  address_type: MyString
-  floor: MyString
-  building: MyString
-  street_predirection: MyString
+  business_name: MyString
+  business_phone: MyString
+  floor, limit: MyString
   street_number: MyString
   street_name: MyString
-  street_postdirection: MyString
-  street_suffix: MyString
+  room_no: MyString
   apartment_suite_number: MyString
+  city_sublocality: MyString
   city: MyString
-  county: MyString
-  state_abbreviation: MyString
-  country_code: MyString
+  state_province_subdivision: MyString
+  state_province: MyString
+  state_province_short: MyString
+  country: MyString
+  country_short: MyString
   postal_code: MyString
-  plus4_code: MyString
+  postal_code_suffix: MyString
+  post_box: MyString
   latitude: 9.99
   longitude: 9.99
   time_zone: MyString
@@ -25,21 +27,23 @@ one:
 two:
   event: two
   address: MyString
-  address_type: MyString
-  floor: MyString
-  building: MyString
-  street_predirection: MyString
+  business_name: MyString
+  business_phone: MyString
+  floor, limit: MyString
   street_number: MyString
   street_name: MyString
-  street_postdirection: MyString
-  street_suffix: MyString
+  room_no: MyString
   apartment_suite_number: MyString
+  city_sublocality: MyString
   city: MyString
-  county: MyString
-  state_abbreviation: MyString
-  country_code: MyString
+  state_province_subdivision: MyString
+  state_province: MyString
+  state_province_short: MyString
+  country: MyString
+  country_short: MyString
   postal_code: MyString
-  plus4_code: MyString
+  postal_code_suffix: MyString
+  post_box: MyString
   latitude: 9.99
   longitude: 9.99
   time_zone: MyString

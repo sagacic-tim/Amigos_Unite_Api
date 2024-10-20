@@ -7,11 +7,13 @@ Rails.application.routes.draw do
       # Devise custom routes for authentication
       devise_scope :amigo do
         post 'refresh_token', to: 'sessions#refresh'
+        get 'test', to: 'test#index', as: :amigo_test
         post 'login', to: 'sessions#create', as: :amigo_login
         delete 'logout', to: 'sessions#destroy', as: :amigo_logout
         post 'signup', to: 'registrations#create', as: :amigo_signup
-        get 'verify_token', to: 'sessions#verify_token'  # Add the verify_token route here
-        get 'create_csrf', to: 'sessions#create_csrf'
+        get 'verify_token', to: 'sessions#verify_token' # defined in SessionsController
+        get 'create_csrf', to: 'sessions#create_csrf' # defined in SessionsController
+        post 'refresh', to: 'sessions#refresh' # defined in SessionsController
       end
 
       # Amigo routes with standard RESTful actions

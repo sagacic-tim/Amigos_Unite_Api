@@ -3,6 +3,8 @@ require "active_support/core_ext/integer/time"
 Rails.application.routes.default_url_options[:host] = 'localhost:3001'
 
 Rails.application.configure do
+  # Force SSL
+  config.force_ssl = true
   # Set the type of Active Storage that will be used in thi app.
   config.active_storage.service = :local
 
@@ -69,5 +71,4 @@ Rails.application.configure do
 
   # Set log level to :debug to see everything in the log (default for development).
   config.log_level = :debug
-
 end

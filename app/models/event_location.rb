@@ -37,7 +37,7 @@ class EventLocation < ApplicationRecord
 
   def fetch_detailed_address_components
     uri = URI("https://maps.googleapis.com/maps/api/geocode/json")
-    uri.query = URI.encode_www_form(address: build_raw_address, key: Rails.application.credentials.google_maps_api_key)
+    uri.query = URI.encode_www_form(address: build_raw_address, key: Rails.application.credentials.dig(:google_maps))
     
     response = Net::HTTP.get_response(uri)
     
@@ -75,11 +75,11 @@ class EventLocation < ApplicationRecord
   rescue => e
     log_and_add_error("Time Zone fetch error: #{e.message}")
   end
+
   def save_address_components(result)
     components = result['address_components']
     if lat_lng = result.dig('geometry', 'location')
-      Rails.logger.info "Latitude: #{lat_lng['lat'].inspect}, Longitude: #{lat_lng['lng'].inspect}"
-      # result.geometry.location.lat, result.geometry.location.lng  
+      Rails.logger.info "Latitude: #{lat_lng['lat'].inspect}, Longitude: #{lat_lng['lng'].inspect}"  
       # Convert to float and check for validity
       latitude = lat_lng['lat'].to_f
       longitude = lat_lng['lng'].to_f

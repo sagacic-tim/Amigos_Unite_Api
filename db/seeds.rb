@@ -8,6 +8,17 @@ business_address_pool = JSON.parse(File.read('db/random_business_addresses.json'
 avatars_dir = Rails.root.join('lib', 'seeds', 'avatars')
 password_file = File.open('tmp/dev_user_passwords.txt', 'w')
 
+def build_raw_address(random_amigo_address)
+  [
+    random_amigo_address["street_number"],
+    random_amigo_address["street_name"],
+    random_amigo_address["city"],
+    random_amigo_address["state_province_short"],
+    random_amigo_address["postal_code"],
+    random_amigo_address["country_short"]
+  ].compact.join(', ')
+end
+
 10.times do |i|
   begin
     password = Faker::Internet.password(min_length: 12, max_length: 20)
@@ -49,6 +60,18 @@ password_file = File.open('tmp/dev_user_passwords.txt', 'w')
       puts "AmigoDetail #{i + 1} created"
       
       amigo_address = residential_address_pool.pop
+      def build_raw_address
+        # Build a full address from the available fields
+        [
+          street_number,
+          street_name,
+          city,
+          state_province_short,
+          postal_code,
+          country_short
+        ].compact.join(', ')
+      end
+      
       AmigoLocation.create!(
         amigo: amigo,
         address: amigo_address["address"],

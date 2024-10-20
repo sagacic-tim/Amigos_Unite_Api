@@ -33,11 +33,13 @@ require 'json'
   private
 
   def fetch_detailed_address_components
+    Rails.logger.info "Attempting to geocode address: #{build_raw_address}"
     uri = URI("https://maps.googleapis.com/maps/api/geocode/json")
-    uri.query = URI.encode_www_form(address: build_raw_address, key: Rails.application.credentials.google_maps_api_key)
-    
+    uri.query = URI.encode_www_form(address: build_raw_address, key: Rails.application.credentials.dig(:google_maps))
+   
     response = Net::HTTP.get_response(uri)
-    
+    Rails.logger.info "Geocoding response: #{response.body}"
+   
     if response.is_a?(Net::HTTPSuccess)
       data = JSON.parse(response.body)
       if data['status'] == 'OK'
@@ -53,6 +55,52 @@ require 'json'
   rescue JSON::ParserError => e
     log_and_add_error("Geocoding error: #{e.message}")
   end
+  
+
+  def fetch_detailed_address_components
+    # Construct the raw address to geocode
+    address = build_raw_address
+    Rails.logger.info "Geocoding address: #{address}"
+  
+    # Setup the URI with the correct API endpoint and parameters
+    uri = URI("https://maps.googleapis.com/maps/api/geocode/json")
+    uri.query = URI.encode_www_form(
+      address: address,
+      key: Rails.application.credentials.dig(:google_maps)
+    )
+  
+    # Perform the geocoding request
+    response = Net::HTTP.get_response(uri)
+    Rails.logger.info "Geocoding API response: #{response.body}"  # Log the API response
+  
+    if response.is_a?(Net::HTTPSuccess)
+      begin
+        data = JSON.parse(response.body)
+  
+        # Check if the response status is OK
+        if data['status'] == 'OK'
+          result = data['results'].first
+  
+          # Save address components and fetch the time zone
+          save_address_components(result)
+          fetch_time_zone if latitude.present? && longitude.present?
+        else
+          # Log and add an error if geocoding wasn't successful
+          log_and_add_error("Geocoding failed: #{data['status']}. Address: #{address}")
+          errors.add(:address, 'could not be geocoded')
+        end
+      rescue JSON::ParserError => e
+        log_and_add_error("Geocoding response parse error: #{e.message}. Address: #{address}")
+        errors.add(:base, 'Geocoding response could not be parsed')
+      end
+    else
+      log_and_add_error("Geocoding request failed with HTTP status: #{response.code}. Address: #{address}")
+      errors.add(:base, 'Geocoding request failed')
+    end
+  rescue StandardError => e
+    log_and_add_error("Unexpected geocoding error: #{e.message}. Address: #{address}")
+    errors.add(:base, 'An unexpected error occurred while geocoding')
+  end    
 
   def fetch_time_zone
     # Assuming latitude and longitude have already been assigned
@@ -76,8 +124,7 @@ require 'json'
   def save_address_components(result)
     components = result['address_components']
     if lat_lng = result.dig('geometry', 'location')
-      Rails.logger.info "Latitude: #{lat_lng['lat'].inspect}, Longitude: #{lat_lng['lng'].inspect}"
-      # result.geometry.location.lat, result.geometry.location.lng  
+      Rails.logger.info "Latitude: #{lat_lng['lat'].inspect}, Longitude: #{lat_lng['lng'].inspect}" 
       # Convert to float and check for validity
       latitude = lat_lng['lat'].to_f
       longitude = lat_lng['lng'].to_f

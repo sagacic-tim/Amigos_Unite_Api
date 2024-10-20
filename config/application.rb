@@ -32,10 +32,10 @@ module AmigosUniteApi
         resource '*',
           headers: :any,
           methods: [:get, :post, :put, :patch, :delete, :options, :head],
-          credentials: true
+          credentials: true  # Important to allow cookies
       end
     end
-    
+
     # Include the necessary middleware for handling cookies
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore

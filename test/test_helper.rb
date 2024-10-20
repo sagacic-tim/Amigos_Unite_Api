@@ -4,10 +4,14 @@ require "rails/test_help"
 
 class ActiveSupport::TestCase
   # Run tests in parallel with specified workers
-  parallelize(workers: :number_of_processors)
+  # Uncomment the following line if you encounter issues with parallelization
+  # parallelize(workers: :number_of_processors)
 
   # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
   fixtures :all
 
   # Add more helper methods to be used by all tests here...
+
+  # Optionally include Active Job test helpers if needed
+  include ActiveJob::TestHelper
 end
