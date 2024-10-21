@@ -4,7 +4,8 @@ Rails.application.routes.default_url_options[:host] = 'localhost:3001'
 
 Rails.application.configure do
   # Force SSL
-  config.force_ssl = true
+  # config.force_ssl = true
+  config.ssl_options = { verify_mode: OpenSSL::SSL::VERIFY_NONE }
   # Set the type of Active Storage that will be used in thi app.
   config.active_storage.service = :local
 
@@ -58,7 +59,6 @@ Rails.application.configure do
 
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = true
-
 
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
