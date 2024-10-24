@@ -5,24 +5,24 @@ module Api
       include ActionController::Cookies
       respond_to :json
 
-      # # Handle specific JWT-related errors
-      # rescue_from JWT::DecodeError, JWT::VerificationError, JWT::ExpiredSignature do |exception|
-      #   Rails.logger.error "JWT Error: #{exception.message}"
-      #   render json: { error: 'Invalid or expired token' }, status: :unauthorized
-      # end
+      # Handle specific JWT-related errors
+      rescue_from JWT::DecodeError, JWT::VerificationError, JWT::ExpiredSignature do |exception|
+        Rails.logger.error "JWT Error: #{exception.message}"
+        render json: { error: 'Invalid or expired token' }, status: :unauthorized
+      end
 
-      # # Handle record not found errors
-      # rescue_from ActiveRecord::RecordNotFound do |exception|
-      #   Rails.logger.error "Record Not Found: #{exception.message}"
-      #   render json: { error: 'Resource not found' }, status: :not_found
-      # end
+      # Handle record not found errors
+      rescue_from ActiveRecord::RecordNotFound do |exception|
+        Rails.logger.error "Record Not Found: #{exception.message}"
+        render json: { error: 'Resource not found' }, status: :not_found
+      end
 
-      # # Catch all other errors
-      # rescue_from StandardError do |exception|
-      #   Rails.logger.error "SessionsController - Error: #{exception.message}"
-      #   Rails.logger.error exception.backtrace.join("\n") # Log the full backtrace for debugging
-      #   render json: { error: 'Internal Server Error', message: exception.message }, status: :internal_server_error
-      # end
+      # Catch all other errors
+      rescue_from StandardError do |exception|
+        Rails.logger.error "SessionsController - Error: #{exception.message}"
+        Rails.logger.error exception.backtrace.join("\n") # Log the full backtrace for debugging
+        render json: { error: 'Internal Server Error', message: exception.message }, status: :internal_server_error
+      end
 
       before_action :authenticate_amigo!, only: [:show]
       before_action :set_default_format
@@ -52,7 +52,7 @@ module Api
         response.set_header('X-CSRF-Token', csrf_token)
 
         render json: {
-          status: { code: 200, message: 'Logged in successfully.' },
+          status: { code: 200, message: 'Logged into Amigos Unite successfully.' },
           data: { amigo: amigo, csrf_token: csrf_token, jwt: token }
         }, status: :ok
       
@@ -202,7 +202,7 @@ module Api
 
       def respond_with(resource, _opts = {})
         render json: {
-          status: { code: 200, message: 'Logged in successfully.' },
+          status: { code: 200, message: 'Logged into Amigos Unite successfully.' },
           data: resource
         }, status: :ok
       end
@@ -219,7 +219,7 @@ module Api
             if current_amigo
               render json: {
                 status: 200,
-                message: 'Logged out successfully.'
+                message: 'Logged out of Amigos Unite successfully.'
               }, status: :ok
             else
               render json: {

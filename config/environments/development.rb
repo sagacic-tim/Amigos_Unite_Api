@@ -4,8 +4,8 @@ Rails.application.routes.default_url_options[:host] = 'localhost:3001'
 
 Rails.application.configure do
   # Force SSL
-  # config.force_ssl = true
-  config.ssl_options = { verify_mode: OpenSSL::SSL::VERIFY_NONE }
+  config.force_ssl = true
+  
   # Set the type of Active Storage that will be used in thi app.
   config.active_storage.service = :local
 

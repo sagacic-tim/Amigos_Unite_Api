@@ -1,6 +1,7 @@
 # config/routes.rb
 Rails.application.routes.draw do
   devise_for :amigos, skip: [:sessions, :registrations]
+  match '*path', via: [:options], to: 'application#options_request'
 
   namespace :api do
     namespace :v1, defaults: { format: :json } do

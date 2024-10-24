@@ -23,6 +23,10 @@ class ApplicationController < ActionController::API
  
   attr_reader :current_amigo
 
+  def options_request
+    head :ok
+  end
+
   protected
 
   # Custom CSRF token verification - exclusively from headers

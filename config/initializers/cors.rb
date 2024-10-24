@@ -9,10 +9,10 @@
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
     origins 'https://localhost:5173'
-    resource '/api/v1/*',
+    resource '*',
       headers: :any,
       methods: [:get, :post, :patch, :put, :delete, :options, :head],
-      expose: ['Authorization', 'Set-Cookie'], # If there are headers you need exposed to the client
+      expose: ['Authorization','Set-Cookie','X-CSRF-Token','Access-Control-Allow-Credentials'], # If there are headers you need exposed to the client
       credentials: true # Allow cookies to be sent across domains
   end
 end
