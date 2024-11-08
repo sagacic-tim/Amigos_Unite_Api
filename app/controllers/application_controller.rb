@@ -81,7 +81,8 @@ class ApplicationController < ActionController::API
   end
 
   def log_request
-    Rails.logger.info "Application Controller - Incoming request to #{request.path} with headers: #{filtered_headers}"
+    is_api_request = api_request? # Check if the incoming request is an API request
+    Rails.logger.info "Application Controller - Incoming request to #{request.path} with headers: #{filtered_headers}. Is API request: #{is_api_request}"
   end
 
   def filtered_headers

@@ -12,7 +12,7 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     resource '*',
       headers: :any,
       methods: [:get, :post, :patch, :put, :delete, :options, :head],
-      expose: ['Authorization','Set-Cookie','X-CSRF-Token','Access-Control-Allow-Credentials'], # If there are headers you need exposed to the client
-      credentials: true # Allow cookies to be sent across domains
+      expose: ['Authorization', 'Set-Cookie', 'X-CSRF-Token'],
+      credentials: true
   end
 end
