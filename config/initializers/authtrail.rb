@@ -1,14 +1,19 @@
-# set to true for geocoding (and add the geocoder gem to your Gemfile)
-# we recommend configuring local geocoding as well
-# see https://github.com/ankane/authtrail#geocoding
-AuthTrail.geocode = false
+# config/initializers/authtrail.rb
 
-# add or modify data
-# AuthTrail.transform_method = lambda do |data, request|
-#   data[:request_id] = request.request_id
-# end
+# Enable IP geocoding
+AuthTrail.geocode = true
 
-# exclude certain attempts from tracking
-# AuthTrail.exclude_method = lambda do |data|
-#   data[:identity] == "capybara@example.org"
-# end
+# Transform login data to enrich logging
+AuthTrail.transform_method = lambda do |data, request|
+  data[:request_id] = request.request_id
+  data[:user_agent] = request.user_agent
+  data[:referrer] = request.referrer
+  data[:ip] = request.remote_ip
+  data[:context] = request.params[:controller]
+  data[:scope] = 'amigo'  # Customize for Devise scope if needed
+end
+
+# Exclude test or non-human login attempts
+AuthTrail.exclude_method = lambda do |data|
+  data[:identity] == "capybara@example.org" || Rails.env.test?
+end

@@ -1,19 +1,57 @@
+# app/serializers/amigo_serializer.rb
 class AmigoSerializer < ActiveModel::Serializer
-  attributes :id, :first_name, :last_name, :user_name, :email, :secondary_email, :phone_1, :phone_2, :avatar_url, :created_at, :updated_at
+  include Rails.application.routes.url_helpers
+
+  attributes :id,
+             :first_name,
+             :last_name,
+             :user_name,
+             :email,
+             :secondary_email,
+             :phone_1,
+             :phone_2,
+             :avatar_url,
+             :created_at,
+             :updated_at,
+             :full_name,
+             :formatted_created_at,
+             :formatted_updated_at
+
+  has_one :amigo_detail
+  has_many :amigo_locations
+
+  def formatted_created_at
+    return nil unless object.created_at
+    object.created_at.strftime("%F %T %Z")
+  end
 
   def phone_1
-    Phonelib.parse(object.unformatted_phone_1).international
+    return nil unless object.phone_1.present?
+    Phonelib.parse(object.phone_1).international
   end
 
   def phone_2
-    Phonelib.parse(object.unformatted_phone_2).international
+    return nil unless object.phone_2.present?
+    Phonelib.parse(object.phone_2).international
   end
 
   def avatar_url
     if object.avatar.attached?
-      Rails.application.routes.url_helpers.rails_blob_path(object.avatar, only_path: true)
+      rails_blob_url(object.avatar, host: Rails.application.config.default_url_options[:host])
     else
-      ActionController::Base.helpers.asset_path('default-amigo-avatar.png') # or the appropriate path to the default avatar
+      ActionController::Base.helpers.asset_url('default-amigo-avatar.png', host: Rails.application.config.default_url_options[:host])
     end
+  end
+
+  def full_name
+    "#{object.first_name} #{object.last_name}".strip
+  end
+
+  def formatted_created_at
+    object.created_at.strftime("%Y-%m-%d %H:%M:%S")
+  end
+
+  def formatted_updated_at
+    object.updated_at.strftime("%Y-%m-%d %H:%M:%S")
   end
 end

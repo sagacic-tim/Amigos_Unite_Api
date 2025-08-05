@@ -1,10 +1,21 @@
-class LoginActivity < ApplicationRecord
-  # Associates the login activity with an Amigo (user)
-  belongs_to :amigo, optional: true
 
-  # Fields for tracking activity (you can add these in your migration)
-  # t.inet :ip_address       # To track the IP address of the login attempt
-  # t.string :user_agent     # To track the browser or device information
-  # t.boolean :successful    # To track if the login attempt was successful
-  # t.timestamps             # To store the time of the login activity
+class LoginActivity < ApplicationRecord
+  # Associations
+  belongs_to :user, polymorphic: true, optional: true  # use :user to match the migration
+  alias_attribute :amigo, :user  # Optional: alias if you still want to reference it as `amigo`
+
+  # Validations (optional, but recommended for meaningful entries)
+  validates :identity, presence: true
+  validates :ip, presence: true
+  validates :user_agent, presence: true
+
+  # Scopes
+  scope :successful, -> { where(success: true) }
+  scope :failed,     -> { where(success: false) }
+
+  # Instance methods
+  def success?
+    success
+  end
 end
+

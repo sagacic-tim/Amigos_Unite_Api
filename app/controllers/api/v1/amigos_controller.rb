@@ -24,21 +24,6 @@ module Api
         end
       
         render json: @amigo.as_json.merge(avatar_url: avatar_url), status: :ok
-      end      
-
-      def create
-        @amigo = Amigo.new(amigo_params.except(:avatar))
-
-        if params[:amigo][:avatar]
-          @amigo.attach_avatar_by_identifier(params[:amigo][:avatar])
-        end
-
-        if @amigo.save
-          avatar_url = rails_blob_path(@amigo.avatar, disposition: "attachment", only_path: true) if @amigo.avatar.attached?
-          render json: @amigo.as_json.merge(avatar_url: avatar_url), status: :created
-        else
-          render json: @amigo.errors, status: :unprocessable_entity
-        end
       end
 
       def create

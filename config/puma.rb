@@ -1,30 +1,46 @@
 # config/puma.rb
 
-# Set the number of threads (min and max)
-max_threads_count = ENV.fetch("RAILS_MAX_THREADS") { 8 }
-min_threads_count = ENV.fetch("RAILS_MIN_THREADS") { max_threads_count }
-threads min_threads_count, max_threads_count
+require 'etc'
 
-# Specifies the `worker_timeout` threshold for development
-worker_timeout 3600 if ENV.fetch("RAILS_ENV", "development") == "development"
+# —————————————————————————————————————————————
+# 1) CPU‑based defaults for threads & workers
+cpu_count   = Etc.nprocessors
+min_threads = ENV.fetch("RAILS_MIN_THREADS") { 1 }.to_i
+max_threads = ENV.fetch("RAILS_MAX_THREADS") { cpu_count }.to_i
+max_workers = ENV.fetch("PUMA_MAX_WORKERS") { cpu_count/3 }.to_i
 
-# Set the port and SSL settings for development
-if ENV.fetch("RAILS_ENV") { "development" } == "development"
-  ssl_bind '127.0.0.1', '3001', {
-    key: Rails.root.join("config/ssl/localhost.key").to_s,
-    cert: Rails.root.join("config/ssl/localhost.crt").to_s,
-    verify_mode: "none"
-  }
-end
+puts "Detected #{cpu_count} CPU cores"
+puts "Puma threads: #{min_threads}-#{max_threads}, workers: #{max_workers}"
 
-# Specifies the `environment` that Puma will run in.
+threads min_threads, max_threads
 environment ENV.fetch("RAILS_ENV") { "development" }
 
-# Specifies the number of workers (for multi-threading)
-workers ENV.fetch("WEB_CONCURRENCY") { 2 } unless ENV.fetch("RAILS_ENV") { "development" } == "development"
+# —————————————————————————————————————————————
+# 2) Development: long timeout + SSL on 3001
+if ENV.fetch("RAILS_ENV") == "development"
+  worker_timeout 3600
 
-# Preload the application for faster worker boot times
-preload_app!
+  ssl_bind '0.0.0.0', '3001',
+    key:  "/Users/drruby/ruby_projects/localhost+2-key.pem",
+    cert: "/Users/drruby/ruby_projects/localhost+2.pem",
+    verify_mode: "none"
 
-# Allow Puma to be restarted by `rails restart` command.
+  # if you still want HTTP on 3000 too, uncomment:
+  # port ENV.fetch("PORT") { 3000 }
+
+# —————————————————————————————————————————————
+# 3) Production/Staging: clustered with on_worker_boot & HTTP
+else
+  workers max_workers
+  preload_app!
+
+  on_worker_boot do
+    ActiveRecord::Base.establish_connection if defined?(ActiveRecord)
+  end
+
+  port ENV.fetch("PORT") { 3001 }
+end
+
+# —————————————————————————————————————————————
+# 4) Allow bin/rails restart to work
 plugin :tmp_restart

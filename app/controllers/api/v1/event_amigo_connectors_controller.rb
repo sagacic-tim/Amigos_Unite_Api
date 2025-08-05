@@ -15,11 +15,18 @@ class Api::V1::EventAmigoConnectorsController < ApplicationController
   end
 
   # POST /api/v1/events/:event_id/event_amigo_connectors
+
+  # POST
   def create
     @event_amigo_connector = @event.event_amigo_connectors.new(event_amigo_connector_params)
-    if authorized_to_assign?
+    amigo_id = params.dig(:event_amigo_connector, :amigo_id).to_i
+
+    if current_amigo.lead_coordinator_for?(@event) || 
+       current_amigo.assistant_coordinator_for?(@event) || 
+       current_amigo.id == amigo_id
+
       if @event_amigo_connector.save
-        render :create, status: :created
+        render json: @event_amigo_connector, status: :created
       else
         render json: @event_amigo_connector.errors, status: :unprocessable_entity
       end
@@ -74,10 +81,6 @@ class Api::V1::EventAmigoConnectorsController < ApplicationController
     current_amigo.id == @event_amigo_connector.amigo_id ||
     current_amigo.lead_coordinator_for?(@event) ||
     current_amigo.assistant_coordinator_for?(@event)
-  end
-
-  def set_event
-    @event = Event.find(params[:event_id])
   end
 
   def event_amigo_connector_params

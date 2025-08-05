@@ -1,8 +1,8 @@
 class AmigoDetail < ApplicationRecord
   belongs_to :amigo
-  before_validation :remove_code_from_personal_bio
+
+  before_validation :sanitize_personal_bio
   before_validation :normalize_boolean_fields
-  before_validation :remove_code_from_personal_bio
   before_validation :convert_date_of_birth
 
   validates :personal_bio, length: { maximum: 650 }
@@ -10,73 +10,66 @@ class AmigoDetail < ApplicationRecord
 
   private
 
-  def remove_code_from_personal_bio
-    self.personal_bio = Sanitize.fragment(self.personal_bio)
+  # Sanitize HTML tags or unwanted characters from bio
+  def sanitize_personal_bio
+    self.personal_bio = Sanitize.fragment(personal_bio)
   end
 
-  # Convert various representations of boolean values to true/false
+  # Normalize input values to true/false/nil for boolean fields
   def normalize_boolean_fields
-    self.member_in_good_standing = to_boolean(member_in_good_standing)
-    self.available_to_host = to_boolean(available_to_host)
-    self.willing_to_help = to_boolean(willing_to_help)
-    self.willing_to_donate = to_boolean(willing_to_donate)
+    %i[
+      member_in_good_standing
+      available_to_host
+      willing_to_help
+      willing_to_donate
+    ].each do |field|
+      self[field] = coerce_to_boolean(self[field])
+    end
   end
 
-  # Convert input to a boolean value
-  def to_boolean(value)
-    return true if value.to_s.downcase.in?(['yes', 'true', '1'])
-    return false if value.to_s.downcase.in?(['no', 'false', '0', ''])
-    nil
+  def coerce_to_boolean(value)
+    case value.to_s.strip.downcase
+    when 'true', 'yes', '1' then true
+    when 'false', 'no', '0', '' then false
+    else nil
+    end
   end
 
-  # Attempts to parse the date_of_birth from a string using multiple expected formats
+  # Attempts to coerce date_of_birth to a proper Date object from various formats
   def convert_date_of_birth
-    # Return immediately if date_of_birth is already a Date object or nil
     return if date_of_birth.is_a?(Date) || date_of_birth.nil?
 
-    date_str = date_of_birth_before_type_cast
-    # Define a list of expected date formats
-    expected_formats = [
-      '%m/%d/%Y', # MM/DD/YYYY
-      '%d/%m/%Y', # DD/MM/YYYY
-      '%Y-%m-%d', # YYYY/MM/DD
-      '%Y-%m-%d', # YYYY-MM-DD
-      '%d-%m-%Y', # DD-MM-YYYY
-      '%d.%m.%Y', # DD.MM.YYYY
-      '%d %B %Y', # DD MMMM YYYY
-      '%B %d, %Y' # MMMM DD, YYYY
+    raw_input = date_of_birth_before_type_cast.to_s.strip
+
+    # Handle Japanese-style date strings
+    if raw_input.match(/\A\d{4}年\d{1,2}月\d{1,2}日\z/)
+      raw_input = raw_input.gsub(/[年月日]/, '年' => '/', '月' => '/', '日' => '')
+    end
+
+    formats = [
+      '%m/%d/%Y', '%d/%m/%Y', '%Y/%m/%d',
+      '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y',
+      '%d %B %Y', '%B %d, %Y'
     ]
 
-    # Special handling for 'YYYY年MM月DD日' format
-    if date_str.match(/\A\d{4}年\d{1,2}月\d{1,2}日\z/)
-      date_str = date_str.gsub(/[年月日]/, '年' => '/', '月' => '/', '日' => '')
-      expected_formats << '%Y/%m/%d' # Ensure this format is tried for 'YYYY年MM月DD日'
-    end
-
-    # Try each format in sequence
-    parsed_date = nil
-    expected_formats.each do |format|
+    parsed = formats.lazy.map do |fmt|
       begin
-        parsed_date = Date.strptime(date_str, format)
-        break if parsed_date # If parsing succeeds, stop trying more formats
+        Date.strptime(raw_input, fmt)
       rescue ArgumentError
-        # Ignore parsing errors and try the next format
+        nil
       end
-    end
+    end.find(&:present?)
 
-    if parsed_date
-      # If a valid date was parsed, set it
-      self.date_of_birth = parsed_date
-      Rails.logger.debug { "date_of_birth after assignment: #{date_of_birth.inspect}" }
+    if parsed
+      self.date_of_birth = parsed
+      Rails.logger.debug "Parsed date_of_birth: #{date_of_birth.inspect}"
     else
-      # If none of the formats worked, add an error
-      errors.add(:date_of_birth, 'is in an unrecognized format. Expected formats: M/DD/YYYY, DD/MM/YYYY, YYYY/MM/DD, YYYY-MM-DD, DD-MM-YYYY, DD.MM.YYYY, DD MMMM YYYY, MMMM DD, YYYY, YYYY年MM月DD日')
+      errors.add(:date_of_birth, 'is in an unrecognized format. Expected formats include MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD, and others.')
     end
   end
 
-  # Ensure date_of_birth is a valid date object
+  # Ensures final value is a valid Date object
   def date_of_birth_format
     errors.add(:date_of_birth, 'must be a valid date') unless date_of_birth.is_a?(Date)
   end
-
 end

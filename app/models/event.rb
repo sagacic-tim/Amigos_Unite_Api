@@ -1,4 +1,5 @@
 class Event < ApplicationRecord
+
   # Associations
   
   # Each event is associated a lead_coordsinator
@@ -14,6 +15,13 @@ class Event < ApplicationRecord
   validates :event_name, uniqueness: { 
     scope: [:event_date, :event_time], 
     message: "cannot have duplicate event names at the same date and time" 
+  }
+
+  enum status: {
+    planning: 0,
+    active: 1,
+    completed: 2,
+    canceled: 3
   }
 
   public

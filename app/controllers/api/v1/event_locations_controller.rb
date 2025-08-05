@@ -40,36 +40,31 @@ class Api::V1::EventLocationsController < ApplicationController
 
   # DELETE /api/v1/event_locations/:id
   def destroy
-    @event_location = EventLocation.find(params[:id])
-
-    if @event_location.event_location_connectors.any?
-      # Assuming you send back a list of events that need to be manually handled or confirmed
+    if @event_location.event_location_connectors.exists?
       event_ids = @event_location.events.pluck(:id)
-      render json: { warning: 'This location is currently associated with Event(s) #' + event_ids.join(', ') + ', are you sure you want to delete this location?', event_ids: event_ids }, status: :forbidden
+      render json: {
+        warning: "This location is currently associated with Event(s) ##{event_ids.join(', ')}. Are you sure you want to delete this location?",
+        event_ids: event_ids
+      }, status: :forbidden
+    elsif @event_location.destroy
+      render json: { message: 'Event location successfully deleted.' }, status: :ok
     else
-      if @event_location.destroy
-        render json: { message: 'Event location successfully deleted.' }, status: :ok
-      else
-        render json: { error: 'Failed to delete event location.' }, status: :unprocessable_entity
-      end
+      render json: { error: 'Failed to delete event location.' }, status: :unprocessable_entity
     end
   end
-
 
   private
 
   def set_event
     @event = Event.find_by(id: params[:event_id])
-    unless @event
+    return if @event
       render json: { error: 'Event not found' }, status: :not_found
-    end
   end
 
   def set_event_location
     @event_location = EventLocation.find_by(id: params[:id])
-    unless @event_location
-      render json: { error: 'Event location not found' }, status: :not_found
-    end
+    return if @event
+    render json: { error: 'Event Location not found' }, status: :not_found
   end
 
   def event_location_params

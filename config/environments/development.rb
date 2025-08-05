@@ -1,32 +1,48 @@
 require "active_support/core_ext/integer/time"
 
-Rails.application.routes.default_url_options[:host] = 'localhost:3001'
-
 Rails.application.configure do
-  # Force SSL
-  config.force_ssl = true
-  
-  # Set the type of Active Storage that will be used in thi app.
+  # -----------------------------------------------
+  # URL and SSL Settings (Important for OAuth testing)
+  # -----------------------------------------------
+  host = 'localhost'
+  port = 3001
+
+  config.force_ssl = true # Required for OAuth callbacks and secure cookies
+  config.action_mailer.default_url_options = { host:, port: }
+  config.action_mailer.perform_caching = false
+  Rails.application.routes.default_url_options = { host:, port: }
+  config.default_url_options = { host: "http://#{host}:#{port}" }
+
+  # -----------------------------------------------
+  # Active Storage
+  # -----------------------------------------------
   config.active_storage.service = :local
 
-  # Settings specified here will take precedence over those in config/application.rb.
-
-  # In the development environment your application's code is reloaded any time
-  # it changes. This slows down response time but is perfect for development
-  # since you don't have to restart the web server when you make code changes.
+  # -----------------------------------------------
+  # Code Loading & Caching
+  # -----------------------------------------------
   config.cache_classes = false
-
-  # Do not eager load code on boot.
   config.eager_load = false
 
-  # Show full error reports.
+  # -----------------------------------------------
+  # Error Handling & Logging
+  # -----------------------------------------------
   config.consider_all_requests_local = true
-
-  # Enable server timing
   config.server_timing = true
+  config.log_level = :debug
+  config.active_support.deprecation = :log
+  config.active_support.disallowed_deprecation = :raise
+  config.active_support.disallowed_deprecation_warnings = []
 
-  # Enable/disable caching. By default caching is disabled.
-  # Run rails dev:cache to toggle caching.
+  config.active_record.migration_error = :page_load
+  config.active_record.verbose_query_logs = true
+
+  # Optional: Log format for cleaner logs
+  config.log_formatter = ::Logger::Formatter.new
+
+  # -----------------------------------------------
+  # Caching Configuration
+  # -----------------------------------------------
   if Rails.root.join("tmp/caching-dev.txt").exist?
     config.cache_store = :memory_store
     config.public_file_server.headers = {
@@ -34,41 +50,29 @@ Rails.application.configure do
     }
   else
     config.action_controller.perform_caching = false
-
     config.cache_store = :null_store
   end
 
-  # Don't care if the mailer can't send.
+  # -----------------------------------------------
+  # Action Mailer Delivery Settings
+  # -----------------------------------------------
   config.action_mailer.raise_delivery_errors = false
-
   config.action_mailer.perform_caching = false
+  config.action_mailer.delivery_method = :letter_opener_web
+  config.action_mailer.perform_deliveries = true
+  # To use letter_opener for viewing emails in the browser:
+  # config.action_mailer.delivery_method = :letter_opener
+  # config.action_mailer.perform_deliveries = true
 
-  config.action_mailer.default_url_options = { host: 'localhost', port: 3001 }
-
-  # Print deprecation notices to the Rails logger.
-  config.active_support.deprecation = :log
-
-  # Raise exceptions for disallowed deprecations.
-  config.active_support.disallowed_deprecation = :raise
-
-  # Tell Active Support which deprecation messages to disallow.
-  config.active_support.disallowed_deprecation_warnings = []
-
-  # Raise an error on page load if there are pending migrations.
-  config.active_record.migration_error = :page_load
-
-  # Highlight code that triggered database queries in logs.
-  config.active_record.verbose_query_logs = true
-
-  # Raises error for missing translations.
+  # -----------------------------------------------
+  # Optional: Raise on missing translations
   # config.i18n.raise_on_missing_translations = true
 
-  # Annotate rendered view with file names.
+  # -----------------------------------------------
+  # Optional: Annotate views with file names
   # config.action_view.annotate_rendered_view_with_filenames = true
 
-  # Uncomment if you wish to allow Action Cable access from any origin.
+  # -----------------------------------------------
+  # Optional: Allow Action Cable from any origin (if needed)
   # config.action_cable.disable_request_forgery_protection = true
-
-  # Set log level to :debug to see everything in the log (default for development).
-  config.log_level = :debug
 end
