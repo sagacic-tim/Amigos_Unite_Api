@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_14_191911) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_15_021656) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -108,10 +108,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_14_191911) do
     t.datetime "locked_at", comment: "Timestamp when account was locked"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index "lower((email)::text)", name: "idx_amigos_email_ci", unique: true
+    t.index "lower((user_name)::text)", name: "idx_amigos_user_name_ci", unique: true
     t.index ["confirmation_token"], name: "index_amigos_on_confirmation_token", unique: true
     t.index ["email"], name: "index_amigos_on_email", unique: true
     t.index ["jti"], name: "index_amigos_on_jti", unique: true
+    t.index ["phone_1"], name: "idx_amigos_phone_1_not_null", unique: true, where: "(phone_1 IS NOT NULL)"
     t.index ["phone_1"], name: "index_amigos_on_phone_1", unique: true, where: "(phone_1 IS NOT NULL)"
+    t.index ["phone_2"], name: "idx_amigos_phone_2_not_null", unique: true, where: "(phone_2 IS NOT NULL)"
     t.index ["phone_2"], name: "index_amigos_on_phone_2", unique: true, where: "(phone_2 IS NOT NULL)"
     t.index ["reset_password_token"], name: "index_amigos_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_amigos_on_unlock_token", unique: true

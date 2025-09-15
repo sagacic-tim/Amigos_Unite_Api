@@ -48,6 +48,11 @@ gem 'lockbox', '~> 1.3', '>= 1.3.3'
   # LIKE queries are not possible, but you can index expressions.
 gem 'blind_index', '~> 2.5'
 
+  # Protect your Rails and Rack apps from bad clients. Rack::Attacklets
+  # lets you easily decide when to allow, block and throttle based only
+  # properties of the request.
+gem 'rack-attack', '~> 6.7'
+
   # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '~> 1.18', '>= 1.18.4', require: false
 

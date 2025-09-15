@@ -3,58 +3,58 @@ require 'jwt'
 
 class JsonWebToken
   ALGORITHM = 'HS256'.freeze
+  LEEWAY   = 5
 
   class << self
+    # Single source of truth for the secret
     def jwt_secret_key
-      Rails.application.config.jwt_secret_key
+      Rails.application.credentials.dig(:devise, :jwt_secret_key)
     end
 
+    # Sign a token; you can pass a custom exp (Time)
     def encode(payload, exp = 15.minutes.from_now)
-      payload[:exp] = exp.to_i
-      payload[:iat] = Time.now.to_i
-      payload[:jti] ||= SecureRandom.uuid
+      data = payload.dup
+      data[:exp] = exp.to_i
+      data[:iat] = Time.now.to_i
+      data[:jti] ||= SecureRandom.uuid
 
-      token = JWT.encode(payload, jwt_secret_key, ALGORITHM)
-      Rails.logger.info("[JWT] Token encoded with JTI=#{payload[:jti]}, IAT=#{payload[:iat]}, EXP=#{payload[:exp]}")
+      token = JWT.encode(data, jwt_secret_key, ALGORITHM)
+      Rails.logger.info("[JWT] encode jti=#{data[:jti]} iat=#{data[:iat]} exp=#{data[:exp]}")
       token
     rescue => e
-      Rails.logger.error("[JWT] Encoding error: #{e.class} - #{e.message}")
+      Rails.logger.error("[JWT] encode error: #{e.class}: #{e.message}")
       raise
     end
 
+    # Verify signature + claims; allow small clock skew
     def decode(token)
-      decoded = JWT.decode(token, jwt_secret_key, true, algorithm: ALGORITHM)[0]
-      Rails.logger.info("[JWT] Token decoded successfully: #{decoded}")
+      decoded = JWT.decode(
+        token,
+        jwt_secret_key,
+        true,
+        { algorithm: ALGORITHM, leeway: LEEWAY }
+      ).first
       HashWithIndifferentAccess.new(decoded)
     rescue JWT::ExpiredSignature
-      Rails.logger.warn("[JWT] Token has expired")
-      raise JWT::ExpiredSignature, 'Token has expired'
+      Rails.logger.warn("[JWT] decode expired")
+      raise
     rescue JWT::DecodeError => e
-      Rails.logger.warn("[JWT] Decode error: #{e.message}")
-      raise JWT::DecodeError, 'Invalid token'
+      Rails.logger.warn("[JWT] decode error: #{e.message}")
+      raise
     end
 
-    def extract_expiration(token)
-      payload = decode(token)
-      extract_timestamp(payload[:exp])
-    rescue => e
-      Rails.logger.error("[JWT] Could not extract expiration: #{e.message}")
-      nil
-    end
-
-    def extract_issued_at(token)
-      payload = decode(token)
-      extract_timestamp(payload[:iat])
-    rescue => e
-      Rails.logger.error("[JWT] Could not extract issued-at: #{e.message}")
-      nil
-    end
-
-    private
-
-    def extract_timestamp(timestamp)
-      return nil unless timestamp
-      Time.at(timestamp).in_time_zone
+    # For refresh: verify signature but ignore exp
+    def decode_allow_expired(token)
+      decoded = JWT.decode(
+        token,
+        jwt_secret_key,
+        true,
+        { algorithm: ALGORITHM, verify_expiration: false }
+      ).first
+      HashWithIndifferentAccess.new(decoded)
+    rescue JWT::DecodeError => e
+      Rails.logger.warn("[JWT] decode_allow_expired error: #{e.message}")
+      raise
     end
   end
 end

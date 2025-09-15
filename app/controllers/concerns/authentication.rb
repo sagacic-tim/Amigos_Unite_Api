@@ -1,14 +1,8 @@
-
 # app/controllers/concerns/authentication.rb
 module Authentication
   extend ActiveSupport::Concern
 
-  included do
-    before_action :authenticate_amigo!
-    helper_method :current_amigo
-  end
-
-  private
+  # Do NOT auto-register filters here; ApplicationController decides when to auth.
 
   def authenticate_amigo!
     token = extract_jwt_token
@@ -18,12 +12,12 @@ module Authentication
       begin
         decoded = JsonWebToken.decode(token)
         @current_amigo = Amigo.find(decoded[:sub])
-      rescue JWT::DecodeError => e
-        Rails.logger.warn "JWT decode error: #{e.message}"
-        render json: { error: 'Invalid token' }, status: :unauthorized
       rescue JWT::ExpiredSignature, JWT::VerificationError => e
         Rails.logger.warn "JWT expired or invalid: #{e.message}"
         render json: { error: 'Token has expired or is invalid' }, status: :unauthorized
+      rescue JWT::DecodeError => e
+        Rails.logger.warn "JWT decode error: #{e.message}"
+        render json: { error: 'Invalid token' }, status: :unauthorized
       rescue ActiveRecord::RecordNotFound => e
         Rails.logger.warn "Amigo not found: #{e.message}"
         render json: { error: 'Amigo not found' }, status: :not_found
@@ -34,17 +28,11 @@ module Authentication
     end
   end
 
-  def extract_jwt_token
-    request.headers['Authorization']&.split(' ')&.last ||
-      cookies.signed[:jwt] ||
-      cookies.encrypted[:jwt]
-  end
-
   def current_amigo
     @current_amigo
   end
-end
 
+  # Optional helpers you can call from controllers as needed
   def require_authentication!
     unless current_amigo
       Rails.logger.warn "Authentication required but missing current_amigo"
@@ -58,3 +46,10 @@ end
       render json: { error: 'Admin access required' }, status: :forbidden
     end
   end
+
+  private
+
+  def extract_jwt_token
+    request.headers['Authorization']&.split(' ')&.last || cookies.signed[:jwt]
+  end
+end

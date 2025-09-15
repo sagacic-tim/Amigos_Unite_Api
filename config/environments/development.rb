@@ -33,6 +33,7 @@ Rails.application.configure do
   config.active_support.deprecation = :log
   config.active_support.disallowed_deprecation = :raise
   config.active_support.disallowed_deprecation_warnings = []
+  config.action_dispatch.cookies_same_site_protection = :none
 
   config.active_record.migration_error = :page_load
   config.active_record.verbose_query_logs = true
