@@ -13,13 +13,18 @@ module Api
         # We want JSON, not HTML exceptions
         respond_to :json
 
+        skip_before_action :verify_signed_out_user, only: :destroy
         # Do NOT require auth for these endpoints
         skip_before_action :authenticate_amigo!, raise: false
-
         # CSRF should NOT block API auth endpoints
+
         skip_before_action :verify_authenticity_token,
-          only: %i[verify_token],
+          only: %i[create refresh destroy verify_token],
           raise: false
+
+
+        before_action :ensure_devise_mapping,
+          only: %i[create refresh verify_token destroy]
 
         # Force JSON format
         before_action :set_default_format
@@ -67,25 +72,34 @@ module Api
         end
 
         # DELETE /api/v1/logout
+
         def destroy
           token = cookies.signed[:jwt] || bearer_token
-          unless token
-            return render_error('Authorization header or cookie missing', :unauthorized)
+
+          if token.present?
+            begin
+              payload = JWT.decode(
+                token,
+                Rails.application.credentials.dig(:devise, :jwt_secret_key),
+                true,
+                algorithm: JsonWebToken::ALGORITHM
+              ).first
+              JwtDenylist.revoke_jwt(payload, nil) # best-effort
+            rescue JWT::DecodeError => e
+              Rails.logger.warn "Logout: token decode failed: #{e.message}"
+              # continue to clear cookies and respond 204
+            end
+          else
+            Rails.logger.info "Logout called with no token; treating as already signed-out"
           end
 
-          begin
-            payload = JWT.decode(token, Rails.application.credentials.dig(:devise, :jwt_secret_key), true, algorithm: JsonWebToken::ALGORITHM).first
-            JwtDenylist.revoke_jwt(payload, nil)
-          rescue JWT::DecodeError => e
-            Rails.logger.error "JWT Decode Error during logout: #{e.message}"
-            return render_error('Invalid token during logout', :unauthorized)
-          ensure
-            cookies.delete(:jwt, path: '/', same_site: :none, secure: true)
-            cookies.delete('CSRF-TOKEN', path: '/', same_site: :none, secure: true)
-          end
+          # Always clear cookies (httpOnly jwt must be cleared by the server)
+          cookies.delete(:jwt,         path: '/', same_site: :none, secure: true)
+          cookies.delete('CSRF-TOKEN', path: '/', same_site: :none, secure: true)
 
-          render json: { status: { code: 200, message: 'Logged out successfully.' } }, status: :ok
+          head :no_content
         end
+
 
         # POST /api/v1/refresh_token
         def refresh
