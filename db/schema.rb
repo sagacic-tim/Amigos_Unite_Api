@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_15_021656) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_18_211244) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -84,13 +84,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_15_021656) do
   create_table "amigos", force: :cascade do |t|
     t.string "first_name", limit: 50, comment: "First name of the Amigo"
     t.string "last_name", limit: 50, comment: "Last name of the Amigo"
-    t.string "user_name", limit: 50, default: "", null: false, comment: "Unique username"
-    t.string "email", limit: 50, default: "", null: false, comment: "Primary email address"
-    t.string "secondary_email", limit: 50, default: "", comment: "Secondary email address"
+    t.string "user_name", limit: 50, null: false, comment: "Unique username"
+    t.string "email", limit: 50, null: false, comment: "Primary email address"
+    t.string "secondary_email", limit: 50, comment: "Secondary email address"
     t.string "phone_1", limit: 35, comment: "Primary phone number"
     t.string "phone_2", limit: 35, comment: "Secondary phone number"
     t.string "encrypted_password", default: "", null: false, comment: "Devise-encrypted password"
-    t.string "jti", null: false, comment: "JWT unique identifier for token revocation"
     t.string "reset_password_token", comment: "Token for resetting password"
     t.datetime "reset_password_sent_at", comment: "Timestamp when password reset token was sent"
     t.datetime "remember_created_at", comment: "Timestamp for remember-me feature"
@@ -109,17 +108,13 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_15_021656) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index "lower((email)::text)", name: "idx_amigos_email_ci", unique: true
+    t.index "lower((secondary_email)::text)", name: "idx_amigos_secondary_email_ci", unique: true, where: "((secondary_email IS NOT NULL) AND ((secondary_email)::text <> ''::text))"
     t.index "lower((user_name)::text)", name: "idx_amigos_user_name_ci", unique: true
-    t.index ["confirmation_token"], name: "index_amigos_on_confirmation_token", unique: true
-    t.index ["email"], name: "index_amigos_on_email", unique: true
-    t.index ["jti"], name: "index_amigos_on_jti", unique: true
-    t.index ["phone_1"], name: "idx_amigos_phone_1_not_null", unique: true, where: "(phone_1 IS NOT NULL)"
-    t.index ["phone_1"], name: "index_amigos_on_phone_1", unique: true, where: "(phone_1 IS NOT NULL)"
-    t.index ["phone_2"], name: "idx_amigos_phone_2_not_null", unique: true, where: "(phone_2 IS NOT NULL)"
-    t.index ["phone_2"], name: "index_amigos_on_phone_2", unique: true, where: "(phone_2 IS NOT NULL)"
-    t.index ["reset_password_token"], name: "index_amigos_on_reset_password_token", unique: true
-    t.index ["unlock_token"], name: "index_amigos_on_unlock_token", unique: true
-    t.index ["user_name"], name: "index_amigos_on_user_name", unique: true
+    t.index ["confirmation_token"], name: "index_amigos_on_confirmation_token", unique: true, where: "(confirmation_token IS NOT NULL)"
+    t.index ["phone_1"], name: "idx_amigos_phone_1_unique", unique: true, where: "((phone_1 IS NOT NULL) AND ((phone_1)::text <> ''::text))"
+    t.index ["phone_2"], name: "idx_amigos_phone_2_unique", unique: true, where: "((phone_2 IS NOT NULL) AND ((phone_2)::text <> ''::text))"
+    t.index ["reset_password_token"], name: "index_amigos_on_reset_password_token", unique: true, where: "(reset_password_token IS NOT NULL)"
+    t.index ["unlock_token"], name: "index_amigos_on_unlock_token", unique: true, where: "(unlock_token IS NOT NULL)"
   end
 
   create_table "event_amigo_connectors", force: :cascade do |t|

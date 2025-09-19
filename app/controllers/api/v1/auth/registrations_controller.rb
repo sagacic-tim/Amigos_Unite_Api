@@ -1,61 +1,42 @@
+# app/controllers/api/v1/auth/registrations_controller.rb
 # frozen_string_literal: true
+
 module Api
   module V1
     module Auth
       class RegistrationsController < Devise::RegistrationsController
+        include ActionController::MimeResponds
 
-        include RackSessionsFix
+        prepend_before_action -> { request.env['devise.mapping'] = Devise.mappings[:amigo] }
         respond_to :json
+        skip_before_action :authenticate_amigo!, raise: false
 
         # POST /api/v1/signup
         def create
-          super
+          build_resource(sign_up_params)
+
+          if resource.save
+            render json: {
+              status: { code: 201, message: 'Signed up successfully.' },
+              data:   { amigo: resource.slice(:id, :user_name, :email, :first_name, :last_name) }
+            }, status: :created
+          else
+            Rails.logger.warn "Signup failed: #{resource.errors.full_messages.join(', ')}"
+            render json: {
+              status: { code: 422, message: 'Unprocessable Entity' },
+              errors: resource.errors.full_messages
+            }, status: :unprocessable_entity
+          end
         end
 
         private
 
-        # Permit only the fields you need for signup
+        # Only the essentials at signup
         def sign_up_params
-          params.require(:amigo).permit(:email, :password)
-        end
-
-        # Customize the JSON + cookie response
-        def respond_with(resource, _opts = {})
-          if resource.persisted?
-            # 1) Issue JWT
-            jwt = Warden::JWTAuth::UserEncoder.new
-                                       .call(resource, :amigo, nil)
-                                       .first
-            cookies.signed[:jwt] = {
-              value:      jwt,
-              httponly:   true,
-              secure:     Rails.env.production?,
-              same_site:  :lax
-            }
-
-            # 2) Expose CSRF token so Axios can pick it up
-            cookies['CSRF-TOKEN'] = {
-              value:      form_authenticity_token,
-              secure:     Rails.env.production?,
-              same_site:  :lax
-            }
-
-            # 3) Render JSON payload
-            render json: {
-              status: { code: 200, message: 'Signed up successfully. Welcome, Amigo!' },
-              data:   { amigo: AmigoSerializer
-                               .new(resource)
-                               .serializable_hash[:data][:attributes] }
-            }, status: :ok
-          else
-            render json: {
-              status: {
-                code:    422,
-                message: 'Signup failed.',
-                errors:  resource.errors.messages
-              }
-            }, status: :unprocessable_entity
-          end
+          params.require(:amigo).permit(
+            :first_name, :last_name, :user_name, :email,
+            :password, :password_confirmation, :avatar
+          )
         end
       end
     end

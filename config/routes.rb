@@ -27,6 +27,7 @@ Rails.application.routes.draw do
       devise_scope :amigo do
         post   'login',         to: 'auth/sessions#create'
         delete 'logout',        to: 'auth/sessions#destroy'
+        post   'signup',        to: 'auth/registrations#create'
         post   'refresh_token', to: 'auth/sessions#refresh'
         get    'verify_token',  to: 'auth/sessions#verify_token'
       end

@@ -8,15 +8,15 @@ class ApplicationController < ActionController::API
 
   prepend_before_action :force_devise_amigo_mapping
 
-  # Use Rails' built-in CSRF for non-API (HTML) requests only
+  # Use Rails' CSRF for non-API (HTML) requests only
   protect_from_forgery with: :exception, unless: -> { api_request? }
 
   # Issue a CSRF token cookie for API GETs so the SPA can send it back
-  before_action :set_csrf_cookie,  if: -> { api_request? && request.get? }
+  before_action :set_csrf_cookie, if: -> { api_request? && request.get? }
 
-  # ✅ Enforce CSRF for ALL mutating API calls, including login/signup
+  # Enforce CSRF for ALL mutating API calls (including signup/login)
   before_action :verify_csrf_token,
-    if: -> { api_request? && request.method.in?(%w[POST PUT PATCH DELETE]) }
+                if: -> { api_request? && request.method.in?(%w[POST PUT PATCH DELETE]) }
 
   # Authenticate everywhere EXCEPT our public auth endpoints
   before_action :authenticate_amigo!, unless: :auth_public_endpoint?
@@ -33,7 +33,8 @@ class ApplicationController < ActionController::API
       value:     form_authenticity_token,
       same_site: :none,
       secure:    true,
-      http_only: false
+      http_only: false,
+      path:      '/'
     }
   end
 
@@ -65,7 +66,7 @@ class ApplicationController < ActionController::API
 
   def force_devise_amigo_mapping
     if request.path.start_with?("/api/v1/") &&
-       %w[signup login refresh_token logout verify_token].any? { |segment| request.path.include?(segment) }
+       %w[signup login refresh_token logout verify_token].any? { |seg| request.path.include?(seg) }
       Rails.logger.info "[APPLICATION] forcing Devise.mapping[:amigo] for #{request.path}"
       request.env["devise.mapping"] = Devise.mappings[:amigo]
     end
@@ -75,6 +76,7 @@ class ApplicationController < ActionController::API
     path = request.path
     path.start_with?(
       '/api/v1/csrf',
+      '/api/v1/signup',
       '/api/v1/login',
       '/api/v1/refresh_token',
       '/api/v1/verify_token',
