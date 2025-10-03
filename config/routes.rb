@@ -3,6 +3,11 @@ Rails.application.routes.draw do
   # CORS preflight
   match '*path', via: :options, to: 'application#options_request'
 
+  require 'sidekiq/web'
+  if Rails.env.development?
+    mount Sidekiq::Web => '/sidekiq'
+  end
+
   if Rails.env.development?
     mount LetterOpenerWeb::Engine, at: '/letter_opener'
   end
@@ -45,5 +50,8 @@ Rails.application.routes.draw do
     end
 
     resources :event_locations, except: %i[new edit]
+
+    resources :contact_messages, only: :create
+
   end
 end

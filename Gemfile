@@ -155,6 +155,15 @@ gem 'ruby-vips', '~> 2.2', '>= 2.2.2'
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem 'debug', '~> 1.9', '>= 1.9.2', platforms: %i[ mri mingw x64_mingw ]
+
+  # Sidekiq is a full-featured background job framework for Ruby. It aims to
+  # be simple to integrate with any modern Rails application and much higher
+  # performance than other existing solutions.
+  gem 'sidekiq', '~> 8.0', '>= 8.0.7', require: true
+
+  # A Ruby client that tries to match Redis' API one-to-one, while stil
+  # lproviding an idiomatic interface.
+  gem 'redis', '~> 5.4', '>= 5.4.1'
 end
 
 group :development do

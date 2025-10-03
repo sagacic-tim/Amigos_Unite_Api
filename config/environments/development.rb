@@ -57,10 +57,17 @@ Rails.application.configure do
   # -----------------------------------------------
   # Action Mailer Delivery Settings
   # -----------------------------------------------
-  config.action_mailer.raise_delivery_errors = false
+  config.action_mailer.raise_delivery_errors = true
   config.action_mailer.perform_caching = false
-  config.action_mailer.delivery_method = :letter_opener_web
+  config.action_mailer.delivery_method = :smtp      # <- use SMTP, not letter_opener_web
   config.action_mailer.perform_deliveries = true
+  # (optional but useful)
+  config.action_mailer.default_url_options = { host: "localhost", protocol: "https", port: 3001 }
+
+  config.active_job.queue_adapter = :sidekiq
+
+  Rails.application.routes.default_url_options = { host: "localhost", protocol: "https", port: 3001 }
+
   # To use letter_opener for viewing emails in the browser:
   # config.action_mailer.delivery_method = :letter_opener
   # config.action_mailer.perform_deliveries = true

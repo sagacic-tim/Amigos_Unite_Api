@@ -78,11 +78,16 @@ Rails.application.configure do
   # -----------------------------------------------
   # Action Mailer (no SMTP yet, but delivery errors should be reported)
   # -----------------------------------------------
-  config.action_mailer.perform_caching = false
   config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.perform_caching      = false
+  config.action_mailer.delivery_method      = :smtp
+  config.action_mailer.perform_deliveries   = true
+  config.action_mailer.default_url_options  = { host: "amigosunite.org", protocol: "https" }
 
-  config.action_mailer.default_url_options = { host: 'https://amigosunite.org' }
-  Rails.application.config.default_url_options = { host: 'https://amigosunite.org' }
+  config.active_job.queue_adapter = :sidekiq
+
+  # For URL helpers used outside controllers/mailers (e.g., jobs/services)
+  Rails.application.routes.default_url_options = { host: "amigosunite.org", protocol: "https" }
 
   # -----------------------------------------------
   # I18n
