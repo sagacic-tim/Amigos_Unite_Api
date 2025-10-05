@@ -117,6 +117,12 @@ class Amigo < ApplicationRecord
     end
   end
 
+  # === devise Mailer ===
+
+  def send_devise_notification(notification, *args)
+    devise_mailer.send(notification, self, *args).deliver_later
+  end
+
   # === JSON presentation ===
   def as_json(options = {})
     super(options).merge(

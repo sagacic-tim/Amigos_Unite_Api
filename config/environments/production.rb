@@ -82,12 +82,12 @@ Rails.application.configure do
   config.action_mailer.perform_caching      = false
   config.action_mailer.delivery_method      = :smtp
   config.action_mailer.perform_deliveries   = true
-  config.action_mailer.default_url_options  = { host: "amigosunite.org", protocol: "https" }
+  config.action_mailer.default_url_options  = { host: "sagacicweb.com", protocol: "https" }
 
   config.active_job.queue_adapter = :sidekiq
 
   # For URL helpers used outside controllers/mailers (e.g., jobs/services)
-  Rails.application.routes.default_url_options = { host: "amigosunite.org", protocol: "https" }
+  Rails.application.routes.default_url_options = { host: "sagacicweb.com", protocol: "https" }
 
   # -----------------------------------------------
   # I18n

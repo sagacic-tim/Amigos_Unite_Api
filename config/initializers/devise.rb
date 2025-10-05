@@ -1,7 +1,7 @@
 # config/initializers/devise.rb #
 
 Devise.setup do |config|
-  config.mailer_sender = 'tmichel@ssgacicweb.com'
+  config.mailer_sender = "tmichel@sagacicweb.com"
   config.mailer = 'Devise::Mailer'
   config.parent_mailer = 'ActionMailer::Base'
 

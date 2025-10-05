@@ -68,9 +68,7 @@ Rails.application.configure do
 
   Rails.application.routes.default_url_options = { host: "localhost", protocol: "https", port: 3001 }
 
-  # To use letter_opener for viewing emails in the browser:
-  # config.action_mailer.delivery_method = :letter_opener
-  # config.action_mailer.perform_deliveries = true
+  config.action_controller.action_on_unpermitted_parameters = :raise
 
   # -----------------------------------------------
   # Optional: Raise on missing translations

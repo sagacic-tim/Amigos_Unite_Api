@@ -1,7 +1,7 @@
 # app/mailers/contact_mailer.rb
 
 class ContactMailer < ApplicationMailer
-  default from: "no-reply@sagacicweb.com"
+  default from: "timchel@sagacicweb.com"
 
   def contact_message(first_name:, last_name:, email:, message:)
     @first_name = first_name

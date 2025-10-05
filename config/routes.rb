@@ -8,13 +8,12 @@ Rails.application.routes.draw do
     mount Sidekiq::Web => '/sidekiq'
   end
 
-  if Rails.env.development?
-    mount LetterOpenerWeb::Engine, at: '/letter_opener'
-  end
-
   scope '/api/v1', module: 'api/v1', defaults: { format: :json } do
     # CSRF handshake
-    get    'csrf',          to: 'auth/csrf#show'
+    get    'csrf',        to: 'auth/csrf#show'
+
+    get  'confirmations', to: 'confirmations#show'   # /api/v1/confirmations?token=...
+    post 'confirmations', to: 'confirmations#create' # resend
 
     # Signup still comes from Devise registrations
     devise_for :amigos,
