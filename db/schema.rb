@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_18_211244) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_07_213904) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -107,6 +107,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_211244) do
     t.datetime "locked_at", comment: "Timestamp when account was locked"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "avatar_source", comment: "upload|gravatar|url|default"
+    t.string "avatar_remote_url", comment: "When avatar_source = url"
+    t.datetime "avatar_synced_at"
     t.index "lower((email)::text)", name: "idx_amigos_email_ci", unique: true
     t.index "lower((secondary_email)::text)", name: "idx_amigos_secondary_email_ci", unique: true, where: "((secondary_email IS NOT NULL) AND ((secondary_email)::text <> ''::text))"
     t.index "lower((user_name)::text)", name: "idx_amigos_user_name_ci", unique: true

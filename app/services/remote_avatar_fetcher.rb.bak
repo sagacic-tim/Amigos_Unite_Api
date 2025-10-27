@@ -1,0 +1,47 @@
+# app/services/remote_avatar_fetcher.rb
+require "digest/md5"
+
+class RemoteAvatarFetcher
+  def initialize(amigo)
+    @amigo = amigo
+  end
+
+  # Try a best-effort fetch:
+  # - explicit URL (if given)
+  # - Gravatar
+  # - Libravatar (fallback)
+  #
+  # Returns true if an image was attached.
+  def fetch_best(size: 200, explicit_url: nil, prefer: %i[gravatar libravatar])
+    return fetch_url(explicit_url) if explicit_url.present?
+
+    prefer.any? do |source|
+      case source
+      when :gravatar
+        @amigo.attach_gravatar
+      when :libravatar
+        url = libravatar_url(@amigo.email, size)
+        url.present? && @amigo.attach_remote_image(url)
+      else
+        false
+      end
+    end
+  end
+
+  def fetch_gravatar(size: 200)
+    @amigo.attach_gravatar
+  end
+
+  def fetch_url(url)
+    url.present? && @amigo.attach_remote_image(url)
+  end
+
+  private
+
+  def libravatar_url(email, size)
+    email = email.to_s.strip.downcase
+    return if email.blank?
+    hash = Digest::MD5.hexdigest(email)
+    "https://seccdn.libravatar.org/avatar/#{hash}?s=#{size}&d=404"
+  end
+end
