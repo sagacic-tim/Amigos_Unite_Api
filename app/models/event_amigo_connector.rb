@@ -19,6 +19,7 @@ class EventAmigoConnector < ApplicationRecord
   validates :amigo_id, :event_id, :role, :status, presence: true
   validates :amigo_id, uniqueness: { scope: :event_id, message: "is already assigned to this event" }
   validate :single_lead_coordinator, if: :lead_coordinator?
+  validates :event_id, uniqueness: { scope: :amigo_id }
 
   # Scopes
   scope :coordinators, -> { where(role: [:lead_coordinator, :assistant_coordinator]) }

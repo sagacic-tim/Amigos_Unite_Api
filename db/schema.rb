@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_30_043056) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_01_044519) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -130,6 +130,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_30_043056) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["amigo_id"], name: "index_event_amigo_connectors_on_amigo_id"
+    t.index ["event_id", "amigo_id"], name: "uniq_event_amigo_per_event", unique: true
     t.index ["event_id"], name: "index_event_amigo_connectors_on_event_id"
     t.index ["event_id"], name: "uniq_lead_coordinator_per_event", unique: true, where: "(role = 2)"
   end
@@ -140,7 +141,10 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_30_043056) do
     t.integer "status", default: 0, null: false, comment: "Status of the connector (e.g., active/inactive), stored as enum"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "is_primary", default: false, null: false
+    t.index ["event_id", "event_location_id"], name: "uniq_event_location_connector", unique: true
     t.index ["event_id"], name: "index_event_location_connectors_on_event_id"
+    t.index ["event_id"], name: "uniq_primary_location_per_event", unique: true, where: "(is_primary = true)"
     t.index ["event_location_id"], name: "index_event_location_connectors_on_event_location_id"
   end
 

@@ -7,6 +7,14 @@ class Event < ApplicationRecord
   # Each event is associated with one or more event locations
   has_many :event_location_connectors, dependent: :destroy
   has_many :event_locations, through: :event_location_connectors
+  has_one  :primary_event_location_connector,
+          -> { where(is_primary: true) },
+          class_name: "EventLocationConnector",
+          dependent: :destroy
+
+  has_one  :primary_event_location,
+          through: :primary_event_location_connector,
+          source: :event_location
   # Each event is associated wioth a igos as participants
   has_many :event_amigo_connectors, dependent: :destroy
   has_many :amigos, through: :event_amigo_connectors

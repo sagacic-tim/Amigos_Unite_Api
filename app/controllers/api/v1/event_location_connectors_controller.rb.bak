@@ -1,0 +1,109 @@
+# app/controllers/api/v1/event_location_connectors_controller.rb
+
+class Api::V1::EventLocationConnectorsController < ApplicationController
+  before_action :set_event
+  before_action :set_event_location_connector, only: [:show, :update, :destroy]
+
+  # GET /api/v1/events/:event_id/event_location_connectors
+  def index
+    connectors = @event.event_location_connectors.includes(:event_location)
+    render json: connectors.as_json(include: :event_location), status: :ok
+  end
+
+  # GET /api/v1/events/:event_id/event_location_connectors/:id
+  def show
+    if @event_location_connector.event_id != @event.id
+      render json: { error: "Connector does not belong to the specified event" }, status: :forbidden
+    else
+      render json: @event_location_connector.as_json(include: :event_location), status: :ok
+    end
+  end
+
+  # POST /api/v1/events/:event_id/event_location_connectors
+  def create
+    event_location = EventLocation.find_by(id: event_location_connector_params[:event_location_id])
+    return render json: { error: 'Event location not found' }, status: :not_found unless event_location
+
+    connector = EventLocationConnector.find_or_initialize_by(
+      event_id: @event.id,
+      event_location_id: event_location.id
+    )
+
+    if connector.persisted?
+      # Already connected; if caller asked to make it primary, toggle here
+      if ActiveModel::Type::Boolean.new.cast(event_location_connector_params[:is_primary])
+        EventLocationConnector.transaction do
+          @event.event_location_connectors.where.not(id: connector.id).update_all(is_primary: false)
+          connector.update!(is_primary: true)
+        end
+      end
+      render json: connector, status: :ok
+    else
+      # First connector for this event becomes primary by default,
+      # or honor explicit is_primary=true from the caller
+      EventLocationConnector.transaction do
+        if !@event.event_location_connectors.exists?
+          connector.is_primary = true
+        elsif ActiveModel::Type::Boolean.new.cast(event_location_connector_params[:is_primary])
+          @event.event_location_connectors.update_all(is_primary: false)
+          connector.is_primary = true
+        end
+        connector.save!
+      end
+      render json: connector, status: :created
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { errors: connector.errors.full_messages }, status: :unprocessable_entity
+  end
+  # PATCH/PUT /api/v1/events/:event_id/event_location_connectors/:id
+  def update
+  def update
+    if @event_location_connector.event_id != @event.id
+      render json: { error: "Connector does not belong to the specified event" }, status: :forbidden
+      return
+    end
+
+    make_primary = ActiveModel::Type::Boolean.new.cast(event_location_connector_params[:is_primary])
+
+    if make_primary
+      EventLocationConnector.transaction do
+        @event.event_location_connectors.where.not(id: @event_location_connector.id).update_all(is_primary: false)
+        @event_location_connector.update!(is_primary: true)
+      end
+      render json: @event_location_connector, status: :ok
+    else
+      if @event_location_connector.update(event_location_connector_params)
+        render json: @event_location_connector, status: :ok
+      else
+        render json: { errors: @event_location_connector.errors.full_messages }, status: :unprocessable_entity
+      end
+    end
+  end
+
+  # DELETE /api/v1/events/:event_id/event_location_connectors/:id
+  def destroy
+    if @event_location_connector.event_id != @event.id
+      render json: { error: 'Event Location Connector does not belong to the specified event.' }, status: :forbidden
+    elsif @event_location_connector.destroy
+      render json: { message: 'Event Location Connector successfully deleted' }, status: :ok
+    else
+      render json: { error: @event_location_connector.errors.full_messages.to_sentence }, status: :unprocessable_entity
+    end
+  end
+
+  private
+
+  def set_event
+    @event = Event.find_by(id: params[:event_id])
+    return render json: { error: 'Event not found' }, status: :not_found unless @event
+  end
+
+  def set_event_location_connector
+    @event_location_connector = EventLocationConnector.find_by(id: params[:id])
+    return render json: { error: 'Event Location Connector not found' }, status: :not_found unless @event_location_connector
+  end
+
+  def event_location_connector_params
+    params.require(:event_location_connector).permit(:event_location_id, :is_primary)
+  end
+end

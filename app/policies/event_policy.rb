@@ -1,3 +1,5 @@
+# app/policies/event_policy.rb
+
 class EventPolicy
   attr_reader :user, :record
   alias_method :amigo, :user
@@ -15,6 +17,8 @@ class EventPolicy
 
   # Connectors may be managed by admin, lead, or assistant
   def manage_connectors? = admin? || lead? || assistant?
+
+  def manage_locations? = manage_connectors?
 
   # Roles may be changed only by admin or lead (NO assistant)
   def manage_roles? = admin? || lead?

@@ -1,4 +1,5 @@
 # app/controllers/api/v1/event_locations_controller.rb
+
 class Api::V1::EventLocationsController < ApplicationController
   before_action :set_event, only: [:index], if: -> { params[:event_id].present? }
   before_action :set_event_location, only: [:show, :update, :destroy]
@@ -58,12 +59,12 @@ class Api::V1::EventLocationsController < ApplicationController
   def set_event
     @event = Event.find_by(id: params[:event_id])
     return if @event
-      render json: { error: 'Event not found' }, status: :not_found
+    render json: { error: 'Event not found' }, status: :not_found
   end
 
   def set_event_location
     @event_location = EventLocation.find_by(id: params[:id])
-    return if @event
+    return if @event_location
     render json: { error: 'Event Location not found' }, status: :not_found
   end
 
