@@ -74,7 +74,7 @@ class Api::V1::AmigoDetailsController < ApplicationController
 
   def amigo_detail_params
     # :message from earlier responses will be dropped here automatically
-    params.require(:amigo_detail).permit(
+    permitted = params.require(:amigo_detail).permit(
       :date_of_birth,
       :member_in_good_standing,
       :available_to_host,
@@ -82,5 +82,10 @@ class Api::V1::AmigoDetailsController < ApplicationController
       :willing_to_donate,
       :personal_bio
     )
+    # Treat blank DOB as nil so validations allow "unset"
+    if permitted.key?(:date_of_birth) && permitted[:date_of_birth].respond_to?(:strip) && permitted[:date_of_birth].strip == ""
+      permitted[:date_of_birth] = nil
+    end
+    permitted
   end
 end

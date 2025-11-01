@@ -12,7 +12,7 @@ class AmigoDetail < ApplicationRecord
 
   # Sanitize HTML tags or unwanted characters from bio
   def sanitize_personal_bio
-    self.personal_bio = Sanitize.fragment(personal_bio)
+    self.personal_bio = personal_bio.present? ? Sanitize.fragment(personal_bio) : nil
   end
 
   # Normalize input values to true/false/nil for boolean fields
@@ -37,9 +37,14 @@ class AmigoDetail < ApplicationRecord
 
   # Attempts to coerce date_of_birth to a proper Date object from various formats
   def convert_date_of_birth
-    return if date_of_birth.is_a?(Date) || date_of_birth.nil?
+    return if date_of_birth.is_a?(Date)
+    raw_input = (respond_to?(:date_of_birth_before_type_cast) ? date_of_birth_before_type_cast : date_of_birth).to_s.strip
 
-    raw_input = date_of_birth_before_type_cast.to_s.strip
+    # Blank → treat as nil (optional field)
+    if raw_input.blank?
+      self.date_of_birth = nil
+      return
+    end
 
     # Handle Japanese-style date strings
     if raw_input.match(/\A\d{4}年\d{1,2}月\d{1,2}日\z/)
@@ -64,12 +69,15 @@ class AmigoDetail < ApplicationRecord
       self.date_of_birth = parsed
       Rails.logger.debug "Parsed date_of_birth: #{date_of_birth.inspect}"
     else
+      # Only add an error when a non-blank input was provided but could not be parsed
       errors.add(:date_of_birth, 'is in an unrecognized format. Expected formats include MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD, and others.')
     end
   end
 
   # Ensures final value is a valid Date object
   def date_of_birth_format
+    # Allow blank; only enforce type when present
+    return if date_of_birth.nil?
     errors.add(:date_of_birth, 'must be a valid date') unless date_of_birth.is_a?(Date)
   end
 end

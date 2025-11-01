@@ -93,8 +93,11 @@ class Amigo < ApplicationRecord
   end
 
   # === Roles / helpers ===
+  enum role: { amigo: 0, staff: 1, admin: 2 }
+
+  # Prefer enum over legacy boolean columns if present.
   def admin?
-    role == "admin" || is_admin
+    self.role == "admin" || respond_to?(:is_admin) && is_admin
   end
 
   def lead_coordinator_for?(event)

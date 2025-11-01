@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_07_213904) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_30_043056) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -110,6 +110,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_07_213904) do
     t.string "avatar_source", comment: "upload|gravatar|url|default"
     t.string "avatar_remote_url", comment: "When avatar_source = url"
     t.datetime "avatar_synced_at"
+    t.integer "role", default: 0, null: false
     t.index "lower((email)::text)", name: "idx_amigos_email_ci", unique: true
     t.index "lower((secondary_email)::text)", name: "idx_amigos_secondary_email_ci", unique: true, where: "((secondary_email IS NOT NULL) AND ((secondary_email)::text <> ''::text))"
     t.index "lower((user_name)::text)", name: "idx_amigos_user_name_ci", unique: true
@@ -117,6 +118,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_07_213904) do
     t.index ["phone_1"], name: "idx_amigos_phone_1_unique", unique: true, where: "((phone_1 IS NOT NULL) AND ((phone_1)::text <> ''::text))"
     t.index ["phone_2"], name: "idx_amigos_phone_2_unique", unique: true, where: "((phone_2 IS NOT NULL) AND ((phone_2)::text <> ''::text))"
     t.index ["reset_password_token"], name: "index_amigos_on_reset_password_token", unique: true, where: "(reset_password_token IS NOT NULL)"
+    t.index ["role"], name: "index_amigos_on_role"
     t.index ["unlock_token"], name: "index_amigos_on_unlock_token", unique: true, where: "(unlock_token IS NOT NULL)"
   end
 
@@ -129,6 +131,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_07_213904) do
     t.datetime "updated_at", null: false
     t.index ["amigo_id"], name: "index_event_amigo_connectors_on_amigo_id"
     t.index ["event_id"], name: "index_event_amigo_connectors_on_event_id"
+    t.index ["event_id"], name: "uniq_lead_coordinator_per_event", unique: true, where: "(role = 2)"
   end
 
   create_table "event_location_connectors", force: :cascade do |t|
@@ -171,13 +174,15 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_07_213904) do
   create_table "events", force: :cascade do |t|
     t.string "event_name", comment: "Name of the event (e.g., Annual Meetup)"
     t.string "event_type", comment: "Type of event (e.g., Workshop, Seminar, Concert)"
-    t.string "event_speakers_performers", default: [], comment: "List of speakers or performers for the event", array: true
     t.date "event_date", comment: "Date on which the event will be held"
     t.time "event_time", comment: "Time of day the event is scheduled to start"
     t.bigint "lead_coordinator_id", null: false, comment: "Amigo ID of the event's lead coordinator"
     t.integer "status", default: 0, null: false, comment: "Event status (e.g., pendiong, verified, rejected) represented as enum"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "event_speakers_performers", default: [], null: false, array: true
+    t.index ["event_speakers_performers"], name: "idx_events_speakers_gin", using: :gin
+    t.check_constraint "array_position(event_speakers_performers, ''::text) IS NULL", name: "chk_event_speakers_no_blank"
   end
 
   create_table "jwt_denylist", force: :cascade do |t|

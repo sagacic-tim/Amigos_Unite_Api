@@ -1,6 +1,6 @@
 class Api::V1::EventsController < ApplicationController
   include ErrorHandling  # For handling common ActiveRecord errors
-  before_action :authenticate_current_user!, except: [:index, :show, :mission_index]
+  before_action :authenticate_amigo!, except: [:index, :show, :mission_index]
   before_action :debug_authentication
   before_action :set_event, only: [:show, :update, :destroy]
   rescue_from ActiveRecord::RecordNotFound, with: :handle_standard_error
@@ -23,34 +23,48 @@ class Api::V1::EventsController < ApplicationController
   
   # POST /api/v1/events
   def create
-    @event = Event.new(event_params)
-    @event.lead_coordinator = current_amigo
-    if @event.save
-      EventAmigoConnector.create!(event: @event, amigo: current_amigo, role: 'lead_coordinator')
-      render :create, status: :created
-    else
-      render json: @event.errors, status: :unprocessable_entity
-    end
-  rescue => e
-    render json: { error: e.message }, status: :internal_server_error
+    policy = EventPolicy.new(current_amigo, nil)
+    return render json: { error: "Unauthorized" }, status: :unauthorized unless policy.create?
+
+    event = Events::CreateEvent.new.call(
+      creator: current_amigo,
+      attrs: event_params
+    )
+
+    render json: { id: event.id, event_name: event.event_name, event_date: event.event_date, event_time: event.event_time,
+                   lead_coordinator_id: event.lead_coordinator_id },
+           status: :created
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { errors: event&.errors&.full_messages || [e.message] }, status: :unprocessable_entity
   end
 
   # PATCH/PUT /api/v1/events/:id
+
   def update
-    if params[:new_lead_coordinator_id].present?
-      @event.lead_coordinator_id = params[:new_lead_coordinator_id]
+    authorize_event!(@event, :update?)
+
+    Event.transaction do
+      if params[:new_lead_coordinator_id].present?
+        new_id = params[:new_lead_coordinator_id].to_i
+
+        # Remove any existing lead row that isn't the new one, then upsert the new lead
+        @event.event_amigo_connectors.lead_coordinator.where.not(amigo_id: new_id).delete_all
+        @event.event_amigo_connectors.find_or_initialize_by(amigo_id: new_id).update!(role: :lead_coordinator)
+        @event.update!(lead_coordinator_id: new_id)
+      end
+
+      @event.update!(event_params)
     end
-  
-    if @event.update(event_params)
-      render :update
-    else
-      render json: { error: @event.errors.full_messages }, status: :unprocessable_entity
-    end
+
+    render :update
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.record.errors.full_messages }, status: :unprocessable_entity
   end
+
   
   # DELETE /api/v1/events/:id
   def destroy
-    @event = Event.find(params[:id])
+    authorize_event!(@event, :destroy?)
     if @event.destroy
       render json: { message: "Event successfully deleted." }, status: :ok
     else
@@ -95,5 +109,13 @@ class Api::V1::EventsController < ApplicationController
       :event_time,
       event_speakers_performers: []
     )
+  end
+
+  # Minimal policy invoker without bringing in Pundit
+  def authorize_event!(record, action)
+    policy = EventPolicy.new(current_amigo, record)
+    ok = policy.public_send(action)
+    return if ok
+    render json: { error: "Unauthorized" }, status: :unauthorized and return
   end
 end

@@ -1,91 +1,119 @@
-class Api::V1::EventAmigoConnectorsController < ApplicationController
-  before_action :authenticate_amigo!  # Ensure user is logged in
-  before_action :set_event
-  before_action :set_event_amigo_connector, only: [:show, :update, :destroy]
+# app/controllers/api/v1/event_amigo_connectors_controller.rb
+module Api
+  module V1
+    class EventAmigoConnectorsController < ApplicationController
+      before_action :authenticate_amigo!
+      before_action :set_event
+      before_action :set_event_amigo_connector, only: [:show, :update, :destroy]
+      before_action :set_target_amigo,          only: [:create, :update, :destroy]
 
-  # GET /api/v1/events/:event_id/event_amigo_connectors
-  def index
-    @event_amigo_connectors = @event.event_amigo_connectors
-    render :index
-  end
-
-  # GET /api/v1/events/:event_id/event_amigo_connectors/:id
-  def show
-    render :show
-  end
-
-  # POST /api/v1/events/:event_id/event_amigo_connectors
-
-  # POST
-  def create
-    @event_amigo_connector = @event.event_amigo_connectors.new(event_amigo_connector_params)
-    amigo_id = params.dig(:event_amigo_connector, :amigo_id).to_i
-
-    if current_amigo.lead_coordinator_for?(@event) || 
-       current_amigo.assistant_coordinator_for?(@event) || 
-       current_amigo.id == amigo_id
-
-      if @event_amigo_connector.save
-        render json: @event_amigo_connector, status: :created
-      else
-        render json: @event_amigo_connector.errors, status: :unprocessable_entity
+      def index
+        @event_amigo_connectors = @event.event_amigo_connectors
+        render :index
       end
-    else
-      render json: { error: 'Unauthorized' }, status: :unauthorized
-    end
-  end
 
-  # PATCH/PUT /api/v1/events/:event_id/event_amigo_connectors/:id
-  def update
-    if authorized_to_assign?
-      if @event_amigo_connector.update(event_amigo_connector_params)
-        render :update
-      else
-        render json: @event_amigo_connector.errors, status: :unprocessable_entity
+      def show
+        render :show
       end
-    else
-      render json: { error: 'Unauthorized' }, status: :unauthorized
+
+      # Allows “manager OR self-join”.
+      def create
+        return render json: { error: 'amigo_id is required' }, status: :unprocessable_entity unless @target_amigo
+
+        can_manage = EventPolicy.new(current_amigo, @event).manage_connectors?
+        self_join  = @target_amigo && current_amigo.id == @target_amigo.id
+        return unauthorized! unless can_manage || self_join
+
+        role = resolved_role || :participant
+        @event_amigo_connector = @event.event_amigo_connectors.new(amigo: @target_amigo, role: role)
+
+        if @event_amigo_connector.save
+          render json: @event_amigo_connector, status: :created
+        else
+          render json: @event_amigo_connector.errors, status: :unprocessable_entity
+        end
+      end
+
+      # Only role changes here; lead goes through TransferLead.
+      def update
+        target = @target_amigo || @event_amigo_connector&.amigo
+        return render json: { error: 'Target not found' }, status: :unprocessable_entity unless target
+
+        role_sym = resolved_role
+        return render json: { error: 'Role param is required' }, status: :unprocessable_entity unless role_sym
+
+        # Validate role to avoid ArgumentError from enum
+        valid_roles = EventAmigoConnector.roles.keys.map!(&:to_sym)
+        unless valid_roles.include?(role_sym)
+          return render json: { error: "Invalid role. Allowed: #{valid_roles.join(', ')}" },
+                        status: :unprocessable_entity
+        end
+        # Lead promotions are handled by service below; keep guard explicit for clarity
+        # (this is redundant safety, but keeps intent obvious)
+
+        conn =
+          if role_sym == :lead_coordinator
+            Events::TransferLead.new.call(actor: current_amigo, event: @event, new_lead: target)
+          else
+            Events::ChangeRole.new.call(actor: current_amigo, event: @event, target: target, new_role: role_sym)
+          end
+
+        render json: conn, status: :ok
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.record.errors.full_messages }, status: :unprocessable_entity
+      end
+
+      # Allows “manager OR self-remove”.
+      def destroy
+        can_manage = EventPolicy.new(current_amigo, @event).manage_connectors?
+
+        connector =
+          if @event_amigo_connector
+            @event_amigo_connector
+          elsif @target_amigo
+            @event.event_amigo_connectors.find_by!(amigo_id: @target_amigo.id)
+          else
+            return render json: { error: 'Connector not found' }, status: :not_found
+          end
+
+        self_owner = current_amigo.id == connector.amigo_id
+        return unauthorized! unless can_manage || self_owner
+
+        connector.destroy!
+        head :no_content
+      end
+
+      private
+
+      def set_event
+        @event = Event.find_by(id: params[:event_id])
+        render json: { error: 'Event not found' }, status: :not_found unless @event
+      end
+
+      def set_event_amigo_connector
+        return unless @event
+        @event_amigo_connector = @event.event_amigo_connectors.find_by(id: params[:id])
+        render json: { error: 'Event Amigo Connector not found' }, status: :not_found unless @event_amigo_connector || params[:id].blank?
+      end
+
+      def set_target_amigo
+        amigo_id = params.dig(:event_amigo_connector, :amigo_id) || params[:amigo_id]
+        @target_amigo = Amigo.find_by(id: amigo_id) if amigo_id.present?
+      end
+
+      def resolved_role
+        raw = params.dig(:event_amigo_connector, :role) || params[:role]
+        raw.present? ? raw.to_s.strip.downcase.to_sym : nil
+      end
+
+      def event_amigo_connector_params
+        params.require(:event_amigo_connector).permit(:amigo_id, :role)
+      end
+
+      # Kept for guards in create/destroy; NotAuthorizedError bubbles globally.
+      def unauthorized!
+        render json: { error: 'Unauthorized' }, status: :unauthorized
+      end
     end
-  end
-
-  # DELETE /api/v1/events/:event_id/event_amigo_connectors/:id
-  def destroy
-    if authorized_to_remove?
-      @event_amigo_connector.destroy
-      render :destroy
-    else
-      render json: { error: 'Unauthorized' }, status: :unauthorized
-    end
-  end
-
-  private
-
-  def set_event
-    @event = Event.find_by(id: params[:event_id])
-    render json: { error: 'Event not found' }, status: :not_found unless @event
-  end
-
-  def set_event_amigo_connector
-    @event_amigo_connector = @event.event_amigo_connectors.find_by(id: params[:id])
-    render json: { error: 'Event Amigo Connector not found' }, status: :not_found unless @event_amigo_connector
-  end
-
-  def authorized_to_assign?
-    Rails.logger.debug "Lead: #{lead}, Assistant: #{assistant}, Current Amigo: #{is_current_amigo}"
-    current_amigo.lead_coordinator_for?(@event) || current_amigo.assistant_coordinator_for?(@event) ||
-    current_amigo.id == params[:event_amigo_connector][:amigo_id].to_i
-  end
-
-  def authorized_to_remove?
-    Rails.logger.debug "Is Current Amigo: #{is_current_amigo}, Lead: #{lead}, Assistant: #{assistant}"
-    current_amigo.id == @event_amigo_connector.amigo_id ||
-    current_amigo.lead_coordinator_for?(@event) ||
-    current_amigo.assistant_coordinator_for?(@event)
-  end
-
-  def event_amigo_connector_params
-    params.require(:event_amigo_connector).permit(
-      :amigo_id,
-      :role)
   end
 end

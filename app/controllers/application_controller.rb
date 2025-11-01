@@ -1,5 +1,10 @@
 # app/controllers/application_controller.rb
 class ApplicationController < ActionController::API
+
+  # Local auth error used by services/policies when Pundit is not installed.
+  class NotAuthorizedError < StandardError; end
+
+  include ActionController::MimeResponds
   include RackSessionsFix
   include Devise::Controllers::Helpers
   include ActionController::Cookies
@@ -26,6 +31,16 @@ class ApplicationController < ActionController::API
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :log_request
 
+  rescue_from NotAuthorizedError do
+    respond_to do |format|
+      format.json { render json: { error: 'Unauthorized' }, status: :unauthorized }
+      format.html { head :unauthorized }
+    end
+  end
+
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+
+
   # --- CSRF helpers ----------------------------------------------------------
 
   def set_csrf_cookie
@@ -43,6 +58,8 @@ class ApplicationController < ActionController::API
     unless header.present? && valid_authenticity_token?(session, header)
       Rails.logger.error "CSRF token mismatch. Received: #{header.inspect}"
       render json: { error: 'Invalid CSRF token' }, status: :unauthorized
+      # Important: halt the filter chain to avoid double render / side effects
+      return
     end
   end
 
@@ -93,7 +110,14 @@ class ApplicationController < ActionController::API
   end
 
   def filtered_headers
+    # Strip sensitive headers explicitly before logging.
+    sensitive = %w[
+      HTTP_AUTHORIZATION Authorization
+      COOKIE Cookie Set-Cookie
+      X-CSRF-Token X_CSRF_TOKEN X_Csrf_Token
+    ]
     request.headers.to_h.except(
+      *sensitive,
       *%w[
         rack.input action_dispatch.secret_key_base
         action_dispatch.signed_cookie_salt action_dispatch.encrypted_cookie_salt
@@ -106,4 +130,13 @@ class ApplicationController < ActionController::API
       ]
     )
   end
+
+  def render_unauthorized
+    render json: { error: 'Unauthorized' }, status: :unauthorized
+  end
+
+  def render_not_found
+    render json: { error: 'Not found' }, status: :not_found
+  end
+
 end

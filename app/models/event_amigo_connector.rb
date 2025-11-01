@@ -18,6 +18,7 @@ class EventAmigoConnector < ApplicationRecord
   # Validations
   validates :amigo_id, :event_id, :role, :status, presence: true
   validates :amigo_id, uniqueness: { scope: :event_id, message: "is already assigned to this event" }
+  validate :single_lead_coordinator, if: :lead_coordinator?
 
   # Scopes
   scope :coordinators, -> { where(role: [:lead_coordinator, :assistant_coordinator]) }
@@ -35,5 +36,15 @@ class EventAmigoConnector < ApplicationRecord
 
   def set_default_status
     self.status ||= :pending
+  end
+
+  # Ensure only one lead per event
+  def single_lead_coordinator
+    return unless lead_coordinator?
+    exists = EventAmigoConnector
+               .where(event_id: event_id, role: :lead_coordinator)
+               .where.not(id: id)
+               .exists?
+    errors.add(:role, "This event already has a lead coordinator") if exists
   end
 end
