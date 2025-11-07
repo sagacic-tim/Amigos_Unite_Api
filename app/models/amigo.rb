@@ -123,10 +123,14 @@ class Amigo < ApplicationRecord
   # === Avatar helpers ===
 
   def avatar_url_with_buster
-    return nil unless avatar.attached?
-    path = Rails.application.routes.url_helpers.rails_blob_path(avatar, only_path: true)
-    stamp = (avatar_synced_at || updated_at)&.to_i
-    stamp ? "#{path}?v=#{stamp}" : path
+    if avatar.attached?
+      path  = Rails.application.routes.url_helpers.rails_blob_path(avatar, only_path: true)
+      stamp = (avatar_synced_at || updated_at)&.to_i
+      stamp ? "#{path}?v=#{stamp}" : path
+    else
+      # ⬅️ fallback when nothing is attached yet
+      gravatar_url(size: 200) || "/images/default-amigo-avatar.png"
+    end
   end
 
   def as_json(options = {})

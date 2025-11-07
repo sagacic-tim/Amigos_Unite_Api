@@ -14,7 +14,6 @@ module AmigosUniteApi
 
     # --- Cookies & Session (required for CSRF) ---
     config.middleware.use ActionDispatch::Cookies
-    config.middleware.use Rack::Attack
     config.middleware.use(
       ActionDispatch::Session::CookieStore,
       key:       '_amigos_unite_session',
@@ -41,12 +40,10 @@ module AmigosUniteApi
 
     # --- Serializer / Jobs ---
     ActiveModelSerializers.config.adapter = :json_api
-    config.active_job.queue_adapter = :async
 
     # --- Autoload/eager-load libraries under app/lib (where JsonWebToken lives) ---
     config.autoload_paths << Rails.root.join('app/lib')
     config.eager_load_paths << Rails.root.join('app/lib')
     config.active_job.queue_adapter = :sidekiq
-    
   end
 end

@@ -1,18 +1,44 @@
+# app/models/amigo_detail.rb
 class AmigoDetail < ApplicationRecord
   belongs_to :amigo
 
-  before_validation :sanitize_personal_bio
+  # Permit nothing by default; selectively allow safe inline tags.
+  # Adjust elements/attributes/protocols as needed for your UX.
+  BIO_SANITIZE_CONFIG = Sanitize::Config.merge(
+    Sanitize::Config::RESTRICTED,
+    elements:   %w[b i em strong br a],
+    attributes: { 'a' => %w[href rel target] },
+    protocols:  { 'a' => %w[http https mailto] }
+  )
+
+  before_validation :scrub_personal_bio
   before_validation :normalize_boolean_fields
   before_validation :convert_date_of_birth
 
-  validates :personal_bio, length: { maximum: 650 }
-  validate :date_of_birth_format
+  validates :personal_bio, length: { maximum: 2000 }, allow_nil: true
+  validate  :bio_must_not_be_only_removed_markup
+  validate  :date_of_birth_format
 
   private
 
-  # Sanitize HTML tags or unwanted characters from bio
-  def sanitize_personal_bio
-    self.personal_bio = personal_bio.present? ? Sanitize.fragment(personal_bio) : nil
+  # Sanitize HTML from the bio with a restrictive allowlist.
+  # Tracks if user input was present but fully stripped by sanitize.
+  def scrub_personal_bio
+    return if personal_bio.nil?
+
+    original = personal_bio.to_s
+    cleaned  = Sanitize.fragment(original, BIO_SANITIZE_CONFIG).to_s.strip
+
+    self.personal_bio = cleaned
+    @bio_cleared_by_sanitize = original.present? && cleaned.blank?
+  end
+
+  # If sanitize nuked everything (e.g., only script/unsafe tags were submitted),
+  # treat that as invalid rather than saving an empty string.
+  def bio_must_not_be_only_removed_markup
+    if @bio_cleared_by_sanitize
+      errors.add(:personal_bio, "must contain readable text")
+    end
   end
 
   # Normalize input values to true/false/nil for boolean fields
@@ -38,17 +64,13 @@ class AmigoDetail < ApplicationRecord
   # Attempts to coerce date_of_birth to a proper Date object from various formats
   def convert_date_of_birth
     return if date_of_birth.is_a?(Date)
+
     raw_input = (respond_to?(:date_of_birth_before_type_cast) ? date_of_birth_before_type_cast : date_of_birth).to_s.strip
 
     # Blank → treat as nil (optional field)
     if raw_input.blank?
       self.date_of_birth = nil
       return
-    end
-
-    # Handle Japanese-style date strings
-    if raw_input.match(/\A\d{4}年\d{1,2}月\d{1,2}日\z/)
-      raw_input = raw_input.gsub(/[年月日]/, '年' => '/', '月' => '/', '日' => '')
     end
 
     formats = [
@@ -69,7 +91,6 @@ class AmigoDetail < ApplicationRecord
       self.date_of_birth = parsed
       Rails.logger.debug "Parsed date_of_birth: #{date_of_birth.inspect}"
     else
-      # Only add an error when a non-blank input was provided but could not be parsed
       errors.add(:date_of_birth, 'is in an unrecognized format. Expected formats include MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD, and others.')
     end
   end

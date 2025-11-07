@@ -7,8 +7,7 @@ Rails.application.reloader.to_prepare do
     require_dependency 'jwt_denylist'
 
     Warden::JWTAuth.configure do |config|
-      config.secret = Rails.application.credentials.dig(:devise_jwt_secret_key)
-
+      config.secret = Rails.application.credentials.dig(:jwt_secret_key)
       if config.secret.blank?
         Rails.logger.warn "Warden JWT setup: Missing Devise JWT secret key in credentials!"
       end

@@ -54,12 +54,17 @@ class ApplicationController < ActionController::API
   end
 
   def verify_csrf_token
-    header = request.headers['X-CSRF-Token']
-    unless header.present? && valid_authenticity_token?(session, header)
-      Rails.logger.error "CSRF token mismatch. Received: #{header.inspect}"
-      render json: { error: 'Invalid CSRF token' }, status: :unauthorized
-      # Important: halt the filter chain to avoid double render / side effects
-      return
+    header_token = request.headers['X-CSRF-Token'].to_s
+    cookie_token = cookies['CSRF-TOKEN'].to_s
+
+    if header_token.blank? || cookie_token.blank?
+      Rails.logger.error "CSRF token missing. Header: #{header_token.inspect}, Cookie: #{cookie_token.inspect}"
+      return render json: { error: 'Invalid CSRF token' }, status: :unauthorized
+    end
+
+    unless ActiveSupport::SecurityUtils.secure_compare(header_token, cookie_token)
+      Rails.logger.error "CSRF token mismatch. Header: #{header_token.inspect}, Cookie: #{cookie_token.inspect}"
+      return render json: { error: 'Invalid CSRF token' }, status: :unauthorized
     end
   end
 

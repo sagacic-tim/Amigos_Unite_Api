@@ -1,13 +1,11 @@
 # app/serializers/amigo_serializer.rb
 class AmigoSerializer < ActiveModel::Serializer
-  include Rails.application.routes.url_helpers
-
   attributes :id, :first_name, :last_name, :user_name, :email,
              :secondary_email, :phone_1, :phone_2, :avatar_url,
              :full_name, :formatted_created_at, :formatted_updated_at
 
-  has_one  :amigo_detail
-  has_many :amigo_locations
+  has_one  :amigo_detail,    serializer: AmigoDetailSerializer
+  has_many :amigo_locations, serializer: AmigoLocationSerializer
 
   def formatted_created_at
     object.created_at&.strftime("%Y-%m-%d %H:%M:%S")
@@ -22,18 +20,22 @@ class AmigoSerializer < ActiveModel::Serializer
   end
 
   def phone_1
-    return nil if object.phone_1.blank?
-    Phonelib.parse(object.phone_1).international
+    present_and_format_phone(object.phone_1)
   end
 
   def phone_2
-    return nil if object.phone_2.blank?
-    Phonelib.parse(object.phone_2).international
+    present_and_format_phone(object.phone_2)
   end
 
-  # IMPORTANT: nil when no avatar, relative path when present
   def avatar_url
-    return nil unless object.avatar.attached?
-    rails_blob_path(object.avatar, only_path: true)
+    # Do NOT bypass the model logic; return exactly what the FE expects (relative path with buster, or a fallback)
+    object.avatar_url_with_buster
+  end
+
+  private
+
+  def present_and_format_phone(raw)
+    return nil if raw.blank?
+    Phonelib.parse(raw).international
   end
 end

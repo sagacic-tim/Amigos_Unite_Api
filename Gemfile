@@ -136,7 +136,7 @@ gem 'bigdecimal', '~> 3.1', '>= 3.1.8', require: true
 # Sanitize is an allowlist-based HTML and CSS sanitizer. It
 # removes all HTML and/or CSS from a string except the
 # elements, attributes, and properties you choose to allow.
-gem 'sanitize', '~> 6.1', '>= 6.1.2'
+gem 'sanitize', '~> 7.0'
 
 # Validations for Active Storage
 gem 'active_storage_validations', '~> 1.1', '>= 1.1.4'
@@ -163,7 +163,14 @@ group :development, :test do
 
   # A Ruby client that tries to match Redis' API one-to-one, while stil
   # lproviding an idiomatic interface.
-  gem 'redis', '~> 5.4', '>= 5.4.1'
+  gem 'redis', '~> 5.4', '>= 5.4.1'  
+
+  # In RSpec, tests are not just scripts that verify your applications
+  # code. They’re also specifications (or specs, for short): detailedexplanations
+  # explanations of how the application is supposed to behave, expressedin
+  # in plain English.
+  gem 'rspec-rails', '~> 7.1', '>= 7.1.1'
+
 end
 
 group :development do
