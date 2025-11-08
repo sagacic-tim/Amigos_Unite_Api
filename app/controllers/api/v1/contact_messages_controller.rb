@@ -1,14 +1,7 @@
 # app/controllers/api/v1/contact_messages_controller.rb
 class Api::V1::ContactMessagesController < ApplicationController
-  # If you have an auth filter globally:
+  # because I haveIf an auth filter set globally:
   skip_before_action :authenticate_amigo!, only: :create
-
-  # If your API still verifies CSRF for JSON posts, either:
-  # Option 1: use null_session for APIs (preferred in API-only)
-  protect_from_forgery with: :null_session, only: :create
-
-  # OR Option 2 (less ideal): skip verification just for this endpoint
-  # skip_before_action :verify_authenticity_token, only: :create
 
   def create
     p = params.require(:contact_message).permit(:first_name, :last_name, :email, :message)

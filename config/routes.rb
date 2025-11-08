@@ -18,7 +18,7 @@ Rails.application.routes.draw do
     # Signup still comes from Devise registrations
     devise_for :amigos,
       path: '',
-      skip: [:sessions],                          # ⇣— don’t generate Devise’s own /login & /logout
+      skip: [:sessions, :registrations],                          # ⇣— don’t generate Devise’s own /login & /logout
       path_names: { sign_up: 'signup' },
       controllers: {
         registrations: 'auth/registrations',

@@ -1,39 +1,69 @@
 # app/controllers/api/v1/auth/registrations_controller.rb
-# frozen_string_literal: true
-
 module Api
   module V1
     module Auth
-      class RegistrationsController < Devise::RegistrationsController
-        include ActionController::MimeResponds
-
-        prepend_before_action -> { request.env['devise.mapping'] = Devise.mappings[:amigo] }
-        respond_to :json
-        skip_before_action :authenticate_amigo!, raise: false
-        protect_from_forgery with: :null_session  # safe for API JSON
+      class RegistrationsController < ApplicationController
+        # Signup is public: no existing JWT required
+        skip_before_action :authenticate_amigo!, only: :create
 
         # POST /api/v1/signup
         def create
-          build_resource(sign_up_params)
+          amigo = Amigo.new(sign_up_params)
 
-          if resource.save
+          if amigo.save
+            expires_at = 12.hours.from_now
+
+            # Issue JWT (match SessionsController’s behavior for consistency)
+            token = JsonWebToken.encode({ sub: amigo.id }, expires_at)
+
+            cookies.signed[:jwt] = {
+              value:     token,
+              httponly:  true,
+              secure:    true,          # required with SameSite=None in cross-origin setups
+              same_site: :none,
+              path:      '/',
+              expires:   expires_at
+            }
+
+            # Expose CSRF token to SPA (same pattern as SessionsController)
+            cookies['CSRF-TOKEN'] = {
+              value:     form_authenticity_token,
+              same_site: Rails.env.development? ? :none : :strict,
+              secure:    true,
+              http_only: false,
+              path:      '/'
+            }
+
+            amigo_payload = {
+              id:         amigo.id,
+              user_name:  amigo.user_name,
+              email:      amigo.email,
+              first_name: amigo.first_name,
+              last_name:  amigo.last_name,
+              phone_1:    amigo.phone_1
+            }
+
             render json: {
-              status: { code: 201, message: 'Signed up successfully.' },
-              data:   { amigo: resource.slice(:id, :user_name, :email, :first_name, :last_name) }
-            }, status: :created
+              status: { code: 200, message: 'Signed up successfully. Welcome, Amigo!' },
+              data:   {
+                amigo:          amigo_payload,
+                jwt_expires_at: expires_at.utc.iso8601
+              }
+            }, status: :ok
           else
             render json: {
-              status: { code: 422, message: 'Unprocessable Entity' },
-              errors: resource.errors.full_messages
+              status: {
+                code:    422,
+                message: 'Signup failed.',
+                errors:  amigo.errors.full_messages
+              }
             }, status: :unprocessable_entity
           end
         end
 
         private
 
-        # Only the essentials at signup, plus the extra fields your form now posts.
-        # NOTE: This assumes the payload is wrapped as { "amigo": { ... } }.
-        # If your frontend is flat (no "amigo" wrapper), switch to params.permit(...)
+        # Combine the richer param list from the old RegistrationsController
         def sign_up_params
           params.require(:amigo).permit(
             :first_name,
@@ -42,11 +72,11 @@ module Api
             :email,
             :phone_1,
             :password,
-            :password_confirmation,
+            :password_confirmation
           )
         end
 
-        # (Optional, for when you wire up profile editing later)
+        # Keep this for when you wire up account update later
         def account_update_params
           params.require(:amigo).permit(
             :first_name,
