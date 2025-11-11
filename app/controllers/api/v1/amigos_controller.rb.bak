@@ -19,19 +19,14 @@ module Api
 
       # GET /api/v1/amigos
       def index
+        Rails.logger.info("amigos_controller.rb - Is Amigo signed in? #{amigo_signed_in?}")
         amigos = Amigo.includes(avatar_attachment: :blob).all
-        render json: amigos,
-               each_serializer: AmigoIndexSerializer,
-               adapter: :attributes,       # ⬅️ important
-               status: :ok
+        render json: amigos, each_serializer: AmigoIndexSerializer, status: :ok
       end
 
       # GET /api/v1/amigos/:id
       def show
-        render json: @amigo,
-               serializer: AmigoSerializer,
-               adapter: :attributes,       # ⬅️ same here
-               status: :ok
+        render json: @amigo, serializer: AmigoSerializer, status: :ok
       end
 
       # POST /api/v1/amigos
@@ -151,11 +146,11 @@ module Api
       def amigo_params
         params.require(:amigo).permit(
           :first_name, :last_name, :user_name, :email, :secondary_email,
-          :phone_1, :phone_2,            # ⬅️ use the real columns
+          :unformatted_phone_1, :unformatted_phone_2,
           :password,
-          :avatar,
-          :avatar_source,
-          :avatar_remote_url
+          :avatar,                 # file upload (multipart)
+          :avatar_source,          # 'upload' | 'gravatar' | 'url' | 'default'
+          :avatar_remote_url       # only when avatar_source='url'
         )
       end
 
