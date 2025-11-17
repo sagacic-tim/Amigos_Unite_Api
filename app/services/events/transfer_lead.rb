@@ -3,8 +3,6 @@
 module Events
   class TransferLead
 
-    raise NotAuthorizedError unless policy.manage_roles?
-
     # actor must be admin or current lead
     def call(actor:, event:, new_lead:)
       policy = EventPolicy.new(actor, event)

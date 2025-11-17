@@ -124,6 +124,16 @@ module Api
             errors: ['Amigo not found']
           }, status: :unauthorized
         end
+
+        rescue => e
+          Rails.logger.error("[/api/v1/me] #{e.class}: #{e.message}")
+          Rails.logger.error(e.backtrace.join("\n"))
+
+          render json: {
+            status: { code: 500, message: 'Internal error in /me' },
+            errors: [e.class.to_s, e.message]
+          }, status: :internal_server_error
+        end
       end
 
       private
