@@ -107,6 +107,7 @@ class Api::V1::EventsController < ApplicationController
       :event_type,
       :event_date,
       :event_time,
+      :description,
       event_speakers_performers: []
     )
   end
