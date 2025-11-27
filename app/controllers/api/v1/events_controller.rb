@@ -1,45 +1,57 @@
+# app/controllers/api/v1/events_controller.rb
 class Api::V1::EventsController < ApplicationController
   include ErrorHandling  # For handling common ActiveRecord errors
+
   before_action :authenticate_amigo!, except: [:index, :show, :mission_index]
   before_action :debug_authentication
   before_action :set_event, only: [:show, :update, :destroy]
+
   rescue_from ActiveRecord::RecordNotFound, with: :handle_standard_error
-  rescue_from StandardError, with: :handle_standard_error
+  rescue_from StandardError,               with: :handle_standard_error
 
   # GET /api/v1/events
   def index
     @events = Event.all
     render :index
   rescue ActiveRecord::ConnectionNotEstablished => e
-    render json: { error: 'Database connection error.' }, status: :service_unavailable
+    render json: { error: "Database connection error." }, status: :service_unavailable
   rescue StandardError => e
     render json: { error: e.message }, status: :internal_server_error
   end
 
-  # GET /api/v1/events/:id 
+  # GET /api/v1/events/:id
   def show
-    render :show  # Assuming @event is set by set_event and exists
-  end 
-  
+    render :show  # @event is set by set_event
+  end
+
   # POST /api/v1/events
   def create
     policy = EventPolicy.new(current_amigo, nil)
     return render json: { error: "Unauthorized" }, status: :unauthorized unless policy.create?
 
+    permitted = event_params
+    Rails.logger.debug "[EventsController#create] event_params: #{permitted.inspect}"
+
     event = Events::CreateEvent.new.call(
       creator: current_amigo,
-      attrs: event_params
+      attrs:   permitted
     )
 
-    render json: { id: event.id, event_name: event.event_name, event_date: event.event_date, event_time: event.event_time,
-                   lead_coordinator_id: event.lead_coordinator_id },
-           status: :created
+    render json: {
+      id:                  event.id,
+      event_name:          event.event_name,
+      event_date:          event.event_date,
+      event_time:          event.event_time,
+      status:              event.status,            # expose enum value ("planning", etc.)
+      lead_coordinator_id: event.lead_coordinator_id
+    }, status: :created
   rescue ActiveRecord::RecordInvalid => e
-    render json: { errors: event&.errors&.full_messages || [e.message] }, status: :unprocessable_entity
+    render json: {
+      errors: event&.errors&.full_messages || [e.message]
+    }, status: :unprocessable_entity
   end
 
   # PATCH/PUT /api/v1/events/:id
-
   def update
     authorize_event!(@event, :update?)
 
@@ -49,7 +61,10 @@ class Api::V1::EventsController < ApplicationController
 
         # Remove any existing lead row that isn't the new one, then upsert the new lead
         @event.event_amigo_connectors.lead_coordinator.where.not(amigo_id: new_id).delete_all
-        @event.event_amigo_connectors.find_or_initialize_by(amigo_id: new_id).update!(role: :lead_coordinator)
+        @event.event_amigo_connectors
+              .find_or_initialize_by(amigo_id: new_id)
+              .update!(role: :lead_coordinator)
+
         @event.update!(lead_coordinator_id: new_id)
       end
 
@@ -61,25 +76,25 @@ class Api::V1::EventsController < ApplicationController
     render json: { error: e.record.errors.full_messages }, status: :unprocessable_entity
   end
 
-  
   # DELETE /api/v1/events/:id
   def destroy
     authorize_event!(@event, :destroy?)
+
     if @event.destroy
       render json: { message: "Event successfully deleted." }, status: :ok
     else
-      render json: { error: @event.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      render json: { error: @event.errors.full_messages.to_sentence },
+             status: :unprocessable_entity
     end
-  rescue ActiveRecord::RecordNotFound => e
+  rescue ActiveRecord::RecordNotFound
     render json: { error: "Event not found." }, status: :not_found
   rescue => e
     render json: { error: e.message }, status: :internal_server_error
-  end   
+  end
 
   # GET /api/v1/events/mission
   def mission_index
-    # This is a hypothetical action; you'll need to define what data to show
-    render 'api/v1/events/mission_index'
+    render "api/v1/events/mission_index"
   end
 
   private
@@ -91,11 +106,17 @@ class Api::V1::EventsController < ApplicationController
 
   def set_event
     @event = Event.find(params[:id])
-  end 
+  end
 
   def handle_standard_error(e)
-    if action_name == 'show' && e.is_a?(ActiveRecord::RecordNotFound)
-      render json: { error: "Event with ID #{params[:id]} doesn't exist." }, status: :not_found
+    # --- This is the crucial visibility fix -------------------------------
+    Rails.logger.error "[EventsController##{action_name}] #{e.class}: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n") if Rails.env.development?
+    # ----------------------------------------------------------------------
+
+    if action_name == "show" && e.is_a?(ActiveRecord::RecordNotFound)
+      render json: { error: "Event with ID #{params[:id]} doesn't exist." },
+             status: :not_found
     else
       render json: { error: e.message }, status: :internal_server_error
     end
@@ -107,6 +128,7 @@ class Api::V1::EventsController < ApplicationController
       :event_type,
       :event_date,
       :event_time,
+      :status,                # ← this was missing; FE sends "status": "planning"
       :description,
       event_speakers_performers: []
     )
@@ -115,8 +137,9 @@ class Api::V1::EventsController < ApplicationController
   # Minimal policy invoker without bringing in Pundit
   def authorize_event!(record, action)
     policy = EventPolicy.new(current_amigo, record)
-    ok = policy.public_send(action)
+    ok     = policy.public_send(action)
     return if ok
+
     render json: { error: "Unauthorized" }, status: :unauthorized and return
   end
 end

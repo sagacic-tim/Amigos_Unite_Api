@@ -114,6 +114,17 @@ gem 'jsonapi-serializer', '~> 2.2'
 # Sinatra and other Rack frameworks too.
 gem 'geocoder', '~> 1.8', '>= 1.8.3'
 
+# The Ruby gem for Google Maps Web Service APIs is a gem for the following Google Maps APIs:
+# Google Maps Directions API
+# Google Maps Distance Matrix API
+# Google Maps Elevation API
+# Google Maps Geocoding API
+# Google Maps Places API
+# Google Maps Time Zone API
+# Google Maps Roads API
+# Google Maps Routes API
+gem 'google_maps_service_ruby', '~> 0.7.0'
+
 # Makes http fun again! Ain't no party like a httparty,
 # because a httparty don't stop.
 gem 'httparty', '~> 0.22.0'

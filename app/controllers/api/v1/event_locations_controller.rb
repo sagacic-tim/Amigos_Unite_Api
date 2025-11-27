@@ -16,7 +16,22 @@ class Api::V1::EventLocationsController < ApplicationController
 
   # GET /api/v1/event_locations/:id
   def show
-    render :show  # Ensure consistent use of JBuilder
+    event_location = EventLocation.find(params[:id])
+
+    render json: event_location.as_json(
+      only: %i[
+        id
+        business_name
+        address
+        city
+        state_province_short
+        postal_code
+        country
+        status
+        location_image_attribution
+      ],
+      methods: %i[location_image_url]
+    )
   end
 
   # POST /api/v1/event_locations

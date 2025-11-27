@@ -191,7 +191,6 @@ module Api
           Rails.logger.info "JWT cookie set to expire at #{expires_at.utc.iso8601}"
         end
 
-        # app/controllers/api/v1/auth/sessions_controller.rb
         def authenticate_amigo(amigo_params)
           unless amigo_params
             render_error('Missing login parameters', :bad_request)

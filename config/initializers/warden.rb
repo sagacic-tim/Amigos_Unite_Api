@@ -6,14 +6,25 @@ Rails.application.reloader.to_prepare do
     require_dependency 'amigo'
     require_dependency 'jwt_denylist'
 
-    Warden::JWTAuth.configure do |config|
-      config.secret = Rails.application.credentials.dig(:jwt_secret_key)
-      if config.secret.blank?
-        Rails.logger.warn "Warden JWT setup: Missing Devise JWT secret key in credentials!"
-      end
+    # Use the same secret source as Devise and jwt.rb
+    jwt_secret =
+      Rails.application.credentials.dig(:devise, :jwt_secret_key) ||
+      ENV['DEVISE_JWT_SECRET_KEY']
 
+    if jwt_secret.blank?
+      Rails.logger.warn "[Warden/JWT] Missing JWT secret key. " \
+                        "Set devise.jwt_secret_key in credentials or DEVISE_JWT_SECRET_KEY."
+    else
+      Rails.logger.info "[Warden/JWT] Loaded JWT secret key successfully."
+    end
+
+    Warden::JWTAuth.configure do |config|
+      config.secret = jwt_secret
+
+      # These should mirror your Devise jwt config; they are harmless if
+      # you are not using Devise's sign_in/sign_out for JWT dispatch.
       config.dispatch_requests = [
-        ['POST', %r{^/api/v1/login$}],
+        ['POST',   %r{^/api/v1/login$}],
         ['DELETE', %r{^/api/v1/logout$}]
       ]
 
@@ -25,7 +36,7 @@ Rails.application.reloader.to_prepare do
       config.revocation_strategies = { amigo: JwtDenylist }
     end
   rescue => e
-    Rails.logger.error "Warden JWTAuth configuration failed: #{e.message}"
+    Rails.logger.error "[Warden/JWT] configuration failed: #{e.class}: #{e.message}"
     raise
   end
 end

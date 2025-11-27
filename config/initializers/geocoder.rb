@@ -5,7 +5,7 @@ Geocoder.configure(
   lookup: :google,
 
   # Secure API key from encrypted credentials
-  api_key: Rails.application.credentials.dig(:google_maps),
+  api_key: Rails.application.credentials.dig(:google_maps, :api_key),
 
   # Automatically use HTTPS in production (Google requires HTTPS anyway)
   use_https: true,

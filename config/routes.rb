@@ -18,7 +18,7 @@ Rails.application.routes.draw do
     # Signup still comes from Devise registrations
     devise_for :amigos,
       path: '',
-      skip: [:sessions, :registrations],                          # ⇣— don’t generate Devise’s own /login & /logout
+      skip: [:sessions, :registrations],
       path_names: { sign_up: 'signup' },
       controllers: {
         registrations: 'auth/registrations',
@@ -27,14 +27,21 @@ Rails.application.routes.draw do
         unlocks:       'auth/unlocks'
       }
 
-    # Now manually re-declare all of the “session” routes you want:
-      devise_scope :amigo do
-        post   'login',         to: 'auth/sessions#create'
-        delete 'logout',        to: 'auth/sessions#destroy'
-        post   'signup',        to: 'auth/registrations#create'
-        post   'refresh_token', to: 'auth/sessions#refresh'
-        get    'verify_token',  to: 'auth/sessions#verify_token'
-      end
+    devise_scope :amigo do
+      post   'login',         to: 'auth/sessions#create'
+      delete 'logout',        to: 'auth/sessions#destroy'
+      post   'signup',        to: 'auth/registrations#create'
+      post   'refresh_token', to: 'auth/sessions#refresh'
+      get    'verify_token',  to: 'auth/sessions#verify_token'
+    end
+
+    # ─────────────────────────────────────────────
+    # Google Places proxy endpoint
+    # ─────────────────────────────────────────────
+
+    get 'places/search', to: 'places#search'
+    get 'places/:id/photos', to: 'places#photos'
+    # → becomes GET /api/v1/places/search mapped to Api::V1::PlacesController#search
 
     # Your application resources
     get    'me',            to: 'amigos#me'
@@ -44,13 +51,11 @@ Rails.application.routes.draw do
     end
 
     resources :events, except: %i[new edit] do
-      resources :event_amigo_connectors, except: %i[new edit]
+      resources :event_amigo_connectors,    except: %i[new edit]
       resources :event_location_connectors, only: %i[index show create update destroy]
     end
 
-    resources :event_locations, except: %i[new edit]
-
+    resources :event_locations,  except: %i[new edit]
     resources :contact_messages, only: :create
-
   end
 end

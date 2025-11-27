@@ -8,6 +8,23 @@ class EventLocation < ApplicationRecord
   # ====================
   has_many :event_location_connectors, dependent: :destroy
   has_many :events, through: :event_location_connectors
+  has_many_attached :images
+  has_one_attached :location_image
+
+    # If you want typed access to services:
+  def services_hash
+    (services || {}).symbolize_keys
+  end
+
+  def service_enabled?(key)
+    !!services_hash[key.to_sym]
+  end
+
+  def location_image_url
+    return unless location_image.attached?
+
+    Rails.application.routes.url_helpers.url_for(location_image)
+  end
 
   # ====================
   # Enums

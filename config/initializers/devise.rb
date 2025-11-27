@@ -34,15 +34,32 @@ Devise.setup do |config|
   config.send_email_changed_notification = true
   config.send_password_change_notification = true
 
+  jwt_secret =
+    Rails.application.credentials.dig(:devise, :jwt_secret_key) ||
+    ENV["DEVISE_JWT_SECRET_KEY"]
+
+  if jwt_secret.blank?
+    Rails.logger.error "[Devise/JWT] Missing JWT secret key. "\
+                       "Set devise.jwt_secret_key in credentials "\
+                       "or DEVISE_JWT_SECRET_KEY in the environment."
+    raise "Devise JWT secret key is not configured"
+  end
+
   config.jwt do |jwt|
-    jwt.secret = Rails.application.credentials.dig(:devise, :jwt_secret_key)
-    jwt.dispatch_requests = [['POST', %r{^/api/v1/login$}]]
-    jwt.revocation_requests = [['DELETE', %r{^/api/v1/logout$}]]
+    jwt.secret = jwt_secret
+    jwt.dispatch_requests = [
+      ['POST', %r{^/api/v1/login$}]
+    ]
+    jwt.revocation_requests = [
+      ['DELETE', %r{^/api/v1/logout$}]
+    ]
     jwt.expiration_time = 2.hours.to_i
     jwt.request_formats = { amigo: [:json] }
   end
 
-  config.pepper = Rails.application.credentials.dig(:devise, :pepper)
+  config.pepper =
+    Rails.application.credentials.dig(:devise, :pepper) ||
+    ENV["DEVISE_PEPPER"]
 
   config.warden do |manager|
     manager.failure_app = CustomFailureApp
