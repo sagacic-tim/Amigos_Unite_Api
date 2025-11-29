@@ -76,22 +76,23 @@ module Api
         end
 
         # DELETE /api/v1/logout
+
         def destroy
           log_token_presence('logout')
           token = cookies.signed[:jwt] || bearer_token
 
           if token.present?
             begin
-              payload = JWT.decode(
-                token,
-                Rails.application.credentials.dig(:devise, :jwt_secret_key),
-                true,
-                algorithm: JsonWebToken::ALGORITHM
-              ).first
-              JwtDenylist.revoke_jwt(payload, nil) # best-effort
+              # permit logout even if token is expired
+              payload = JsonWebToken.decode_allow_expired(token)
+              JwtDenylist.revoke_jwt(payload, nil)
+
+            rescue JsonWebToken::RevokedTokenError
+              Rails.logger.info "Logout: token already revoked, continuing to clear cookies"
+
             rescue JWT::DecodeError => e
               Rails.logger.warn "Logout: token decode failed: #{e.message}"
-              # still clear cookies and 204
+              # still clear cookies and return 204
             end
           else
             Rails.logger.info "Logout called with no token; treating as already signed-out"
@@ -104,6 +105,7 @@ module Api
         end
 
         # POST /api/v1/refresh_token
+
         def refresh
           log_token_presence('refresh')
           token = cookies.signed[:jwt] || bearer_token
@@ -131,8 +133,13 @@ module Api
               status: { code: 200, message: 'Token refreshed successfully.' },
               data:   { jwt_expires_at: expires_at.utc.iso8601 }
             }, status: :ok
+
+          rescue JsonWebToken::RevokedTokenError
+            render_error('Token has been revoked', :unauthorized)
+
           rescue ActiveRecord::RecordNotFound
             render_error('Amigo not found', :unauthorized)
+
           rescue JWT::DecodeError => e
             Rails.logger.error "Refresh decode error: #{e.message}"
             render_error('Invalid token', :unauthorized)
@@ -140,6 +147,7 @@ module Api
         end
 
         # GET /api/v1/verify_token
+
         def verify_token
           log_token_presence('verify')
           token = cookies.signed[:jwt] || bearer_token
@@ -147,15 +155,20 @@ module Api
                         status: :unauthorized if token.blank?
 
           begin
-            payload = JsonWebToken.decode(token)  # will raise on invalid/expired
+            payload = JsonWebToken.decode(token)  # will raise on invalid/expired/revoked
             exp     = (payload[:exp] || payload['exp']).to_i
             return render json: { valid: false, reason: 'Missing exp' },
                           status: :unauthorized if exp.zero?
 
             exp_time = Time.at(exp).utc
             render json: { valid: true, expires_at: exp_time.iso8601 }, status: :ok
+
+          rescue JsonWebToken::RevokedTokenError
+            render json: { valid: false, reason: 'Token has been revoked' }, status: :unauthorized
+
           rescue JWT::ExpiredSignature
             render json: { valid: false, reason: 'Token expired' }, status: :unauthorized
+
           rescue JWT::DecodeError => e
             render json: { valid: false, reason: e.message }, status: :unauthorized
           end
@@ -188,7 +201,7 @@ module Api
             path:      '/',
             expires:   expires_at
           }
-          Rails.logger.info "JWT cookie set to expire at #{expires_at.utc.iso8601}"
+          Rails.logger.debug "JWT cookie set to expire at #{expires_at.utc.iso8601}" if Rails.env.development?
         end
 
         def authenticate_amigo(amigo_params)
@@ -200,7 +213,7 @@ module Api
           login    = amigo_params[:login_attribute].to_s.strip.downcase
           password = amigo_params[:password].to_s
 
-          Rails.logger.info "[LOGIN] Attempt for '#{login}'"
+          Rails.logger.debug "[LOGIN] Attempt for '#{login}'" if Rails.env.development?
 
           amigo = Amigo.where(
             'LOWER(email) = :login OR LOWER(user_name) = :login',
@@ -208,17 +221,15 @@ module Api
           ).first
 
           if amigo.nil?
-            Rails.logger.warn "[LOGIN] No account found for '#{login}'"
+            Rails.logger.debug "[LOGIN] No account found for '#{login}'" if Rails.env.development?
             render_error('Invalid login credentials', :unauthorized)
             return nil
           end
 
           unless amigo.valid_password?(password)
-            Rails.logger.warn "[LOGIN] Password mismatch for id=#{amigo.id} (#{amigo.email}/#{amigo.user_name})"
             render_error('Invalid login credentials', :unauthorized)
             return nil
           end
-
           amigo
         end
 

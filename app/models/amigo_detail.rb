@@ -88,8 +88,7 @@ class AmigoDetail < ApplicationRecord
     end.find(&:present?)
 
     if parsed
-      self.date_of_birth = parsed
-      Rails.logger.debug "Parsed date_of_birth: #{date_of_birth.inspect}"
+      self.date_of_birth = parsed 
     else
       errors.add(:date_of_birth, 'is in an unrecognized format. Expected formats include MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD, and others.')
     end

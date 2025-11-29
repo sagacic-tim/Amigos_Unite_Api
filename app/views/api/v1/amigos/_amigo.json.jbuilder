@@ -14,6 +14,5 @@ json.extract! amigo,
 
 if amigo.avatar.attached?
   avatar_url = url_for(amigo.avatar)
-  Rails.logger.info("Avatar URL: #{avatar_url}")
   json.avatar_url avatar_url
 end

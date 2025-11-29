@@ -1,11 +1,20 @@
 # app/controllers/api/v1/events_controller.rb
 class Api::V1::EventsController < ApplicationController
-  include ErrorHandling  # For handling common ActiveRecord errors
+  include ErrorHandling  # your shared error concern
 
+  # Public reads: index, show, mission_index
+  # All other actions require a valid JWT (protected routes).
   before_action :authenticate_amigo!, except: [:index, :show, :mission_index]
-  before_action :debug_authentication
+
+  # Helpful, but noisy in production – restrict to development.
+  before_action :debug_authentication, if: -> { Rails.env.development? }
+
+  # Tighten writes: require CSRF token on all mutating actions.
+  before_action :verify_csrf_token, only: [:create, :update, :destroy]
+
   before_action :set_event, only: [:show, :update, :destroy]
 
+  # Central error handling for unexpected failures.
   rescue_from ActiveRecord::RecordNotFound, with: :handle_standard_error
   rescue_from StandardError,               with: :handle_standard_error
 
@@ -13,24 +22,23 @@ class Api::V1::EventsController < ApplicationController
   def index
     @events = Event.all
     render :index
-  rescue ActiveRecord::ConnectionNotEstablished => e
+  rescue ActiveRecord::ConnectionNotEstablished
+    # Special-case DB failures, let rescue_from handle everything else.
     render json: { error: "Database connection error." }, status: :service_unavailable
-  rescue StandardError => e
-    render json: { error: e.message }, status: :internal_server_error
   end
 
   # GET /api/v1/events/:id
   def show
-    render :show  # @event is set by set_event
+    render :show  # @event set by set_event
   end
 
   # POST /api/v1/events
   def create
+    # Use your EventPolicy in "class-level" mode; record is nil.
     policy = EventPolicy.new(current_amigo, nil)
     return render json: { error: "Unauthorized" }, status: :unauthorized unless policy.create?
 
-    permitted = event_params
-    Rails.logger.debug "[EventsController#create] event_params: #{permitted.inspect}"
+    permitted = event_params 
 
     event = Events::CreateEvent.new.call(
       creator: current_amigo,
@@ -42,7 +50,7 @@ class Api::V1::EventsController < ApplicationController
       event_name:          event.event_name,
       event_date:          event.event_date,
       event_time:          event.event_time,
-      status:              event.status,            # expose enum value ("planning", etc.)
+      status:              event.status,            # enum string ("planning", etc.)
       lead_coordinator_id: event.lead_coordinator_id
     }, status: :created
   rescue ActiveRecord::RecordInvalid => e
@@ -86,10 +94,6 @@ class Api::V1::EventsController < ApplicationController
       render json: { error: @event.errors.full_messages.to_sentence },
              status: :unprocessable_entity
     end
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: "Event not found." }, status: :not_found
-  rescue => e
-    render json: { error: e.message }, status: :internal_server_error
   end
 
   # GET /api/v1/events/mission
@@ -100,8 +104,8 @@ class Api::V1::EventsController < ApplicationController
   private
 
   def debug_authentication
-    Rails.logger.info "Current User: #{current_amigo.inspect}"
-    Rails.logger.info "Authorization Header: #{request.headers['Authorization']}"
+    Rails.logger.debug "[EventsController##{action_name}] current_amigo: #{current_amigo&.id || 'nil'}" if Rails.env.development?
+    Rails.logger.debug "[EventsController##{action_name}] Authorization header present? #{request.headers['Authorization'].present?}" if Rails.env.development?
   end
 
   def set_event
@@ -109,16 +113,23 @@ class Api::V1::EventsController < ApplicationController
   end
 
   def handle_standard_error(e)
-    # --- This is the crucial visibility fix -------------------------------
-    Rails.logger.error "[EventsController##{action_name}] #{e.class}: #{e.message}"
+    # Log details for you (server-side)
+    Rails.logger.error "[EventsController#{action_name}] #{e.class}: #{e.message}"
     Rails.logger.error e.backtrace.join("\n") if Rails.env.development?
-    # ----------------------------------------------------------------------
 
-    if action_name == "show" && e.is_a?(ActiveRecord::RecordNotFound)
-      render json: { error: "Event with ID #{params[:id]} doesn't exist." },
+    if e.is_a?(ActiveRecord::RecordNotFound) && action_name == "show"
+      render json: { error: "Event with ID #{params[:id]} does not exist." },
              status: :not_found
     else
-      render json: { error: e.message }, status: :internal_server_error
+      # Generic message to the client, detailed message only in logs
+      message =
+        if Rails.env.development?
+          e.message
+        else
+          "An unexpected error occurred. Please try again later."
+        end
+
+      render json: { error: message }, status: :internal_server_error
     end
   end
 
@@ -128,18 +139,18 @@ class Api::V1::EventsController < ApplicationController
       :event_type,
       :event_date,
       :event_time,
-      :status,                # ← this was missing; FE sends "status": "planning"
+      :status,                # FE sends "status": "planning"
       :description,
       event_speakers_performers: []
     )
   end
 
-  # Minimal policy invoker without bringing in Pundit
+  # Minimal policy invoker without bringing in full Pundit integration
   def authorize_event!(record, action)
     policy = EventPolicy.new(current_amigo, record)
     ok     = policy.public_send(action)
     return if ok
 
-    render json: { error: "Unauthorized" }, status: :unauthorized and return
+    render json: { error: "Unauthorized" }, status: :unauthorized
   end
 end

@@ -6,8 +6,7 @@ module Api
         skip_before_action :authenticate_amigo!, raise: false
 
         def show
-          session[:_csrf_token] = form_authenticity_token
-          Rails.logger.info "Session contents before render: #{session.to_hash.inspect}"
+          session[:_csrf_token] = form_authenticity_token 
           # force write (usually unnecessary, but for debugging you can try):
           request.session_options[:skip] = false
           cookies['CSRF-TOKEN'] = {

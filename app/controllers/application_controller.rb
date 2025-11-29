@@ -29,7 +29,6 @@ class ApplicationController < ActionController::API
   respond_to :json
 
   before_action :configure_permitted_parameters, if: :devise_controller?
-  before_action :log_request
 
   rescue_from NotAuthorizedError do
     respond_to do |format|
@@ -58,13 +57,13 @@ class ApplicationController < ActionController::API
     cookie_token = cookies['CSRF-TOKEN'].to_s
 
     if header_token.blank? || cookie_token.blank?
-      Rails.logger.error "CSRF token missing. Header: #{header_token.inspect}, Cookie: #{cookie_token.inspect}"
+      Rails.logger.error("CSRF validation failed for request_id=#{request.request_id}")
       return render json: { error: 'Invalid CSRF token' }, status: :unauthorized
     end
 
     unless ActiveSupport::SecurityUtils.secure_compare(header_token, cookie_token)
-      Rails.logger.error "CSRF token mismatch. Header: #{header_token.inspect}, Cookie: #{cookie_token.inspect}"
-      return render json: { error: 'Invalid CSRF token' }, status: :unauthorized
+      Rails.logger.error("CSRF validation failed for request_id=#{request.request_id}")
+     return render json: { error: 'Invalid CSRF token' }, status: :unauthorized
     end
   end
 
@@ -108,10 +107,6 @@ class ApplicationController < ActionController::API
 
   def api_request?
     request.format.json? || request.path.start_with?('/api')
-  end
-
-  def log_request
-    Rails.logger.info "API Request to #{request.path} with headers: #{filtered_headers}"
   end
 
   def filtered_headers

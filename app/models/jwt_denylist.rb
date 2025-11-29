@@ -6,19 +6,19 @@ class JwtDenylist < ApplicationRecord
   validates :jti, presence: true, uniqueness: true
 
   def self.jwt_revoked?(payload, amigo)
-    Rails.logger.debug "JwtDenylist - Checking if JWT is revoked with payload: #{payload}"
+    Rails.logger.debug "JwtDenylist - Checking revoked jti=#{payload['jti']} exp=#{payload['exp']}"
     exists?(jti: payload['jti'])
   end
   
   def self.revoke_jwt(payload, amigo)
-    Rails.logger.debug "JwtDenylist - Revoking JWT with payload: #{payload}"
+    Rails.logger.debug "JwtDenylist - Checking revoked jti=#{payload['jti']} exp=#{payload['exp']}"
     jti = payload['jti']
     exp = payload['exp']
   
     if jti && exp
       create!(jti: jti, exp: Time.at(exp))
     else
-      Rails.logger.error "JwtDenylist - Missing jti or exp in payload: #{payload}"
+      Rails.logger.error "JwtDenylist - Missing jti or exp; keys=#{payload.keys.join(',')}"
       raise "Invalid payload: missing jti or exp"
     end
   end

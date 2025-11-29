@@ -5,6 +5,9 @@ class JsonWebToken
   ALGORITHM = 'HS256'.freeze
   LEEWAY   = 5
 
+  # Specific error for revoked tokens so we can distinguish it from other decode errors
+  class RevokedTokenError < JWT::DecodeError; end
+
   class << self
     # Single source of truth for the secret
     def jwt_secret_key
@@ -26,7 +29,7 @@ class JsonWebToken
       raise
     end
 
-    # Verify signature + claims; allow small clock skew
+    # Verify signature + claims; allow small clock skew AND enforce denylist
     def decode(token)
       decoded = JWT.decode(
         token,
@@ -34,16 +37,22 @@ class JsonWebToken
         true,
         { algorithm: ALGORITHM, leeway: LEEWAY }
       ).first
-      HashWithIndifferentAccess.new(decoded)
+
+      payload = HashWithIndifferentAccess.new(decoded)
+      enforce_not_revoked!(payload)
+      payload
     rescue JWT::ExpiredSignature
       Rails.logger.warn("[JWT] decode expired")
+      raise
+    rescue RevokedTokenError => e
+      Rails.logger.warn("[JWT] decode revoked: #{e.message}")
       raise
     rescue JWT::DecodeError => e
       Rails.logger.warn("[JWT] decode error: #{e.message}")
       raise
     end
 
-    # For refresh: verify signature but ignore exp
+    # For refresh: verify signature but ignore exp, STILL enforce denylist
     def decode_allow_expired(token)
       decoded = JWT.decode(
         token,
@@ -51,10 +60,31 @@ class JsonWebToken
         true,
         { algorithm: ALGORITHM, verify_expiration: false }
       ).first
-      HashWithIndifferentAccess.new(decoded)
+
+      payload = HashWithIndifferentAccess.new(decoded)
+      enforce_not_revoked!(payload)
+      payload
+    rescue RevokedTokenError => e
+      Rails.logger.warn("[JWT] decode_allow_expired revoked: #{e.message}")
+      raise
     rescue JWT::DecodeError => e
       Rails.logger.warn("[JWT] decode_allow_expired error: #{e.message}")
       raise
+    end
+
+    private
+
+    # Central denylist check used by both decode paths
+    def enforce_not_revoked!(payload)
+      jti = payload[:jti] || payload['jti']
+      return payload if jti.blank? # defensive: older tokens might not have jti
+
+      if JwtDenylist.jwt_revoked?(payload, nil)
+        Rails.logger.warn("[JWT] token revoked jti=#{jti}")
+        raise RevokedTokenError, 'Token has been revoked'
+      end
+
+      payload
     end
   end
 end

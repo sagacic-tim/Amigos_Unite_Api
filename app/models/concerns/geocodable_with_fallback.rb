@@ -19,7 +19,7 @@ module GeocodableWithFallback
       return
     end
 
-    Rails.logger.info "[Geocoder] Resolving partial address: #{input_address}"
+    Rails.logger.debug "[Geocoder] Resolving partial address for amigo_location_id=#{id}" if Rails.env.development?
 
     results = GeocoderWithFallback.search_with_fallback(input_address)
 
@@ -130,7 +130,8 @@ module GeocodableWithFallback
 
   # 6. Centralized logging and error tracking
   def log_and_add_error(message)
-    Rails.logger.error(message)
+    Rails.logger.debug "[Geocoder] Resolving partial address for amigo_location_id=#{id}" if Rails.env.development?
+
     errors.add(:base, message)
     throw(:abort)
   end
