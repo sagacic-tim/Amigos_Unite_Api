@@ -1,34 +1,46 @@
 # app/services/events/create_event.rb
+require "open-uri"
+require "securerandom"
+
 module Events
   class CreateEvent
     # creator: Amigo who is creating the event (becomes lead coordinator)
-    # attrs:   { event_name:, event_date:, event_time:, event_type:, event_speakers_performers: (String|Array<String>) }
+    # attrs:   params[:event] (may include a nested :location hash)
+    #
+    # Expected shape for attrs[:location] (symbolized):
+    # {
+    #   business_name:              String,
+    #   location_type:              String,
+    #   street_number:              String,
+    #   street_name:                String,
+    #   city:                       String,
+    #   state_province:             String,
+    #   country:                    String,
+    #   postal_code:                String,
+    #   owner_name:                 String,
+    #   owner_phone:                String,
+    #   capacity:                   Integer,
+    #   capacity_seated:            Integer,
+    #   availability_notes:         String,
+    #   has_food:                   Boolean,
+    #   has_drink:                  Boolean,
+    #   has_internet:               Boolean,
+    #   has_big_screen:             Boolean,
+    #   place_id:                   String,
+    #   location_image_attribution: String,
+    #   image_url:                  String, # transient
+    #   photo_reference:            String  # transient
+    # }
+    #
     def call(creator:, attrs:)
       Event.transaction do
-        # --- Coerce/normalize incoming attributes ---------------------------------
-        cleaned = attrs.to_h.deep_dup.symbolize_keys
+        cleaned = attrs.to_h.deep_dup.deep_symbolize_keys
 
-        # Normalize date/time
-        if cleaned.key?(:event_date) && cleaned[:event_date].present?
-          cleaned[:event_date] = Date.parse(cleaned[:event_date].to_s)
-        end
-        if cleaned.key?(:event_time) && cleaned[:event_time].present?
-          cleaned[:event_time] = cleaned[:event_time].to_s
-        end
+        # Extract nested location before building the Event.
+        location_attrs = cleaned.delete(:location)
 
-        # Normalize speakers/performers based on the actual column type
-        if cleaned.key?(:event_speakers_performers)
-          col = Event.column_for_attribute(:event_speakers_performers)
-          if col.respond_to?(:array) && col.array
-            # PostgreSQL text[] column
-            cleaned[:event_speakers_performers] =
-              Array(cleaned[:event_speakers_performers]).map(&:to_s).reject(&:blank?)
-          else
-            # Scalar text/varchar fallback
-            cleaned[:event_speakers_performers] =
-              Array(cleaned[:event_speakers_performers]).map(&:to_s).reject(&:blank?).join(", ")
-          end
-        end
+        normalize_event_date_time!(cleaned)
+        normalize_speakers!(cleaned)
 
         # Assign lead BEFORE the first save to satisfy NOT NULL and DB FK
         event = Event.new(cleaned.merge(lead_coordinator_id: creator.id))
@@ -40,8 +52,46 @@ module Events
           role:  :lead_coordinator
         )
 
+        # Upsert primary location if the payload is meaningful
+        if location_attrs.present?
+          Events::UpsertPrimaryLocation.new.call(
+            event:     event,
+            raw_attrs: location_attrs
+          )
+        end
+
         event
+
       end
     end
-  end
+
+    private
+
+    # --- Normalizers --------------------------------------------------------
+
+    def normalize_event_date_time!(attrs)
+      if attrs.key?(:event_date) && attrs[:event_date].present?
+        attrs[:event_date] = Date.parse(attrs[:event_date].to_s)
+      end
+
+      if attrs.key?(:event_time) && attrs[:event_time].present?
+        attrs[:event_time] = attrs[:event_time].to_s
+      end
+    end
+
+    def normalize_speakers!(attrs)
+      return unless attrs.key?(:event_speakers_performers)
+
+      col = Event.column_for_attribute(:event_speakers_performers)
+
+      if col.respond_to?(:array) && col.array
+        # PostgreSQL text[] column
+        attrs[:event_speakers_performers] =
+          Array(attrs[:event_speakers_performers]).map(&:to_s).reject(&:blank?)
+      else
+        # Scalar text/varchar fallback
+        attrs[:event_speakers_performers] =
+          Array(attrs[:event_speakers_performers]).map(&:to_s).reject(&:blank?).join(", ")
+      end
+    end
 end

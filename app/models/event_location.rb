@@ -1,7 +1,43 @@
-# app/model/event_location.rb
-
+# app/models/event_location.rb
 class EventLocation < ApplicationRecord
   include GeocodableWithFallback
+
+  # ====================
+  # Venue categorization
+  # ====================
+
+  VENUE_KEYWORDS = [
+    # core venue words
+    'restaurant', 'cafe', 'coffee shop', 'tea house',
+    'bar', 'pub', 'club',
+    'banquet hall', 'event venue',
+    'conference center', 'convention center',
+    'community center', 'civic center', 'cultural center',
+    'recreation center', 'leisure center',
+
+    # performance / culture
+    'theater', 'auditorium', 'amphitheater',
+    'concert hall',
+
+    # hospitality
+    'hotel', 'motel', 'inn',
+    'resort', 'lodge',
+
+    # religious
+    'church', 'cathedral', 'temple', 'mosque', 'synagogue',
+    'abbey', 'basilica', 'parish', 'gurudwara',
+
+    # education / institutional
+    'school', 'college', 'university', 'library',
+    'training center', 'learning center', 'student union',
+
+    # outdoor
+    'park', 'campground',
+    'picnic ground'
+  ].freeze
+
+  # Infer location_type automatically from business_name if not set manually.
+  before_validation :infer_location_type, if: -> { location_type.blank? && business_name.present? }
 
   # ====================
   # Associations
@@ -11,7 +47,7 @@ class EventLocation < ApplicationRecord
   has_many_attached :images
   has_one_attached :location_image
 
-    # If you want typed access to services:
+  # If you want typed access to services:
   def services_hash
     (services || {}).symbolize_keys
   end
@@ -62,4 +98,33 @@ class EventLocation < ApplicationRecord
   validates :longitude,
     numericality: { greater_than_or_equal_to: -180, less_than_or_equal_to: 180 },
     allow_nil: true
+
+  # ====================
+  # Class-level helpers
+  # ====================
+
+  # Returns true if the given name appears to be a "venue" based on the keyword list.
+  def self.venue_category?(name)
+    return false if name.blank?
+
+    downcased = name.to_s.downcase
+    VENUE_KEYWORDS.any? { |kw| downcased.include?(kw) }
+  end
+
+  # Returns a title-cased category string derived from the first matched keyword,
+  # e.g. "restaurant" => "Restaurant", "community center" => "Community Center".
+  def self.infer_location_type_from(name)
+    return nil if name.blank?
+
+    downcased = name.to_s.downcase
+    match = VENUE_KEYWORDS.find { |kw| downcased.include?(kw) }
+    match&.split&.map(&:capitalize)&.join(" ")
+  end
+
+  private
+
+  # Populate location_type from business_name if we can infer a category.
+  def infer_location_type
+    self.location_type ||= self.class.infer_location_type_from(business_name)
+  end
 end

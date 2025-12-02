@@ -28,6 +28,7 @@ class Api::V1::EventLocationsController < ApplicationController
         postal_code
         country
         status
+        location_type
         location_image_attribution
       ],
       methods: %i[location_image_url]
@@ -105,7 +106,21 @@ class Api::V1::EventLocationsController < ApplicationController
       :post_box,
       :latitude,
       :longitude,
-      :time_zone
+      :time_zone,
+      :location_type,          # ← NEW: persisted category
+      :owner_name,
+      :owner_phone,
+      :capacity,
+      :capacity_seated,
+      :availability_notes,
+      :has_food,
+      :has_drink,
+      :has_internet,
+      :has_big_screen,
+      :place_id,
+      :location_image_attribution
+      # If/when you decide to send a JSON services hash directly:
+      # services: {}
     )
   end
 end

@@ -1,20 +1,24 @@
+# app/models/event.rb
 class Event < ApplicationRecord
 
   # Associations
   
-  # Each event is associated a lead_coordsinator
+ 
   belongs_to :lead_coordinator, class_name: "Amigo", optional: true
-  # Each event is associated with one or more event locations
+
   has_many :event_location_connectors, dependent: :destroy
   has_many :event_locations, through: :event_location_connectors
-  has_one  :primary_event_location_connector,
-          -> { where(is_primary: true) },
-          class_name: "EventLocationConnector",
-          dependent: :destroy
 
-  has_one  :primary_event_location,
+  has_one  :primary_event_location_connector,
+           -> { where(is_primary: true) },
+           class_name: "EventLocationConnector",
+           inverse_of: :event,
+           dependent: :destroy
+
+  has_one :primary_event_location,
           through: :primary_event_location_connector,
           source: :event_location
+
   # Each event is associated wioth a igos as participants
   has_many :event_amigo_connectors, dependent: :destroy
   has_many :amigos, through: :event_amigo_connectors
@@ -42,7 +46,7 @@ class Event < ApplicationRecord
         begin
           parsed_time = Time.parse(json['event_time'].to_s)
           json['event_time'] = parsed_time.strftime('%H:%M:%S')
-          rescue ArgumentError
+        rescue ArgumentError
           # leave as-is if unparsable
         end
       end
@@ -60,7 +64,7 @@ class Event < ApplicationRecord
       Date.parse(event_date.to_s)
       Time.parse(event_time.to_s)
       true
-      rescue ArgumentError
+    rescue ArgumentError
         false
     end
   end
