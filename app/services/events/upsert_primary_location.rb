@@ -48,6 +48,7 @@ module Events
 
       event_location.assign_attributes(
         business_name:              attrs[:business_name],
+        business_phone:             attrs[:business_phone],
         location_type:              attrs[:location_type],
         street_number:              attrs[:street_number],
         street_name:                attrs[:street_name],
@@ -56,7 +57,6 @@ module Events
         country:                    attrs[:country],
         postal_code:                attrs[:postal_code],
         owner_name:                 attrs[:owner_name],
-        owner_phone:                attrs[:owner_phone],
         capacity:                   attrs[:capacity],
         capacity_seated:            attrs[:capacity_seated],
         availability_notes:         attrs[:availability_notes],

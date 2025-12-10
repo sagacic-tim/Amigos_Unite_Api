@@ -26,12 +26,6 @@ class AddPlacesFieldsToEventLocations < ActiveRecord::Migration[7.1]
                  comment: "Owner or main contact for the venue"
     end
 
-    unless column_exists?(:event_locations, :owner_phone)
-      add_column :event_locations, :owner_phone, :string,
-                 limit: 15,
-                 comment: "Owner or main contact phone number"
-    end
-
     unless column_exists?(:event_locations, :services)
       add_column :event_locations, :services, :jsonb,
                  default: {},

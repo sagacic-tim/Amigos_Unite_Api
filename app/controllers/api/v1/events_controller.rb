@@ -146,6 +146,7 @@ class Api::V1::EventsController < ApplicationController
       event_speakers_performers: [],
       location: [
         :business_name,
+        :business_phone,
         :location_type,
         :street_number,
         :street_name,
@@ -154,7 +155,6 @@ class Api::V1::EventsController < ApplicationController
         :country,
         :postal_code,
         :owner_name,
-        :owner_phone,
         :capacity,
         :capacity_seated,
         :availability_notes,

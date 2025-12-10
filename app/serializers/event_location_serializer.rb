@@ -25,7 +25,6 @@ class EventLocationSerializer < ActiveModel::Serializer
              :longitude,
              :time_zone,
              :owner_name,
-             :owner_phone,
              :capacity,
              :capacity_seated,
              :availability_notes,

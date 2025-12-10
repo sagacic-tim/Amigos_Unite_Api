@@ -109,7 +109,6 @@ class Api::V1::EventLocationsController < ApplicationController
       :time_zone,
       :location_type,          # ← NEW: persisted category
       :owner_name,
-      :owner_phone,
       :capacity,
       :capacity_seated,
       :availability_notes,
