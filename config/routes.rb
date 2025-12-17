@@ -15,7 +15,6 @@ Rails.application.routes.draw do
     get  'confirmations', to: 'confirmations#show'   # /api/v1/confirmations?token=...
     post 'confirmations', to: 'confirmations#create' # resend
 
-    # Signup still comes from Devise registrations
     devise_for :amigos,
       path: '',
       skip: [:sessions, :registrations],
@@ -35,13 +34,9 @@ Rails.application.routes.draw do
       get    'verify_token',  to: 'auth/sessions#verify_token'
     end
 
-    # ─────────────────────────────────────────────
-    # Google Places proxy endpoint
-    # ─────────────────────────────────────────────
-
-    get 'places/search', to: 'places#search'
+    # Google Places proxy
+    get 'places/search',     to: 'places#search'
     get 'places/:id/photos', to: 'places#photos'
-    # → becomes GET /api/v1/places/search mapped to Api::V1::PlacesController#search
 
     # Your application resources
     get    'me',            to: 'amigos#me'
@@ -50,7 +45,16 @@ Rails.application.routes.draw do
       resources :amigo_locations, only: %i[index create show update destroy]
     end
 
+    # TOP-LEVEL INDEX: /api/v1/event_amigo_connectors
+    resources :event_amigo_connectors, only: [:index]
+
     resources :events, except: %i[new edit] do
+      # NEW: /api/v1/events/my_events → Api::V1::EventsController#my_events
+      collection do
+        get :my_events
+      end
+
+      # NESTED: /api/v1/events/:event_id/event_amigo_connectors
       resources :event_amigo_connectors,    except: %i[new edit]
       resources :event_location_connectors, only: %i[index show create update destroy]
     end

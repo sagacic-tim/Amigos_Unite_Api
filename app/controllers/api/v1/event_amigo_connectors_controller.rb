@@ -8,7 +8,16 @@ module Api
       before_action :set_target_amigo,          only: [:create, :update, :destroy]
 
       def index
-        @event_amigo_connectors = @event.event_amigo_connectors
+        if params[:event_id].present?
+          return unless @event  # set_event already rendered 404 if not found
+
+          @event_amigo_connectors =
+            @event.event_amigo_connectors.includes(:amigo)
+        else
+          @event_amigo_connectors =
+            EventAmigoConnector.includes(:amigo, :event).all
+        end
+
         render :index
       end
 
@@ -25,7 +34,8 @@ module Api
         return unauthorized! unless can_manage || self_join
 
         role = resolved_role || :participant
-        @event_amigo_connector = @event.event_amigo_connectors.new(amigo: @target_amigo, role: role)
+        @event_amigo_connector =
+          @event.event_amigo_connectors.new(amigo: @target_amigo, role: role)
 
         if @event_amigo_connector.save
           render json: @event_amigo_connector, status: :created
@@ -42,20 +52,26 @@ module Api
         role_sym = resolved_role
         return render json: { error: 'Role param is required' }, status: :unprocessable_entity unless role_sym
 
-        # Validate role to avoid ArgumentError from enum
         valid_roles = EventAmigoConnector.roles.keys.map!(&:to_sym)
         unless valid_roles.include?(role_sym)
           return render json: { error: "Invalid role. Allowed: #{valid_roles.join(', ')}" },
                         status: :unprocessable_entity
         end
-        # Lead promotions are handled by service below; keep guard explicit for clarity
-        # (this is redundant safety, but keeps intent obvious)
 
         conn =
           if role_sym == :lead_coordinator
-            Events::TransferLead.new.call(actor: current_amigo, event: @event, new_lead: target)
+            Events::TransferLead.new.call(
+              actor: current_amigo,
+              event: @event,
+              new_lead: target
+            )
           else
-            Events::ChangeRole.new.call(actor: current_amigo, event: @event, target: target, new_role: role_sym)
+            Events::ChangeRole.new.call(
+              actor: current_amigo,
+              event: @event,
+              target: target,
+              new_role: role_sym
+            )
           end
 
         render json: conn, status: :ok
@@ -86,14 +102,24 @@ module Api
       private
 
       def set_event
+        return unless params[:event_id].present?
+
         @event = Event.find_by(id: params[:event_id])
-        render json: { error: 'Event not found' }, status: :not_found unless @event
+        unless @event
+          render json: { error: 'Event not found' }, status: :not_found
+        end
       end
 
       def set_event_amigo_connector
         return unless @event
-        @event_amigo_connector = @event.event_amigo_connectors.find_by(id: params[:id])
-        render json: { error: 'Event Amigo Connector not found' }, status: :not_found unless @event_amigo_connector || params[:id].blank?
+
+        @event_amigo_connector =
+          @event.event_amigo_connectors.find_by(id: params[:id])
+
+        unless @event_amigo_connector
+          render json: { error: 'Event Amigo Connector not found' },
+                 status: :not_found
+        end
       end
 
       def set_target_amigo
@@ -110,7 +136,6 @@ module Api
         params.require(:event_amigo_connector).permit(:amigo_id, :role)
       end
 
-      # Kept for guards in create/destroy; NotAuthorizedError bubbles globally.
       def unauthorized!
         render json: { error: 'Unauthorized' }, status: :unauthorized
       end
