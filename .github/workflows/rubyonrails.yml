@@ -1,0 +1,78 @@
+name: "Amigos Unite API - Rails CI"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:15-3.4
+        ports:
+          - "5432:5432"
+        env:
+          POSTGRES_DB: amigos_unite_api_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: "postgres://postgres:password@localhost:5432/amigos_unite_api_test"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410
+        with:
+          ruby-version: 3.2.2
+          bundler-cache: true
+
+      - name: Set SECRET_KEY_BASE for test
+        run: echo "SECRET_KEY_BASE=$(ruby -rsecurerandom -e 'print SecureRandom.hex(64)')" >> $GITHUB_ENV
+
+      - name: Prepare database
+        run: bin/rails db:prepare
+
+      - name: Check autoloading / Zeitwerk
+        run: bin/rails zeitwerk:check
+
+      # This will pass even with zero tests; once you add tests, they’ll run here.
+      - name: Run tests
+        run: bin/rails test
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410
+        with:
+          ruby-version: 3.2.2
+          bundler-cache: true
+
+      - name: Generate binstubs
+        run: bundle binstubs bundler-audit brakeman rubocop
+
+      - name: Security audit dependencies
+        run: bin/bundler-audit --update
+
+      - name: Security audit application code
+        run: bin/brakeman -q -w2
+
+      - name: Lint Ruby files
+        run: bin/rubocop --parallel
