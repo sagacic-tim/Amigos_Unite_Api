@@ -1,8 +1,9 @@
 # app/serializers/amigo_serializer.rb
 class AmigoSerializer < ActiveModel::Serializer
-  attributes :id, :first_name, :last_name, :user_name, :email,
-             :secondary_email, :phone_1, :phone_2, :avatar_url,
-             :full_name, :formatted_created_at, :formatted_updated_at
+  attributes  :id, :first_name, :last_name, :user_name, :email,
+              :secondary_email, :phone_1, :phone_2, :avatar_url,
+              :full_name, :formatted_created_at, :formatted_updated_at,
+              :willing_to_help
 
   has_one  :amigo_detail,    serializer: AmigoDetailSerializer
   has_many :amigo_locations, serializer: AmigoLocationSerializer
@@ -30,6 +31,10 @@ class AmigoSerializer < ActiveModel::Serializer
   def avatar_url
     # Do NOT bypass the model logic; return exactly what the FE expects (relative path with buster, or a fallback)
     object.avatar_url_with_buster
+  end
+
+  def willing_to_help
+    object.amigo_detail&.willing_to_help
   end
 
   private

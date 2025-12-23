@@ -9,20 +9,26 @@ module Api
 
       def index
         if params[:event_id].present?
-          return unless @event  # set_event already rendered 404 if not found
+          return unless @event
 
           @event_amigo_connectors =
-            @event.event_amigo_connectors.includes(:amigo)
+            @event.event_amigo_connectors.includes(amigo: :amigo_detail)
         else
           @event_amigo_connectors =
-            EventAmigoConnector.includes(:amigo, :event).all
+            EventAmigoConnector.includes(:event, amigo: :amigo_detail).all
         end
 
-        render :index
+        render json: @event_amigo_connectors,
+               each_serializer: EventAmigoConnectorSerializer,
+               adapter: :attributes,
+               status: :ok
       end
 
       def show
-        render :show
+        render json: @event_amigo_connector,
+               serializer: EventAmigoConnectorSerializer,
+               adapter: :attributes,
+               status: :ok
       end
 
       # Allows “manager OR self-join”.
@@ -38,9 +44,13 @@ module Api
           @event.event_amigo_connectors.new(amigo: @target_amigo, role: role)
 
         if @event_amigo_connector.save
-          render json: @event_amigo_connector, status: :created
+          render json: @event_amigo_connector,
+                 serializer: EventAmigoConnectorSerializer,
+                 adapter: :attributes,
+                 status: :created
         else
-          render json: @event_amigo_connector.errors, status: :unprocessable_entity
+          render json: { errors: @event_amigo_connector.errors.full_messages },
+                 status: :unprocessable_entity
         end
       end
 
@@ -74,7 +84,10 @@ module Api
             )
           end
 
-        render json: conn, status: :ok
+        render json: conn,
+               serializer: EventAmigoConnectorSerializer,
+               adapter: :attributes,
+               status: :ok
       rescue ActiveRecord::RecordInvalid => e
         render json: { error: e.record.errors.full_messages }, status: :unprocessable_entity
       end
