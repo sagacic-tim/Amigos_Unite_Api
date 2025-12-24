@@ -1,11 +1,7 @@
 # config/environments/test.rb
-
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
-  # -----------------------------------------------
-  # Code Loading & Caching
-  # -----------------------------------------------
   config.cache_classes = true
   config.eager_load = ENV["CI"].present?
 
@@ -17,39 +13,29 @@ Rails.application.configure do
   config.action_controller.perform_caching = false
   config.cache_store = :null_store
 
-  # -----------------------------------------------
-  # Error Handling
-  # -----------------------------------------------
   config.consider_all_requests_local = true
-  config.action_dispatch.show_exceptions = false  # Raise errors instead of rendering templates
+  config.action_dispatch.show_exceptions = false
 
-  # -----------------------------------------------
-  # Forgery Protection
-  # -----------------------------------------------
   config.action_controller.allow_forgery_protection = false
 
-  # -----------------------------------------------
-  # Active Storage
-  # -----------------------------------------------
-  config.active_storage.service = :test  # Uses tmp/storage during tests
+  config.active_storage.service = :test
 
-  # -----------------------------------------------
-  # Action Mailer
-  # -----------------------------------------------
+  # URL / host for CI and tests
+  host      = "localhost"
+  protocol  = "http"
+  port      = 3001
+  config.action_mailer.default_url_options = { host:, protocol:, port: }
+  Rails.application.routes.default_url_options = { host:, protocol:, port: }
+  config.default_url_options = { host:, protocol:, port: }
+
+  # Jobs run inline / in test adapter
+  config.active_job.queue_adapter = :test
+
   config.action_mailer.perform_caching = false
   config.action_mailer.delivery_method = :test
-  # Emails will be accumulated in ActionMailer::Base.deliveries array
 
-  # -----------------------------------------------
-  # Deprecations
-  # -----------------------------------------------
   config.active_support.deprecation = :stderr
   config.active_support.disallowed_deprecation = :raise
   config.active_support.disallowed_deprecation_warnings = []
-
-  # -----------------------------------------------
-  # Internationalization & View Debugging
-  # -----------------------------------------------
-  # config.i18n.raise_on_missing_translations = true
-  # config.action_view.annotate_rendered_view_with_filenames = true
+  config.log_level = :warn  # keeps test output cleaner in CI
 end

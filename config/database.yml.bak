@@ -2,9 +2,9 @@ default: &default
   adapter: postgis
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 8 } %>
-  username: <%= ENV.fetch("PGUSER", "drruby") %>
-  host:     <%= ENV.fetch("PGHOST", "/tmp") %>
-  port:     <%= ENV.fetch("PGPORT", 5432) %>
+  username: drruby
+  host: /tmp
+  port: 5432
 
 development:
   <<: *default
@@ -17,5 +17,5 @@ test:
 production:
   <<: *default
   database: amigos_unite_api_production
-  username: <%= ENV.fetch("AMIGOS_UNITE_API_DB_USER", "amigos_unite_api") %>
+  username: amigos_unite_api
   password: <%= ENV["AMIGOS_UNITE_API_DATABASE_PASSWORD"] %>
