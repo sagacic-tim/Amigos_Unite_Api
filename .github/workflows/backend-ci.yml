@@ -1,0 +1,60 @@
+
+name: "Amigos Unite API CI"
+
+on:
+  push:
+    branches: ["main", "Amigos_Unite_Ongoing_Dev"]
+  pull_request:
+    branches: ["main", "Amigos_Unite_Ongoing_Dev"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: amigos_unite_api_test
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U postgres -d amigos_unite_api_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGPORT: 5432
+      # CI is automatically set by GitHub Actions; your test.rb already uses ENV["CI"].present?
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2.2
+          bundler-cache: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libpq-dev
+
+      - name: Prepare database
+        run: |
+          bin/rails db:prepare
+
+      - name: Run test suite
+        run: |
+          bin/rails test
+          # If you switch to RSpec later:
+          # bundle exec rspec
