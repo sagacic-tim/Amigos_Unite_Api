@@ -56,10 +56,6 @@ gem 'rack-attack', '~> 6.7'
   # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '~> 1.18', '>= 1.18.4', require: false
 
-# Faker, a port of Data::Faker from Perl, is used to easily
-# generate fake data: names, addresses, phone numbers, etc.
-gem 'faker', '~> 3.4', '>= 3.4.2'
-
 # Devise and related authentication gems
   # Devise is a flexible authentication solution for Rails
   # based on Warden. It:
@@ -163,18 +159,22 @@ gem 'image_processing', '~> 1.13'
 # loading the whole image in memory.
 gem 'ruby-vips', '~> 2.2', '>= 2.2.2'
 
+# Sidekiq is a full-featured background job framework for Ruby. It aims to
+# be simple to integrate with any modern Rails application and much higher
+# performance than other existing solutions.
+gem 'sidekiq', '~> 8.0', '>= 8.0.7', require: true
+
+# A Ruby client that tries to match Redis' API one-to-one, while stil
+# lproviding an idiomatic interface.
+gem 'redis', '~> 5.4', '>= 5.4.1'
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem 'debug', '~> 1.9', '>= 1.9.2', platforms: %i[ mri mingw x64_mingw ]
 
-  # Sidekiq is a full-featured background job framework for Ruby. It aims to
-  # be simple to integrate with any modern Rails application and much higher
-  # performance than other existing solutions.
-  gem 'sidekiq', '~> 8.0', '>= 8.0.7', require: true
-
-  # A Ruby client that tries to match Redis' API one-to-one, while stil
-  # lproviding an idiomatic interface.
-  gem 'redis', '~> 5.4', '>= 5.4.1'  
+# Faker, a port of Data::Faker from Perl, is used to easily
+# generate fake data: names, addresses, phone numbers, etc.
+  gem 'faker', '~> 3.4', '>= 3.4.2'
 
   # In RSpec, tests are not just scripts that verify your applications
   # code. They’re also specifications (or specs, for short): detailedexplanations
@@ -184,14 +184,6 @@ group :development, :test do
 
 end
 
-group :development do
-  # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
-  # gem "spring"
-  #
-  # Preview email in the default browser instead of sending it.
-  # This means you do not need to set up email delivery in your
-  # development environment, and you no longer need to worry about
-  # accidentally sending a test email to someone else's address.
-  # gem 'letter_opener', '~> 1.10'
-  # gem 'letter_opener_web'
+group :test do
+  gem "factory_bot_rails"
 end

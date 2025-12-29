@@ -5,7 +5,9 @@ one:
   available_to_host: false
   willing_to_help: false
   willing_to_donate: false
-  personal_bio: MyText
+  personal_bio: >
+    I enjoy meeting new people over coffee and learning about different cultures.
+    In my spare time I like reading, walking in nature, and exploring local art events.
   amigo: one
 
 two:
@@ -13,5 +15,7 @@ two:
   available_to_host: false
   willing_to_help: false
   willing_to_donate: false
-  personal_bio: MyText
+  personal_bio: >
+    I am interested in volunteering at community gatherings and supporting local causes.
+    I work remotely in tech and am always looking for ways to give back when I can.
   amigo: two

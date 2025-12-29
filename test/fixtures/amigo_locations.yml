@@ -2,44 +2,44 @@
 
 one:
   amigo: one
-  address: MyString
-  room_no: MyString
-  floor: MyString
-  apartment_suite_number: MyString
-  street_number: MyString
-  street_name: MyString
-  city_sublocality: MyString
-  city: MyString
-  state_province_subdivision: MyString
-  state_province: MyString
-  state_province_short: MyString
-  country: MyString
-  country_short: MyString
-  postal_code: MyString
-  postal_code_suffix: MyString
-  post_box: MyString
-  latitude: 9.99
-  longitude: 9.99
-  time_zone: MyString
+  address: "123 Main St, Pasadena, CA 91101"
+  room_no: "Suite 200"
+  floor: "2"
+  apartment_suite_number: "200"
+  street_number: "123"
+  street_name: "Main St"
+  city_sublocality: "Old Pasadena"
+  city: "Pasadena"
+  state_province_subdivision: "Los Angeles County"
+  state_province: "California"
+  state_province_short: "CA"
+  country: "United States"
+  country_short: "US"
+  postal_code: "91101"
+  postal_code_suffix: "1234"
+  post_box: ""
+  latitude: 34.1478
+  longitude: -118.1445
+  time_zone: "America/Los_Angeles"
 
 two:
   amigo: two
-  address: MyString
-  room_no: MyString
-  floor: MyString
-  apartment_suite_number: MyString
-  street_number: MyString
-  street_name: MyString
-  city_sublocality: MyString
-  city: MyString
-  state_province_subdivision: MyString
-  state_province: MyString
-  state_province_short: MyString
-  country: MyString
-  country_short: MyString
-  postal_code: MyString
-  postal_code_suffix: MyString
-  post_box: MyString
-  latitude: 9.99
-  longitude: 9.99
-  time_zone: MyString
+  address: "456 Queen St W, Toronto, ON M5V 2B6"
+  room_no: "Unit 5B"
+  floor: "5"
+  apartment_suite_number: "5B"
+  street_number: "456"
+  street_name: "Queen St W"
+  city_sublocality: "Downtown"
+  city: "Toronto"
+  state_province_subdivision: "Ontario"
+  state_province: "Ontario"
+  state_province_short: "ON"
+  country: "Canada"
+  country_short: "CA"
+  postal_code: "M5V 2B6"
+  postal_code_suffix: "2B6"
+  post_box: ""
+  latitude: 43.6475
+  longitude: -79.3957
+  time_zone: "America/Toronto"

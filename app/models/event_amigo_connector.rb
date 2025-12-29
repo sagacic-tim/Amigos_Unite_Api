@@ -12,7 +12,8 @@ class EventAmigoConnector < ApplicationRecord
   enum status: {
     pending: 0,
     confirmed: 1,
-    declined: 2
+    active: 2,
+    declined: 3
   }, _prefix: true
 
   # Validations

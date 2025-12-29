@@ -7,7 +7,8 @@ class EventLocationConnector < ApplicationRecord
   enum status: {
     pending: 0,
     confirmed: 1,
-    rejected: 2
+    active: 2,
+    rejected: 3
   }
 
   validates :event_location_id, uniqueness: { scope: :event_id }
@@ -19,7 +20,7 @@ class EventLocationConnector < ApplicationRecord
     },
     if: :is_primary?
 
-  # Automatically set default status
+  # Automatically set default status:
   after_initialize :set_default_status, if: :new_record?
 
   private

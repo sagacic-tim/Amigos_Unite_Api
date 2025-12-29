@@ -1,30 +1,35 @@
-# require "test_helper"
-
-# class ProcessImageJobTest < ActiveJob::TestCase
-# #  queue_as :default
-
-#   def perform(event_location_id)
-#     event_location = EventLocation.find(event_location_id)
-#     return unless event_location.location_image.attached?
-
-#     resized_image = event_location.location_image.variant(resize: "640x480").processed
-#     event_location.location_image.attach(io: File.open(resized_image.path),
-#     filename: event_location.location_image.filename.to_s,
-#     content_type: event_location.location_image.content_type)
-#   end
-# end
-
+# test/jobs/process_image_job_test.rb
 require "test_helper"
+require "stringio"
 
 class ProcessImageJobTest < ActiveJob::TestCase
-  test "process image job" do
-    # Assuming you have a fixture or factory for EventLocation with an attached image
-    event_location = event_locations(:one) 
+  test "process_image_job runs safely and keeps the image attached" do
+    # Create a minimal EventLocation record.
+    # We bypass validations to avoid depending on any future changes there.
+    event_location = EventLocation.new(
+      business_name: "Test Venue",
+      address:       "123 Test Street"
+    )
+    event_location.save!(validate: false)
 
-    # Perform the job
-    ProcessImageJob.perform_now(event_location.id)
+    # Attach a fake in-memory "image"
+    event_location.location_image.attach(
+      io:          StringIO.new("fake-image-data"),
+      filename:    "test.png",
+      content_type: "image/png"
+    )
 
-    # Add assertions here to verify the job's behavior
-    assert event_location.location_image.attached?
+    assert event_location.location_image.attached?,
+           "Precondition: location_image should be attached before the job runs"
+
+    # The job should not raise, even if the underlying image processor fails,
+    # because perform wraps processing in a rescue.
+    assert_nothing_raised do
+      ProcessImageJob.perform_now(event_location.id)
+    end
+
+    # After running, the record should still have an attached image.
+    assert event_location.reload.location_image.attached?,
+           "location_image should remain attached after job processing"
   end
 end

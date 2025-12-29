@@ -1,26 +1,29 @@
-# require "test_helper"
-
-# class ProcessLocationImageJobTest < ActiveJob::TestCase
-# #  queue_as :default
-
-#   def perform(event_location)
-#     # Process the location_image here
-#     # Example: Resize the image
-#     event_location.location_image.variant(resize: "640x480").processed
-#   end
-# end
-
+# test/jobs/process_location_image_job_test.rb
 require "test_helper"
+require "stringio"
 
 class ProcessLocationImageJobTest < ActiveJob::TestCase
-  test "process location image job" do
-    # Assuming you have a fixture or factory for EventLocation with an attached image
-    event_location = event_locations(:one)
+  test "process_location_image_job runs safely and keeps the image attached" do
+    event_location = EventLocation.new(
+      business_name: "Test Venue 2",
+      address:       "456 Another Street"
+    )
+    event_location.save!(validate: false)
 
-    # Perform the job
-    ProcessLocationImageJob.perform_now(event_location)
+    event_location.location_image.attach(
+      io:          StringIO.new("fake-image-data"),
+      filename:    "location-test.png",
+      content_type: "image/png"
+    )
 
-    # Add assertions here to verify the job's behavior
-    assert event_location.location_image.attached?
+    assert event_location.location_image.attached?,
+           "Precondition: location_image should be attached before the job runs"
+
+    assert_nothing_raised do
+      ProcessLocationImageJob.perform_now(event_location.id)
+    end
+
+    assert event_location.reload.location_image.attached?,
+           "location_image should remain attached after job processing"
   end
 end

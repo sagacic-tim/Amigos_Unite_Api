@@ -1,58 +1,49 @@
 # app/services/events/create_event.rb
-require "open-uri"
-require "securerandom"
-
 module Events
   class CreateEvent
-    # creator: Amigo who is creating the event (becomes lead coordinator)
-    # attrs:   params[:event] (may include a nested :location hash)
+    # Public API:
+    #   Events::CreateEvent.new.call(
+    #     creator: current_amigo,
+    #     attrs:   event_params
+    #   )
     #
-    # Expected shape for attrs[:location] (symbolized):
-    # {
-    #   business_name:              String,
-    #   location_type:              String,
-    #   street_number:              String,
-    #   street_name:                String,
-    #   city:                       String,
-    #   state_province:             String,
-    #   country:                    String,
-    #   postal_code:                String,
-    #   owner_name:                 String,
-    #   owner_phone:                String,
-    #   capacity:                   Integer,
-    #   capacity_seated:            Integer,
-    #   availability_notes:         String,
-    #   has_food:                   Boolean,
-    #   has_drink:                  Boolean,
-    #   has_internet:               Boolean,
-    #   has_big_screen:             Boolean,
-    #   place_id:                   String,
-    #   location_image_attribution: String,
-    #   image_url:                  String, # transient
-    #   photo_reference:            String  # transient
-    # }
-    #
+    # This will:
+    #   - Create the Event with +creator+ as lead_coordinator
+    #   - Create an EventAmigoConnector as lead_coordinator
+    #   - Optionally upsert the primary EventLocation if +location+ is provided
     def call(creator:, attrs:)
+      raise ArgumentError, "creator must be an Amigo" unless creator.is_a?(Amigo)
+
+      # attrs may be ActionController::Parameters or a plain Hash.
+      raw_attrs =
+        if attrs.respond_to?(:to_unsafe_h)
+          attrs.to_unsafe_h
+        else
+          attrs.to_h
+        end
+
+      raw_attrs = raw_attrs.deep_symbolize_keys
+
+      # Extract nested location attributes, leaving only core event attributes
+      location_attrs = raw_attrs.delete(:location)
+
       Event.transaction do
-        cleaned = attrs.to_h.deep_dup.deep_symbolize_keys
-
-        # Extract nested location before building the Event.
-        location_attrs = cleaned.delete(:location)
-
-        normalize_event_date_time!(cleaned)
-        normalize_speakers!(cleaned)
-
-        # Assign lead BEFORE the first save to satisfy NOT NULL and DB FK
-        event = Event.new(cleaned.merge(lead_coordinator_id: creator.id))
+        # 1) Build and save the event with the lead coordinator set
+        event = Event.new(raw_attrs)
+        event.lead_coordinator = creator
         event.save!
 
-        # Create the enforcing connector row (unique partial index => one lead per event)
-        event.event_amigo_connectors.find_or_create_by!(
+        # 2) Create the lead coordinator connector
+        #    NOTE: we do NOT force a specific status here; we let the
+        #    enum / DB default handle it to avoid invalid enum values.
+        EventAmigoConnector.create!(
+          event: event,
           amigo: creator,
           role:  :lead_coordinator
+          # status will use the model/database default
         )
 
-        # Upsert primary location if the payload is meaningful
+        # 3) Optionally upsert the primary location
         if location_attrs.present?
           Events::UpsertPrimaryLocation.new.call(
             event:     event,
@@ -61,37 +52,7 @@ module Events
         end
 
         event
-
       end
     end
-
-    private
-
-    # --- Normalizers --------------------------------------------------------
-
-    def normalize_event_date_time!(attrs)
-      if attrs.key?(:event_date) && attrs[:event_date].present?
-        attrs[:event_date] = Date.parse(attrs[:event_date].to_s)
-      end
-
-      if attrs.key?(:event_time) && attrs[:event_time].present?
-        attrs[:event_time] = attrs[:event_time].to_s
-      end
-    end
-
-    def normalize_speakers!(attrs)
-      return unless attrs.key?(:event_speakers_performers)
-
-      col = Event.column_for_attribute(:event_speakers_performers)
-
-      if col.respond_to?(:array) && col.array
-        # PostgreSQL text[] column
-        attrs[:event_speakers_performers] =
-          Array(attrs[:event_speakers_performers]).map(&:to_s).reject(&:blank?)
-      else
-        # Scalar text/varchar fallback
-        attrs[:event_speakers_performers] =
-          Array(attrs[:event_speakers_performers]).map(&:to_s).reject(&:blank?).join(", ")
-      end
-    end
+  end
 end

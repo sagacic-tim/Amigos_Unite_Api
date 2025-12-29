@@ -4,7 +4,7 @@ class Event < ApplicationRecord
   # Associations
   
  
-  belongs_to :lead_coordinator, class_name: "Amigo", optional: true
+  belongs_to :lead_coordinator, class_name: "Amigo", optional: false
 
   has_many :event_location_connectors, dependent: :destroy
   has_many :event_locations, through: :event_location_connectors
