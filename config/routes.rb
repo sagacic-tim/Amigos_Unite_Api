@@ -12,6 +12,9 @@ Rails.application.routes.draw do
     # CSRF handshake
     get    'csrf',        to: 'auth/csrf#show'
 
+    # Simple health-check/test endpoint
+    get 'test', to: 'test#index'
+
     get  'confirmations', to: 'confirmations#show'   # /api/v1/confirmations?token=...
     post 'confirmations', to: 'confirmations#create' # resend
 
