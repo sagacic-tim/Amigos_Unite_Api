@@ -10,34 +10,41 @@ threads min_threads, max_threads
 env = ENV.fetch("RAILS_ENV", "development")
 environment env
 
-# Project root (without relying on Rails)
 APP_ROOT = File.expand_path("..", __dir__)
 
-if env == "development"
+# If you want HTTPS in local development, set:
+#   PUMA_DEV_SSL=true
+# and ensure ./localhost.pem and ./localhost-key.pem exist at APP_ROOT.
+use_dev_ssl = (env == "development" && ENV["PUMA_DEV_SSL"] == "true")
+
+if use_dev_ssl
   # Longer timeout is nice in dev
   worker_timeout 3600
 
-  # Cert/key live at the project root: ./localhost.pem, ./localhost-key.pem
   cert_path = File.join(APP_ROOT, "localhost.pem")
   key_path  = File.join(APP_ROOT, "localhost-key.pem")
 
-  abort "Missing cert: #{cert_path}" unless File.exist?(cert_path)
-  abort "Missing key:  #{key_path}"  unless File.exist?(key_path)
-
-  # HTTPS only on 3001
-  ssl_bind "0.0.0.0", "3001",
-           cert: cert_path,
-           key:  key_path,
-           verify_mode: "none"
-
-  # Do NOT call `port` here (that would also open plain HTTP).
+  if File.exist?(cert_path) && File.exist?(key_path)
+    ssl_bind "0.0.0.0", "3001",
+             cert: cert_path,
+             key:  key_path,
+             verify_mode: "none"
+  else
+    warn "[puma] PUMA_DEV_SSL=true but cert/key not found; falling back to HTTP on PORT."
+    port ENV.fetch("PORT", "3001")
+  end
 else
-  # Non-dev: workers & plain port (front with real TLS at a proxy)
-  workers ENV.fetch("PUMA_MAX_WORKERS", (cpu_count).to_s).to_i
-  preload_app!
+  # Container-friendly defaults:
+  # - In development: single process, no workers, just bind to PORT over HTTP.
+  # - In non-development: optional workers + preload.
 
-  on_worker_boot do
-    ActiveRecord::Base.establish_connection if defined?(ActiveRecord)
+  if env != "development"
+    workers ENV.fetch("PUMA_MAX_WORKERS", cpu_count.to_s).to_i
+    preload_app!
+
+    on_worker_boot do
+      ActiveRecord::Base.establish_connection if defined?(ActiveRecord)
+    end
   end
 
   port ENV.fetch("PORT", "3001")

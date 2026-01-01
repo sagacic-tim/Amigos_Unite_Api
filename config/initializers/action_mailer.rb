@@ -1,27 +1,42 @@
 # config/initializers/action_mailer.rb
+
 Rails.application.configure do
-  config.action_mailer.perform_deliveries = true
+  # Base mailer config
+  config.action_mailer.perform_deliveries    = true
   config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.logger                = Rails.logger
 
-  config.action_mailer.delivery_method = :smtp
-  config.action_mailer.smtp_settings = {
-    address:              "smtp.sendgrid.net",
-    port:                 587,
-    domain:               "sagacicweb.com",
-    user_name:            "apikey", # literal per SendGrid
-    password:             ENV["SENDGRID_API_KEY"],          # ← use ENV
-    authentication:       :plain,
-    enable_starttls_auto: true,
-    open_timeout:         15,
-    read_timeout:         20
-  }
+  sendgrid_key = ENV["SENDGRID_API_KEY"]
 
-  # Optional logging + hard fail if missing to avoid silent worker errors
-  config.action_mailer.logger = Rails.logger
-  if ENV["SENDGRID_API_KEY"].to_s.empty?
-    Rails.logger.error "[MAIL] SENDGRID_API_KEY is MISSING in pid=#{Process.pid}"
-    raise "SENDGRID_API_KEY is missing"
+  if sendgrid_key.present?
+    # Normal SMTP configuration when the key is present
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = {
+      address:              "smtp.sendgrid.net",
+      port:                 587,
+      domain:               ENV.fetch("MAILER_DOMAIN", "amigosunite.org"),
+      user_name:            "apikey", # literal per SendGrid
+      password:             sendgrid_key,
+      authentication:       :plain,
+      enable_starttls_auto: true,
+      open_timeout:         15,
+      read_timeout:         20
+    }
+
+    Rails.logger.info(
+      "[MAIL] SendGrid configured (key length=#{sendgrid_key.length}) env=#{Rails.env} pid=#{Process.pid}"
+    )
   else
-    Rails.logger.warn "[MAIL] SENDGRID_API_KEY PRESENT len=#{ENV['SENDGRID_API_KEY'].length} pid=#{Process.pid}"
+    # No key available
+    if Rails.env.production?
+      Rails.logger.error "[MAIL] SENDGRID_API_KEY is MISSING in production pid=#{Process.pid}"
+      raise "SENDGRID_API_KEY is missing"
+    else
+      # In development/test, don’t crash the app – just log and disable deliveries.
+      config.action_mailer.perform_deliveries = false
+      Rails.logger.warn(
+        "[MAIL] SENDGRID_API_KEY is missing; skipping SMTP setup and email delivery in #{Rails.env}"
+      )
+    end
   end
 end
