@@ -4,31 +4,40 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'app/**'
-      - 'config/**'
-      - 'db/**'
-      - 'Gemfile'
-      - 'Gemfile.lock'
-      - 'test/**'
-      - '.github/workflows/backend-ci.yml'
+      - "app/**"
+      - "config/**"
+      - "db/**"
+      - "Gemfile"
+      - "Gemfile.lock"
+      - "spec/**"
+      - "test/**"
+      - ".github/workflows/backend-ci.yml"
   pull_request:
     branches: [ main ]
     paths:
-      - 'app/**'
-      - 'config/**'
-      - 'db/**'
-      - 'Gemfile'
-      - 'Gemfile.lock'
-      - 'test/**'
-      - '.github/workflows/backend-ci.yml'
+      - "app/**"
+      - "config/**"
+      - "db/**"
+      - "Gemfile"
+      - "Gemfile.lock"
+      - "spec/**"
+      - "test/**"
+      - ".github/workflows/backend-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
-      postgres:
-        image: postgres:17
+      db:
+        image: postgis/postgis:17-3.4
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -37,41 +46,96 @@ jobs:
           - "5432:5432"
         options: >-
           --health-cmd="pg_isready -U postgres -d amigos_unite_api_test"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
 
     env:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/amigos_unite_api_test
+      # Secret should be the raw contents of config/credentials/test.key (32 hex chars)
+      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY_TEST }}
+
+      BUNDLE_WITHOUT: "development"
+      BUNDLE_JOBS: "4"
+      BUNDLE_RETRY: "3"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install OS deps (Postgres + libvips)
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpq-dev \
+            postgresql-client \
+            pkg-config \
+            libvips \
+            libvips-dev \
+            libvips-tools
+          sudo ldconfig
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2.2
-          bundler-cache: true
+          bundler-cache: false
 
-      - name: Install system dependencies
+      # Fixes: "Your bundle only supports platforms [x86_64-darwin-22] ..."
+      - name: Ensure Gemfile.lock supports Linux
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            libpq-dev postgresql-client
+          set -euxo pipefail
+          bundle lock --add-platform x86_64-linux || true
+          bundle lock --add-platform aarch64-linux || true
+
+      - name: Cache gems
+        uses: actions/cache@v4
+        with:
+          path: vendor/bundle
+          key: bundler-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            bundler-${{ runner.os }}-
+
+      - name: Install gems
+        run: |
+          set -euxo pipefail
+          bundle config set path vendor/bundle
+          bundle install
+
+      # Fixes: "key must be 16 bytes" by validating the secret and writing test.key
+      - name: Materialize test credentials key (validate shape)
+        run: |
+          set -euo pipefail
+          KEY="$(printf '%s' "${RAILS_MASTER_KEY:-}" | tr -d '\r\n')"
+          if [[ ! "$KEY" =~ ^[0-9A-Fa-f]{32}$ ]]; then
+            echo "ERROR: RAILS_MASTER_KEY_TEST must be exactly 32 hex characters. Got length=${#KEY}." >&2
+            exit 1
+          fi
+          mkdir -p config/credentials
+          printf '%s' "$KEY" > config/credentials/test.key
+          chmod 0400 config/credentials/test.key
 
       - name: Wait for Postgres
         run: |
-          until pg_isready --host=localhost --port=5432 --username=postgres; do
+          set -euxo pipefail
+          until pg_isready --host=localhost --port=5432 --username=postgres --dbname=amigos_unite_api_test; do
             echo "Waiting for Postgres..."
             sleep 1
           done
 
-      - name: Prepare database
+      # CI-safe DB setup: do NOT run seeds
+      - name: Prepare database (CI-safe: no seeds)
         run: |
-          bin/rails db:test:prepare
+          set -euxo pipefail
+          bin/rails db:drop db:create db:migrate
 
-      - name: Run test suite
+      - name: Run test suite (RSpec if present, else Rails test)
         run: |
-          bundle exec rails test
+          set -euxo pipefail
+          if [ -d "spec" ]; then
+            bundle exec rspec
+          else
+            bundle exec rails test
+          fi

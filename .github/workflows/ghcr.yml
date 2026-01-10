@@ -9,6 +9,10 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: ghcr-api-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: sagacic-tim/amigos_unite_api
@@ -25,7 +29,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: amigos_unite_api_test
         ports:
-          - 5432:5432
+          - "5432:5432"
         options: >-
           --health-cmd="pg_isready -U postgres -d amigos_unite_api_test"
           --health-interval=5s
@@ -35,8 +39,13 @@ jobs:
     env:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/amigos_unite_api_test
-      # Repo secret value: contents of config/credentials/test.key
+
+      # Repo secret: raw contents of config/credentials/test.key (32 hex chars)
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY_TEST }}
+
+      BUNDLE_WITHOUT: "development"
+      BUNDLE_JOBS: "4"
+      BUNDLE_RETRY: "3"
 
     steps:
       - name: Checkout
@@ -48,6 +57,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             libpq-dev \
+            postgresql-client \
             pkg-config \
             libvips \
             libvips-dev \
@@ -58,39 +68,62 @@ jobs:
         run: |
           set -euxo pipefail
           vips --version
-          ldconfig -p | grep -i vips
-          dpkg -l | grep -i vips || true
-          ls -l /usr/lib/*/libvips.so* /usr/lib/*/vips.so* || true
+          ldconfig -p | grep -i vips || true
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          bundler-cache: true
+          ruby-version: 3.2.2
+          bundler-cache: false
 
-      - name: Debug RAILS_MASTER_KEY shape (safe)
+      - name: Ensure Gemfile.lock supports Linux
         run: |
-          python3 - <<'PY'
-          import os, re, binascii
-          k = os.environ.get("RAILS_MASTER_KEY", "")
-          ks = k.strip()
-          print("RAILS_MASTER_KEY present:", bool(k))
-          print("raw_len:", len(k))
-          print("stripped_len:", len(ks))
-          print("looks_like_32_lower_hex:", bool(re.fullmatch(r"[0-9a-f]{32}", ks)))
-          print("looks_like_32_hex_anycase:", bool(re.fullmatch(r"[0-9A-Fa-f]{32}", ks)))
-          try:
-            b = binascii.unhexlify(ks)
-            print("hex_decoded_bytes:", len(b))
-          except Exception as e:
-            print("unhexlify_error:", type(e).__name__)
-          PY
+          set -euxo pipefail
+          bundle lock --add-platform x86_64-linux || true
+          bundle lock --add-platform aarch64-linux || true
 
-      - name: Prepare DB (CI-safe: no seeds)
+      - name: Cache gems
+        uses: actions/cache@v4
+        with:
+          path: vendor/bundle
+          key: bundler-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            bundler-${{ runner.os }}-
+
+      - name: Install gems
         run: |
-          bin/rails db:drop db:create db:schema:load db:migrate
+          set -euxo pipefail
+          bundle config set path vendor/bundle
+          bundle install
+
+      - name: Materialize test credentials key (validate shape)
+        run: |
+          set -euo pipefail
+          KEY="$(printf '%s' "${RAILS_MASTER_KEY:-}" | tr -d '\r\n')"
+          if [[ ! "$KEY" =~ ^[0-9A-Fa-f]{32}$ ]]; then
+            echo "ERROR: RAILS_MASTER_KEY_TEST must be exactly 32 hex characters. Got length=${#KEY}." >&2
+            exit 1
+          fi
+          mkdir -p config/credentials
+          printf '%s' "$KEY" > config/credentials/test.key
+          chmod 0400 config/credentials/test.key
+
+      - name: Wait for Postgres
+        run: |
+          set -euxo pipefail
+          until pg_isready --host=localhost --port=5432 --username=postgres --dbname=amigos_unite_api_test; do
+            echo "Waiting for Postgres..."
+            sleep 1
+          done
+
+      - name: Prepare database (CI-safe: no seeds)
+        run: |
+          set -euxo pipefail
+          bin/rails db:drop db:create db:migrate
 
       - name: Run tests (RSpec if present, else Rails test)
         run: |
+          set -euxo pipefail
           if [ -d "spec" ]; then
             bundle exec rspec
           else
@@ -132,3 +165,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
