@@ -163,7 +163,9 @@ GEM
       logger
     faraday-net_http (3.4.2)
       net-http (~> 0.5)
+    ffi (1.17.2-aarch64-linux-gnu)
     ffi (1.17.2-x86_64-darwin)
+    ffi (1.17.2-x86_64-linux-gnu)
     fiddle (1.1.8)
     geocoder (1.8.6)
       base64 (>= 0.1.0)
@@ -231,7 +233,11 @@ GEM
     net-smtp (0.5.1)
       net-protocol
     nio4r (2.7.5)
+    nokogiri (1.18.10-aarch64-linux-gnu)
+      racc (~> 1.4)
     nokogiri (1.18.10-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
     oauth2 (2.0.18)
       faraday (>= 0.17.3, < 4.0)
@@ -266,7 +272,9 @@ GEM
       actionpack (>= 4.2)
       omniauth (~> 2.0)
     orm_adapter (0.5.0)
+    pg (1.6.2-aarch64-linux)
     pg (1.6.2-x86_64-darwin)
+    pg (1.6.2-x86_64-linux)
     phonelib (0.9.3)
     pp (0.6.3)
       prettyprint
@@ -399,7 +407,9 @@ GEM
     zeitwerk (2.7.3)
 
 PLATFORMS
+  aarch64-linux
   x86_64-darwin-22
+  x86_64-linux
 
 DEPENDENCIES
   active_model_serializers (~> 0.10.14)
