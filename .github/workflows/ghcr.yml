@@ -67,9 +67,27 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Prepare DB
+      - name: Debug RAILS_MASTER_KEY shape (safe)
         run: |
-          bin/rails db:prepare
+          python3 - <<'PY'
+          import os, re, binascii
+          k = os.environ.get("RAILS_MASTER_KEY", "")
+          ks = k.strip()
+          print("RAILS_MASTER_KEY present:", bool(k))
+          print("raw_len:", len(k))
+          print("stripped_len:", len(ks))
+          print("looks_like_32_lower_hex:", bool(re.fullmatch(r"[0-9a-f]{32}", ks)))
+          print("looks_like_32_hex_anycase:", bool(re.fullmatch(r"[0-9A-Fa-f]{32}", ks)))
+          try:
+            b = binascii.unhexlify(ks)
+            print("hex_decoded_bytes:", len(b))
+          except Exception as e:
+            print("unhexlify_error:", type(e).__name__)
+          PY
+
+      - name: Prepare DB (CI-safe: no seeds)
+        run: |
+          bin/rails db:drop db:create db:schema:load db:migrate
 
       - name: Run tests (RSpec if present, else Rails test)
         run: |
