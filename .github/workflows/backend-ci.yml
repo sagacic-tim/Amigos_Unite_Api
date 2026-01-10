@@ -9,7 +9,6 @@ on:
       - "db/**"
       - "Gemfile"
       - "Gemfile.lock"
-      - "spec/**"
       - "test/**"
       - ".github/workflows/backend-ci.yml"
   pull_request:
@@ -20,12 +19,8 @@ on:
       - "db/**"
       - "Gemfile"
       - "Gemfile.lock"
-      - "spec/**"
       - "test/**"
       - ".github/workflows/backend-ci.yml"
-
-permissions:
-  contents: read
 
 concurrency:
   group: backend-ci-${{ github.ref }}
@@ -53,9 +48,8 @@ jobs:
     env:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/amigos_unite_api_test
-      # Secret should be the raw contents of config/credentials/test.key (32 hex chars)
+      # Secret value should be raw contents of config/credentials/test.key (32 hex chars)
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY_TEST }}
-
       BUNDLE_WITHOUT: "development"
       BUNDLE_JOBS: "4"
       BUNDLE_RETRY: "3"
@@ -64,7 +58,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install OS deps (Postgres + libvips)
+      - name: Install system dependencies (Postgres + libvips)
         run: |
           set -euxo pipefail
           sudo apt-get update
@@ -77,34 +71,18 @@ jobs:
             libvips-tools
           sudo ldconfig
 
+      - name: Verify libvips is available
+        run: |
+          set -euxo pipefail
+          vips --version
+          ldconfig -p | grep -i vips || true
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2.2
-          bundler-cache: false
+          bundler-cache: true
 
-      # Fixes: "Your bundle only supports platforms [x86_64-darwin-22] ..."
-      - name: Ensure Gemfile.lock supports Linux
-        run: |
-          set -euxo pipefail
-          bundle lock --add-platform x86_64-linux || true
-          bundle lock --add-platform aarch64-linux || true
-
-      - name: Cache gems
-        uses: actions/cache@v4
-        with:
-          path: vendor/bundle
-          key: bundler-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
-          restore-keys: |
-            bundler-${{ runner.os }}-
-
-      - name: Install gems
-        run: |
-          set -euxo pipefail
-          bundle config set path vendor/bundle
-          bundle install
-
-      # Fixes: "key must be 16 bytes" by validating the secret and writing test.key
       - name: Materialize test credentials key (validate shape)
         run: |
           set -euo pipefail
@@ -131,11 +109,7 @@ jobs:
           set -euxo pipefail
           bin/rails db:drop db:create db:migrate
 
-      - name: Run test suite (RSpec if present, else Rails test)
+      - name: Run tests
         run: |
           set -euxo pipefail
-          if [ -d "spec" ]; then
-            bundle exec rspec
-          else
-            bundle exec rails test
-          fi
+          bundle exec rails test
