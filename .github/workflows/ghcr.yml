@@ -39,10 +39,8 @@ jobs:
     env:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/amigos_unite_api_test
-
-      # Repo secret: raw contents of config/credentials/test.key (32 hex chars)
+      # Repo secret value: raw contents of config/credentials/test.key (32 hex chars, no newline)
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY_TEST }}
-
       BUNDLE_WITHOUT: "development"
       BUNDLE_JOBS: "4"
       BUNDLE_RETRY: "3"
@@ -74,27 +72,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2.2
-          bundler-cache: false
-
-      - name: Ensure Gemfile.lock supports Linux
-        run: |
-          set -euxo pipefail
-          bundle lock --add-platform x86_64-linux || true
-          bundle lock --add-platform aarch64-linux || true
-
-      - name: Cache gems
-        uses: actions/cache@v4
-        with:
-          path: vendor/bundle
-          key: bundler-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
-          restore-keys: |
-            bundler-${{ runner.os }}-
-
-      - name: Install gems
-        run: |
-          set -euxo pipefail
-          bundle config set path vendor/bundle
-          bundle install
+          bundler-cache: true
 
       - name: Materialize test credentials key (validate shape)
         run: |
