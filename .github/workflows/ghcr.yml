@@ -42,10 +42,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OS deps
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpq-dev
+          sudo apt-get install -y \
+            libpq-dev \
+            libvips \
+            libvips-tools \
+            pkg-config
+
+      - name: Verify libvips is available
+        run: |
+          vips --version
+          ldconfig -p | grep -i vips || true
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
