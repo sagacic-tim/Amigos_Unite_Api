@@ -45,14 +45,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Debug: show commit + lockfile platforms
+      - name: Debug - show commit and lockfile identity
         run: |
           set -euxo pipefail
           git rev-parse HEAD
-          echo "---- Gemfile.lock PLATFORMS ----"
-          sed -n '/^PLATFORMS/,/^DEPENDENCIES/p' Gemfile.lock
+          echo "PWD=$(pwd)"
+          echo "---- find Gemfile/Gemfile.lock ----"
+          find . -maxdepth 4 -name Gemfile -o -name Gemfile.lock -print
           echo "---- Gemfile.lock BUNDLED WITH ----"
           sed -n '/^BUNDLED WITH/,$p' Gemfile.lock
+          echo "---- Gemfile.lock PLATFORMS ----"
+          sed -n '/^PLATFORMS/,/^DEPENDENCIES/p' Gemfile.lock
 
       - name: Install OS deps (Postgres + libvips)
         run: |
@@ -76,7 +79,7 @@ jobs:
           set -euo pipefail
           KEY="$(printf '%s' "${RAILS_MASTER_KEY:-}" | tr -d '\r\n')"
           if [[ ! "$KEY" =~ ^[0-9A-Fa-f]{32}$ ]]; then
-            echo "ERROR: RAILS_MASTER_KEY_TEST must be exactly 32 hex chars. Got length=${#KEY}." >&2
+            echo "ERROR: RAILS_MASTER_KEY_TEST must be exactly 32 hex characters. Got length=${#KEY}." >&2
             exit 1
           fi
           mkdir -p config/credentials
@@ -91,7 +94,7 @@ jobs:
             sleep 1
           done
 
-      - name: Prepare database (CI-safe: no seeds)
+      - name: Prepare database (CI-safe - no seeds)
         run: |
           set -euxo pipefail
           bin/rails db:drop db:create db:schema:load
