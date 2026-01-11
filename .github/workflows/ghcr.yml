@@ -2,7 +2,7 @@ name: Build, Test, Push (GHCR) - API
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
   workflow_dispatch: {}
 
 permissions:
@@ -39,47 +39,44 @@ jobs:
     env:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/amigos_unite_api_test
-      # Repo secret value: raw contents of config/credentials/test.key (32 hex chars, no newline)
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY_TEST }}
-      BUNDLE_WITHOUT: "development"
-      BUNDLE_JOBS: "4"
-      BUNDLE_RETRY: "3"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Debug: show commit + lockfile platforms
+        run: |
+          set -euxo pipefail
+          git rev-parse HEAD
+          echo "---- Gemfile.lock PLATFORMS ----"
+          sed -n '/^PLATFORMS/,/^DEPENDENCIES/p' Gemfile.lock
+          echo "---- Gemfile.lock BUNDLED WITH ----"
+          sed -n '/^BUNDLED WITH/,$p' Gemfile.lock
 
       - name: Install OS deps (Postgres + libvips)
         run: |
           set -euxo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            libpq-dev \
-            postgresql-client \
-            pkg-config \
-            libvips \
-            libvips-dev \
-            libvips-tools
+            libpq-dev postgresql-client pkg-config \
+            libvips libvips-dev libvips-tools
           sudo ldconfig
-
-      - name: Verify libvips is available
-        run: |
-          set -euxo pipefail
-          vips --version
-          ldconfig -p | grep -i vips || true
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.2.2
+          ruby-version: "3.2.2"
+          bundler: "2.5.17"
           bundler-cache: true
+          cache-version: 1
 
       - name: Materialize test credentials key (validate shape)
         run: |
           set -euo pipefail
           KEY="$(printf '%s' "${RAILS_MASTER_KEY:-}" | tr -d '\r\n')"
           if [[ ! "$KEY" =~ ^[0-9A-Fa-f]{32}$ ]]; then
-            echo "ERROR: RAILS_MASTER_KEY_TEST must be exactly 32 hex characters. Got length=${#KEY}." >&2
+            echo "ERROR: RAILS_MASTER_KEY_TEST must be exactly 32 hex chars. Got length=${#KEY}." >&2
             exit 1
           fi
           mkdir -p config/credentials
@@ -97,7 +94,7 @@ jobs:
       - name: Prepare database (CI-safe: no seeds)
         run: |
           set -euxo pipefail
-          bin/rails db:drop db:create db:migrate
+          bin/rails db:drop db:create db:schema:load
 
       - name: Run tests (RSpec if present, else Rails test)
         run: |

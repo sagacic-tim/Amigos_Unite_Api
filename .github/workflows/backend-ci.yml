@@ -2,7 +2,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - "app/**"
       - "config/**"
@@ -12,7 +12,7 @@ on:
       - "test/**"
       - ".github/workflows/backend-ci.yml"
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - "app/**"
       - "config/**"
@@ -22,17 +22,13 @@ on:
       - "test/**"
       - ".github/workflows/backend-ci.yml"
 
-concurrency:
-  group: backend-ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   test:
     runs-on: ubuntu-24.04
 
     services:
-      db:
-        image: postgis/postgis:17-3.4
+      postgres:
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -41,54 +37,52 @@ jobs:
           - "5432:5432"
         options: >-
           --health-cmd="pg_isready -U postgres -d amigos_unite_api_test"
-          --health-interval=5s
-          --health-timeout=3s
-          --health-retries=20
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     env:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/amigos_unite_api_test
-      # Secret value should be raw contents of config/credentials/test.key (32 hex chars)
+      # Optional but recommended if your app boots using credentials in test
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY_TEST }}
-      BUNDLE_WITHOUT: "development"
-      BUNDLE_JOBS: "4"
-      BUNDLE_RETRY: "3"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install system dependencies (Postgres + libvips)
+      - name: Debug: show commit + lockfile platforms
         run: |
           set -euxo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libpq-dev \
-            postgresql-client \
-            pkg-config \
-            libvips \
-            libvips-dev \
-            libvips-tools
-          sudo ldconfig
+          git rev-parse HEAD
+          echo "---- Gemfile.lock PLATFORMS ----"
+          sed -n '/^PLATFORMS/,/^DEPENDENCIES/p' Gemfile.lock
+          echo "---- Gemfile.lock BUNDLED WITH ----"
+          sed -n '/^BUNDLED WITH/,$p' Gemfile.lock
 
-      - name: Verify libvips is available
+      - name: Install OS deps
         run: |
           set -euxo pipefail
-          vips --version
-          ldconfig -p | grep -i vips || true
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libpq-dev postgresql-client pkg-config libvips libvips-dev libvips-tools
+          sudo ldconfig
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.2.2
+          ruby-version: "3.2.2"
+          bundler: "2.5.17"
           bundler-cache: true
+          cache-version: 1
 
       - name: Materialize test credentials key (validate shape)
+        if: ${{ env.RAILS_MASTER_KEY != '' }}
         run: |
           set -euo pipefail
           KEY="$(printf '%s' "${RAILS_MASTER_KEY:-}" | tr -d '\r\n')"
           if [[ ! "$KEY" =~ ^[0-9A-Fa-f]{32}$ ]]; then
-            echo "ERROR: RAILS_MASTER_KEY_TEST must be exactly 32 hex characters. Got length=${#KEY}." >&2
+            echo "ERROR: RAILS_MASTER_KEY_TEST must be exactly 32 hex chars. Got length=${#KEY}." >&2
             exit 1
           fi
           mkdir -p config/credentials
@@ -103,13 +97,12 @@ jobs:
             sleep 1
           done
 
-      # CI-safe DB setup: do NOT run seeds
       - name: Prepare database (CI-safe: no seeds)
         run: |
           set -euxo pipefail
-          bin/rails db:drop db:create db:migrate
+          bin/rails db:drop db:create db:schema:load
 
-      - name: Run tests
+      - name: Run test suite
         run: |
           set -euxo pipefail
           bundle exec rails test
