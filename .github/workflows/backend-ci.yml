@@ -24,6 +24,7 @@ on:
 
 jobs:
   test:
+    name: backend-ci / test
     runs-on: ubuntu-24.04
 
     services:

@@ -19,6 +19,7 @@ env:
 
 jobs:
   test:
+    name: ghcr / test
     runs-on: ubuntu-24.04
 
     services:
