@@ -30,7 +30,7 @@ class Api::V1::AmigoLocationsController < ApplicationController
     if location.save
       render json: location, status: :created
     else
-      render json: location.errors, status: :unprocessable_entity
+      render json: location.errors, status: :unprocessable_content
     end
   end
 
@@ -40,7 +40,7 @@ class Api::V1::AmigoLocationsController < ApplicationController
     if @amigo_location.update(location_params)
       render json: @amigo_location, status: :ok
     else
-      render json: @amigo_location.errors, status: :unprocessable_entity
+      render json: @amigo_location.errors, status: :unprocessable_content
     end
   end
 

@@ -48,7 +48,7 @@ module Api
       rescue ActiveRecord::RecordInvalid => e
         render json: {
           errors: event&.errors&.full_messages || [e.message]
-        }, status: :unprocessable_entity
+        }, status: :unprocessable_content
       end
 
       # PATCH/PUT /api/v1/events/:id
@@ -96,7 +96,7 @@ module Api
                status: :ok
       rescue ActiveRecord::RecordInvalid => e
         render json: { error: e.record.errors.full_messages },
-               status: :unprocessable_entity
+               status: :unprocessable_content
       end
 
       # DELETE /api/v1/events/:id
@@ -107,7 +107,7 @@ module Api
           render json: { message: "Event successfully deleted." }, status: :ok
         else
           render json: { error: @event.errors.full_messages.to_sentence },
-                 status: :unprocessable_entity
+                 status: :unprocessable_content
         end
       end
 

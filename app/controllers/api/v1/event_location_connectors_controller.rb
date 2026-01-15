@@ -53,7 +53,7 @@ class Api::V1::EventLocationConnectorsController < ApplicationController
     render json: connector, status: :created
 
   rescue ActiveRecord::RecordInvalid => e
-    render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+    render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
   rescue ActiveRecord::RecordNotUnique
     # Partial unique index conflict (another request won the race for primary)
     connector.is_primary = false
@@ -84,7 +84,7 @@ class Api::V1::EventLocationConnectorsController < ApplicationController
     render json: @event_location_connector, status: :ok
 
   rescue ActiveRecord::RecordInvalid => e
-    render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+    render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
   rescue ActiveRecord::RecordNotUnique
     # Another request set a primary concurrently; keep this one non-primary and still update other fields.
     @event.event_location_connectors.reload # optional clarity
@@ -99,7 +99,7 @@ class Api::V1::EventLocationConnectorsController < ApplicationController
     if @event_location_connector.destroy
       render json: { message: 'Event Location Connector successfully deleted' }, status: :ok
     else
-      render json: { error: @event_location_connector.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      render json: { error: @event_location_connector.errors.full_messages.to_sentence }, status: :unprocessable_content
     end
   end
 

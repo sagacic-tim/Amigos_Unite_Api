@@ -42,7 +42,7 @@ class Api::V1::EventLocationsController < ApplicationController
     if @event_location.save
       render :create, status: :created
     else
-      render json: @event_location.errors, status: :unprocessable_entity
+      render json: @event_location.errors, status: :unprocessable_content
     end
   end 
 
@@ -51,7 +51,7 @@ class Api::V1::EventLocationsController < ApplicationController
     if @event_location.update(event_location_params)
       render :update
     else
-      render json: @event_location.errors, status: :unprocessable_entity
+      render json: @event_location.errors, status: :unprocessable_content
     end
   end
 
@@ -66,7 +66,7 @@ class Api::V1::EventLocationsController < ApplicationController
     elsif @event_location.destroy
       render json: { message: 'Event location successfully deleted.' }, status: :ok
     else
-      render json: { error: 'Failed to delete event location.' }, status: :unprocessable_entity
+      render json: { error: 'Failed to delete event location.' }, status: :unprocessable_content
     end
   end
 

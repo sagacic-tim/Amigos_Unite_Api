@@ -33,7 +33,7 @@ module Api
 
       # Allows “manager OR self-join”.
       def create
-        return render json: { error: 'amigo_id is required' }, status: :unprocessable_entity unless @target_amigo
+        return render json: { error: 'amigo_id is required' }, status: :unprocessable_content unless @target_amigo
 
         can_manage = EventPolicy.new(current_amigo, @event).manage_connectors?
         self_join  = @target_amigo && current_amigo.id == @target_amigo.id
@@ -50,22 +50,22 @@ module Api
                  status: :created
         else
           render json: { errors: @event_amigo_connector.errors.full_messages },
-                 status: :unprocessable_entity
+                 status: :unprocessable_content
         end
       end
 
       # Only role changes here; lead goes through TransferLead.
       def update
         target = @target_amigo || @event_amigo_connector&.amigo
-        return render json: { error: 'Target not found' }, status: :unprocessable_entity unless target
+        return render json: { error: 'Target not found' }, status: :unprocessable_content unless target
 
         role_sym = resolved_role
-        return render json: { error: 'Role param is required' }, status: :unprocessable_entity unless role_sym
+        return render json: { error: 'Role param is required' }, status: :unprocessable_content unless role_sym
 
         valid_roles = EventAmigoConnector.roles.keys.map!(&:to_sym)
         unless valid_roles.include?(role_sym)
           return render json: { error: "Invalid role. Allowed: #{valid_roles.join(', ')}" },
-                        status: :unprocessable_entity
+                        status: :unprocessable_content
         end
 
         conn =
@@ -89,7 +89,7 @@ module Api
                adapter: :attributes,
                status: :ok
       rescue ActiveRecord::RecordInvalid => e
-        render json: { error: e.record.errors.full_messages }, status: :unprocessable_entity
+        render json: { error: e.record.errors.full_messages }, status: :unprocessable_content
       end
 
       # Allows “manager OR self-remove”.

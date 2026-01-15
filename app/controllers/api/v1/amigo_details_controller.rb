@@ -44,7 +44,7 @@ class Api::V1::AmigoDetailsController < ApplicationController
              adapter: :attributes,
              status: :created
     else
-      render json: detail.errors, status: :unprocessable_entity
+      render json: detail.errors, status: :unprocessable_content
     end
   end
 
@@ -59,7 +59,7 @@ class Api::V1::AmigoDetailsController < ApplicationController
              adapter: :attributes,
              status: status
     else
-      render json: @amigo_detail.errors, status: :unprocessable_entity
+      render json: @amigo_detail.errors, status: :unprocessable_content
     end
   end
 

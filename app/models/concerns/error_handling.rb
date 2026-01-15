@@ -19,12 +19,12 @@ module ErrorHandling
 
   def record_invalid(exception)
     Rails.logger.warn "[ErrorHandling] RecordInvalid: #{exception.record.errors.full_messages.to_sentence}"
-    render json: { errors: exception.record.errors.full_messages }, status: :unprocessable_entity
+    render json: { errors: exception.record.errors.full_messages }, status: :unprocessable_content
   end
 
   def record_not_saved(exception)
     Rails.logger.warn "[ErrorHandling] RecordNotSaved: #{exception.message}"
-    render json: { error: exception.message }, status: :unprocessable_entity
+    render json: { error: exception.message }, status: :unprocessable_content
   end
 
   def internal_error(exception)
