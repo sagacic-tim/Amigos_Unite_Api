@@ -1,4 +1,7 @@
 # spec/models/amigo_detail_spec.rb
+
+require "rails_helper"
+
 RSpec.describe AmigoDetail, type: :model do
   let(:amigo) { create(:amigo) }
 
