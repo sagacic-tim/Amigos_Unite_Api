@@ -52,7 +52,7 @@ module Api
         if @amigo.save
           render json: amigo_json(@amigo), status: :created
         else
-          render json: @amigo.errors, status: :unprocessable_entity
+          render json: @amigo.errors, status: :unprocessable_content
         end
       end
 
@@ -68,12 +68,12 @@ module Api
         if @amigo.update(amigo_params)
           unless @amigo.avatar_source.blank? || @amigo.avatar_source == 'upload'
             ok = @amigo.apply_avatar_preference!
-            return render json: { errors: @amigo.errors.full_messages }, status: :unprocessable_entity unless ok
+            return render json: { errors: @amigo.errors.full_messages }, status: :unprocessable_content unless ok
           end
 
           render json: amigo_json(@amigo), status: :ok
         else
-          render json: @amigo.errors, status: :unprocessable_entity
+          render json: @amigo.errors, status: :unprocessable_content
         end
       end
 
@@ -82,7 +82,7 @@ module Api
         if @amigo.destroy
           render json: { message: 'Amigo deleted successfully' }, status: :ok
         else
-          render json: @amigo.errors, status: :unprocessable_entity
+          render json: @amigo.errors, status: :unprocessable_content
         end
       end
 

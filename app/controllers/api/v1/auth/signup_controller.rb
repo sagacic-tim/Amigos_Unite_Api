@@ -41,7 +41,7 @@ module Api
                 message: 'Signup failed.',
                 errors:  amigo.errors.messages
               }
-            }, status: :unprocessable_entity
+            }, status: :unprocessable_content
           end
         end
 

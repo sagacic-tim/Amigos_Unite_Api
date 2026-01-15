@@ -11,7 +11,7 @@ class Api::V1::ConfirmationsController < ApplicationController
     if amigo.errors.empty?
       render json: { status: "ok" }
     else
-      render json: { status: "error", errors: amigo.errors.full_messages }, status: :unprocessable_entity
+      render json: { status: "error", errors: amigo.errors.full_messages }, status: :unprocessable_content
     end
   end
 

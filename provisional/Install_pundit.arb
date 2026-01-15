@@ -20,9 +20,9 @@ class EventsController < ApplicationController
     def update
         authorize @event
             if @event.update(event_params)
-            render json: @event
+              render json: @event
             else
-            render json: @event.errors, status: :unprocessable_entity
+              render json: @event.errors, status: :unprocessable_content
             end
         end
     end
