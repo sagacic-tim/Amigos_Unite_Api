@@ -7,9 +7,9 @@ on:
       - "app/**"
       - "config/**"
       - "db/**"
+      - "spec/**"
       - "Gemfile"
       - "Gemfile.lock"
-      - "test/**"
       - ".github/workflows/backend-ci.yml"
   pull_request:
     branches: [main]
@@ -17,9 +17,9 @@ on:
       - "app/**"
       - "config/**"
       - "db/**"
+      - "spec/**"
       - "Gemfile"
       - "Gemfile.lock"
-      - "test/**"
       - ".github/workflows/backend-ci.yml"
 
 jobs:
@@ -105,8 +105,7 @@ jobs:
           set -euxo pipefail
           bin/rails db:drop db:create db:schema:load
 
-      - name: Run test suite
+      - name: Run RSpec suite
         run: |
           set -euxo pipefail
-          bundle exec rails test
-# touch
+          bundle exec rspec

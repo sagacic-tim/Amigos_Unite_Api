@@ -1,3 +1,4 @@
+# spec/spec_helper.rb
 # frozen_string_literal: true
 
 RSpec.configure do |config|

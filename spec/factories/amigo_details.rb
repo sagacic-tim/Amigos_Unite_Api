@@ -1,4 +1,6 @@
-# test/factories/amigo_details.rb
+# spec/factories/amigo_details.rb
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :amigo_detail do
     association :amigo
@@ -8,14 +10,12 @@ FactoryBot.define do
     available_to_host       { false }
     willing_to_help         { true }
     willing_to_donate       { true }
-    personal_bio            { "Long-time member of Amigos Unite who enjoys hosting small community gatherings and helping coordinate events." }
+    personal_bio            { "Long-time member of Amigos Unite." }
 
-    # ── Trait to preserve the “spec/factories/amigo_details.rb” intent ──
     trait :no_personal_bio do
       personal_bio { nil }
     end
 
-    # convenient alias
     trait :minimal do
       no_personal_bio
     end
