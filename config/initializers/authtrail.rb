@@ -1,5 +1,6 @@
 # config/initializers/authtrail.rb
 
+return if Rails.env.test?
 # Enable IP geocoding
 AuthTrail.geocode = true
 

@@ -100,14 +100,10 @@ jobs:
           set -euxo pipefail
           bin/rails db:drop db:create db:schema:load
 
-      - name: Run tests (RSpec if present, else Rails test)
+      - name: Run RSpec suite
         run: |
           set -euxo pipefail
-          if [ -d "spec" ]; then
-            bundle exec rspec
-          else
-            bundle exec rails test
-          fi
+          bundle exec rspec
 
   build_and_push:
     needs: test

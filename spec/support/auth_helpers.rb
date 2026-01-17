@@ -1,3 +1,5 @@
+# spec/support/suth_helpers.rb
+
 # frozen_string_literal: true
 
 module AuthHelpers
@@ -9,45 +11,56 @@ module AuthHelpers
     "/api/v1/csrf"
   end
 
-  # Calls your CSRF handshake endpoint, which sets:
-  # - cookies['CSRF-TOKEN'] (secure: true)
-  # - response header X-CSRF-Token
+  # Fetches a CSRF token in a way that is compatible with your ApplicationController:
+  # - set_csrf_cookie runs on API GETs and sets cookies['CSRF-TOKEN'] with secure: true
+  # - verify_csrf_token requires BOTH header token and cookie token, and they must match
   #
-  # Returns the header token (must equal cookie token).
+  # This helper will:
+  # 1) force HTTPS so the secure cookie is accepted by the test client
+  # 2) hit /api/v1/csrf (public endpoint)
+  # 3) prefer X-CSRF-Token response header if provided by the endpoint,
+  #    otherwise fall back to the CSRF-TOKEN cookie value
   def fetch_csrf_token!
     ensure_https!
 
     get csrf_path, headers: { "ACCEPT" => "application/json" }
 
-    token = response.headers["X-CSRF-Token"].to_s
-    raise "CSRF endpoint did not return X-CSRF-Token" if token.empty?
+    header_token = response.headers["X-CSRF-Token"].to_s
+    cookie_token = response.cookies["CSRF-TOKEN"].to_s
+
+    token = header_token.presence || cookie_token.presence
+
+    raise "CSRF endpoint did not provide a CSRF token (header or cookie)" if token.blank?
 
     token
   end
 
-  # Your Authentication concern supports Authorization or cookies.signed[:jwt].
-  # Use Authorization for request specs; it avoids cookie signing concerns.
+  # JWT for Authorization header
   def jwt_for(amigo, expires_at: 12.hours.from_now)
     JsonWebToken.encode({ sub: amigo.id }, expires_at)
   end
 
-  # Headers for POST/PUT/PATCH/DELETE that must pass verify_csrf_token
-  def auth_headers_for(amigo)
+  # Fast headers for GET requests (no CSRF handshake)
+  def auth_get_headers_for(amigo)
     ensure_https!
 
+    {
+      "ACCEPT"        => "application/json",
+      "Authorization" => "Bearer #{jwt_for(amigo)}"
+    }
+  end
+
+  # Headers for mutating requests (PATCH/POST/PUT/DELETE) that require CSRF.
+  # IMPORTANT: we do the CSRF handshake first so the cookie jar is populated.
+  def auth_headers_for(amigo)
     csrf = fetch_csrf_token!
-    jwt  = jwt_for(amigo)
+    ensure_https!
 
     {
       "ACCEPT"        => "application/json",
       "CONTENT_TYPE"  => "application/json",
-      "Authorization" => "Bearer #{jwt}",
+      "Authorization" => "Bearer #{jwt_for(amigo)}",
       "X-CSRF-Token"  => csrf
     }
-  end
-
-  def csrf_headers
-    ensure_https!
-    { "ACCEPT" => "application/json", "X-CSRF-Token" => fetch_csrf_token! }
   end
 end
