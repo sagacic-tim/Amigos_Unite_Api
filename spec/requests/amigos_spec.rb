@@ -1,4 +1,5 @@
 # spec/requests/amigos_spec.rb
+
 # frozen_string_literal: true
 
 require "rails_helper"
@@ -16,7 +17,6 @@ RSpec.describe "Amigos", type: :request do
 
     it "returns unauthorized without a token" do
       get "/api/v1/amigos", as: :json
-
       expect(response).to have_http_status(:unauthorized)
     end
   end
@@ -31,7 +31,6 @@ RSpec.describe "Amigos", type: :request do
 
     it "returns unauthorized without a token" do
       get "/api/v1/amigos/#{amigo.id}", as: :json
-
       expect(response).to have_http_status(:unauthorized)
     end
   end
@@ -46,7 +45,6 @@ RSpec.describe "Amigos", type: :request do
 
     it "returns unauthorized without a token" do
       get "/api/v1/me", as: :json
-
       expect(response).to have_http_status(:unauthorized)
     end
   end
@@ -64,7 +62,7 @@ RSpec.describe "Amigos", type: :request do
     it "updates with CSRF" do
       patch "/api/v1/amigos/#{amigo.id}",
             params: { amigo: { first_name: "Updated" } },
-            headers: auth_headers_for(amigo), # JWT + CSRF handshake/token
+            headers: auth_headers_for(amigo), # JWT + CSRF
             as: :json
 
       expect(response).to have_http_status(:ok)
