@@ -1,16 +1,21 @@
-# test/factories/events.rb
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :event do
     association :lead_coordinator, factory: :amigo
 
-    event_name  { "Monthly Community Gathering" }
-    event_type  { "Meetup" }
-    event_date  { Date.today + 7.days }
-    event_time  { Time.zone.parse("19:00") }
+    event_name { "Amigos Meetup #{SecureRandom.hex(3)}" }
+    event_type { "Meetup" }
+    event_date { Date.current + 7.days }
+    event_time { Time.zone.parse("18:30") }
+    status     { :planning }
+    description { "A community meetup event." }
 
-    status      { :planning }
+    # schema default is [] and model normalizes; keep explicit for clarity
+    event_speakers_performers { ["Speaker One", " Speaker Two ", ""] }
 
-    event_speakers_performers { ["Guest Speaker A", "Guest Speaker B"] }
-    description { "A monthly meetup to connect local Amigos and discuss upcoming projects." }
+    trait :with_clean_speakers do
+      event_speakers_performers { ["Alice", "Bob"] }
+    end
   end
 end
