@@ -2,33 +2,35 @@
 module Api
   module V1
     class EventsController < ApplicationController
-      include ErrorHandling
+      # Keep this if you rely on it elsewhere; safe to remove if unused.
+      include ErrorHandling if defined?(ErrorHandling)
 
-      before_action :authenticate_amigo!, except: [:index, :show, :mission_index]
-      before_action :debug_authentication, if: -> { Rails.env.development? }
+      # IMPORTANT:
+      # Your ApplicationController already authenticates globally, but your specs
+      # expect /events and /events/:id to be protected even if something changes
+      # upstream. This makes the contract explicit for Events.
+      before_action :authenticate_amigo!, except: [:mission_index]
+
+      # CSRF is already enforced globally in ApplicationController for mutating API requests,
+      # but keeping this makes the contract obvious and self-contained.
       before_action :verify_csrf_token, only: [:create, :update, :destroy]
-      before_action :set_event, only: [:show, :update, :destroy]
 
-      rescue_from ActiveRecord::RecordNotFound, with: :handle_standard_error
-      rescue_from StandardError,               with: :handle_standard_error
+      before_action :set_event, only: [:show, :update, :destroy]
+      before_action :debug_authentication, if: -> { Rails.env.development? }
+
+      rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
       # GET /api/v1/events
       def index
-        events = Event.all
-        render json: events,
-               each_serializer: EventSerializer,
-               status: :ok
+        events = Event.all.order(created_at: :desc)
+        render json: events.map { |e| event_payload(e) }, status: :ok
       rescue ActiveRecord::ConnectionNotEstablished
-        render json: { error: "Database connection error." },
-               status: :service_unavailable
+        render json: { error: "Database connection error." }, status: :service_unavailable
       end
 
       # GET /api/v1/events/:id
       def show
-        render json: @event,
-               serializer: EventSerializer,
-               include: [:primary_event_location],
-               status: :ok
+        render json: event_payload(@event, include_primary_location: true), status: :ok
       end
 
       # POST /api/v1/events
@@ -38,26 +40,27 @@ module Api
 
         event = Events::CreateEvent.new.call(
           creator: current_amigo,
-          attrs:   event_params
+          attrs: event_params
         )
 
-        render json: event,
-               serializer: EventSerializer,
-               include: [:primary_event_location],
-               status: :created
+        render json: event_payload(event, include_primary_location: true), status: :created
       rescue ActiveRecord::RecordInvalid => e
-        render json: {
-          errors: event&.errors&.full_messages || [e.message]
-        }, status: :unprocessable_content
+        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
       end
 
       # PATCH/PUT /api/v1/events/:id
       def update
-        authorize_event!(@event, :update?)
+        return unless authorize_event!(@event, :update?)
 
         Event.transaction do
-          # 1) Optional lead coordinator swap
+          # 1) Optional lead coordinator swap (this is a role change, so treat it as such)
           if params[:new_lead_coordinator_id].present?
+            roles_policy = EventPolicy.new(current_amigo, @event)
+            unless roles_policy.manage_roles?
+              render json: { error: "Unauthorized" }, status: :unauthorized
+              raise ActiveRecord::Rollback
+            end
+
             new_id = params[:new_lead_coordinator_id].to_i
 
             @event.event_amigo_connectors.lead_coordinator
@@ -72,57 +75,42 @@ module Api
           end
 
           # 2) Split core event attrs from nested location
-          Rails.logger.debug "[EventsController#update] RAW params: #{params.to_unsafe_h.inspect}"
           raw_params     = event_params.to_h.deep_dup
           location_attrs = raw_params.delete("location") || raw_params.delete(:location)
-          Rails.logger.debug "[EventsController#update] event core: #{raw_params.inspect}"
-          Rails.logger.debug "[EventsController#update] location_attrs: #{location_attrs.inspect}"
 
           # 3) Update event core fields
           @event.update!(raw_params)
 
-          # 4) Upsert primary location (create or update + connector + image)
+          # 4) Upsert primary location if provided
           if location_attrs.present?
             Events::UpsertPrimaryLocation.new.call(
-              event:     @event,
+              event: @event,
               raw_attrs: location_attrs
             )
           end
         end
 
-        render json: @event,
-               serializer: EventSerializer,
-               include: [:primary_event_location],
-               status: :ok
+        render json: event_payload(@event, include_primary_location: true), status: :ok
       rescue ActiveRecord::RecordInvalid => e
-        render json: { error: e.record.errors.full_messages },
-               status: :unprocessable_content
+        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
       end
 
       # DELETE /api/v1/events/:id
       def destroy
-        authorize_event!(@event, :destroy?)
+        return unless authorize_event!(@event, :destroy?)
 
-        if @event.destroy
-          render json: { message: "Event successfully deleted." }, status: :ok
-        else
-          render json: { error: @event.errors.full_messages.to_sentence },
-                 status: :unprocessable_content
-        end
+        @event.destroy!
+        render json: { message: "Event successfully deleted." }, status: :ok
+      rescue ActiveRecord::RecordNotDestroyed => e
+        render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_content
       end
 
       # GET /api/v1/events/my_events
-      # Return only events the current_amigo manages (lead or assistant coordinator).
       def my_events
-        authenticate_amigo!
-
-        # Convert enum names to their integer values
-        coordinator_roles =
-          EventAmigoConnector.roles.values_at("lead_coordinator", "assistant_coordinator")
-        # => e.g. [2, 1] depending on your enum definition
+        coordinator_roles = EventAmigoConnector.roles.values_at("lead_coordinator", "assistant_coordinator")
 
         events = Event
-          .left_outer_joins(:event_amigo_connectors) # more forgiving than INNER JOIN
+          .left_outer_joins(:event_amigo_connectors)
           .where(
             "events.lead_coordinator_id = :id OR " \
             "(event_amigo_connectors.amigo_id = :id AND event_amigo_connectors.role IN (:roles))",
@@ -130,8 +118,9 @@ module Api
             roles: coordinator_roles
           )
           .distinct
+          .order(created_at: :desc)
 
-        render json: events, each_serializer: EventSerializer, status: :ok
+        render json: events.map { |e| event_payload(e) }, status: :ok
       end
 
       # GET /api/v1/events/mission
@@ -141,34 +130,41 @@ module Api
 
       private
 
-      def debug_authentication
-        if Rails.env.development?
-          Rails.logger.debug "[EventsController##{action_name}] current_amigo: #{current_amigo&.id || 'nil'}"
-          Rails.logger.debug "[EventsController##{action_name}] Authorization header present? #{request.headers['Authorization'].present?}"
-        end
-      end
-
       def set_event
         @event = Event.find(params[:id])
       end
 
-      def handle_standard_error(e)
-        Rails.logger.error "[EventsController#{action_name}] #{e.class}: #{e.message}"
-        Rails.logger.error e.backtrace.join("\n") if Rails.env.development?
+      def render_not_found(_e)
+        render json: { error: "Event not found" }, status: :not_found
+      end
 
-        if e.is_a?(ActiveRecord::RecordNotFound) && action_name == "show"
-          render json: { error: "Event with ID #{params[:id]} does not exist." },
-                 status: :not_found
-        else
-          message =
-            if Rails.env.development?
-              e.message
-            else
-              "An unexpected error occurred. Please try again later."
-            end
+      # FIX: return boolean so callers can `return unless authorize_event!(...)`
+      # This prevents double-render errors.
+      def authorize_event!(record, action)
+        policy = EventPolicy.new(current_amigo, record)
+        return true if policy.public_send(action)
 
-          render json: { error: message }, status: :internal_server_error
+        render json: { error: "Unauthorized" }, status: :unauthorized
+        false
+      end
+
+      def debug_authentication
+        return unless Rails.env.development?
+
+        Rails.logger.debug "[EventsController##{action_name}] current_amigo: #{current_amigo&.id || 'nil'}"
+        Rails.logger.debug "[EventsController##{action_name}] Authorization header present? #{request.headers['Authorization'].present?}"
+      end
+
+      # Plain JSON payload shaped for your specs (snake_case keys, top-level id)
+      def event_payload(event, include_primary_location: false)
+        payload = event.as_json
+
+        if include_primary_location
+          payload["primary_event_location"] =
+            event.primary_event_location&.as_json
         end
+
+        payload
       end
 
       def event_params
@@ -204,14 +200,6 @@ module Api
             :photo_reference
           ]
         )
-      end
-
-      def authorize_event!(record, action)
-        policy = EventPolicy.new(current_amigo, record)
-        ok     = policy.public_send(action)
-        return if ok
-
-        render json: { error: "Unauthorized" }, status: :unauthorized
       end
     end
   end

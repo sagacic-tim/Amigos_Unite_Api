@@ -1,11 +1,23 @@
-# test/factories/event_amigo_connectors.rb
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :event_amigo_connector do
-    association :amigo
     association :event
+    association :amigo
 
-    # Let defaults handle role/status unless you know the enum mappings.
-    role   { 0 }
-    status { 0 }
+    role   { :participant }
+    status { :pending }
+
+    trait :lead do
+      role { :lead_coordinator }
+    end
+
+    trait :assistant do
+      role { :assistant_coordinator }
+    end
+
+    trait :confirmed do
+      status { :confirmed }
+    end
   end
 end

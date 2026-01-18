@@ -1,39 +1,40 @@
-# test/factories/event_locations.rb
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :event_location do
-    business_name              { "Sunrise Café" }
-    business_phone             { "+1-555-123-4567" }
-    address                    { "456 Oak Avenue, Springfield, IL 62701" }
-    floor                      { "1" }
-    street_number              { "456" }
-    street_name                { "Oak Avenue" }
-    room_no                    { "" }
-    apartment_suite_number     { "" }
-    city_sublocality           { "Riverfront" }
-    city                       { "Springfield" }
-    state_province_subdivision { "Sangamon County" }
-    state_province             { "Illinois" }
-    state_province_short       { "IL" }
-    country                    { "United States" }
-    country_short              { "US" }
-    postal_code                { "62701" }
-    postal_code_suffix         { "5678" }
-    post_box                   { "" }
-    latitude                   { 39.8000 }
-    longitude                  { -89.6400 }
-    time_zone                  { "America/Chicago" }
-    status                     { 0 } # e.g. active, assuming enum in model
-    location_type              { "cafe" }
-    owner_name                 { "Jordan Smith" }
-    capacity_seated            { 40 }
-    availability_notes         { "Available most weeknights after 6 PM." }
-    has_food                   { true }
-    has_drink                  { true }
-    has_internet               { true }
-    has_big_screen             { false }
-    place_id                   { "fake-place-id-123" }
-    capacity                   { 40 }
-    services                   { { food: true, drink: true, internet: true } }
-    location_image_attribution { "Photo by Example Photographer via Google Places." }
+    business_name { "Dancing Mule Coffee Company" }
+    business_phone { "4175551212" }
+
+    # Keep address components populated so Geocodable concern can build address without net calls
+    street_number { "1945" }
+    street_name   { "South Glenstone Avenue" }
+    city          { "Springfield" }
+    state_province { "Missouri" }
+    state_province_short { "MO" }
+    country       { "United States" }
+    country_short { "US" }
+    postal_code   { "65804" }
+
+    location_type { "Cafe" }
+    owner_name    { "Owner Name" }
+
+    capacity { 50 }
+    capacity_seated { 30 }
+    availability_notes { "Evenings best." }
+
+    has_food       { true }
+    has_drink      { true }
+    has_internet   { true }
+    has_big_screen { false }
+
+    place_id { "place_#{SecureRandom.hex(6)}" }
+    location_image_attribution { "Photo by Example" }
+
+    # Provide coords to avoid geocoding/timezone lookups
+    latitude  { 37.1601 }
+    longitude { -93.2466 }
+    time_zone { "America/Chicago" }
+
+    status { :pending }
   end
 end
