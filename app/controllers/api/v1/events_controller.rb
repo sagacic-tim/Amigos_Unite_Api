@@ -1,49 +1,58 @@
 # app/controllers/api/v1/events_controller.rb
+# frozen_string_literal: true
+
 module Api
   module V1
     class EventsController < ApplicationController
-      # Keep this if you rely on it elsewhere; safe to remove if unused.
       include ErrorHandling if defined?(ErrorHandling)
 
-      # IMPORTANT:
-      # Your ApplicationController already authenticates globally, but your specs
-      # expect /events and /events/:id to be protected even if something changes
-      # upstream. This makes the contract explicit for Events.
-      before_action :authenticate_amigo!, except: [:mission_index]
+      # Public endpoints: MUST bypass global auth if ApplicationController authenticates globally.
+      skip_before_action :authenticate_amigo!, only: %i[index show mission_index], raise: false
 
-      # CSRF is already enforced globally in ApplicationController for mutating API requests,
-      # but keeping this makes the contract obvious and self-contained.
-      before_action :verify_csrf_token, only: [:create, :update, :destroy]
+      # Protected endpoints
+      before_action :authenticate_amigo!, only: %i[my_events create update destroy]
 
-      before_action :set_event, only: [:show, :update, :destroy]
-      before_action :debug_authentication, if: -> { Rails.env.development? }
+      # Verify CSRF only for state-changing requests (matches your Axios behavior)
+      before_action :verify_csrf_token, only: %i[create update destroy]
+
+      # But still *mint* a CSRF cookie for public browsing so future mutations can succeed
+      after_action :set_csrf_cookie, only: %i[index show my_events]
+
+      before_action :set_event, only: %i[show update destroy]
 
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
       # GET /api/v1/events
       def index
+        disable_api_caching!
+
         events = Event.all.order(created_at: :desc)
-        render json: events.map { |e| event_payload(e) }, status: :ok
+        render json: events, each_serializer: EventSerializer, status: :ok
       rescue ActiveRecord::ConnectionNotEstablished
         render json: { error: "Database connection error." }, status: :service_unavailable
       end
 
       # GET /api/v1/events/:id
       def show
-        render json: event_payload(@event, include_primary_location: true), status: :ok
+        disable_api_caching!
+
+        render json: @event,
+               serializer: EventSerializer,
+               include: [:primary_event_location],
+               status: :ok
       end
 
       # POST /api/v1/events
       def create
         policy = EventPolicy.new(current_amigo, nil)
-        return render json: { error: "Unauthorized" }, status: :unauthorized unless policy.create?
+        return render(json: { error: "Unauthorized" }, status: :unauthorized) unless policy.create?
 
-        event = Events::CreateEvent.new.call(
-          creator: current_amigo,
-          attrs: event_params
-        )
+        event = Events::CreateEvent.new.call(creator: current_amigo, attrs: event_params)
 
-        render json: event_payload(event, include_primary_location: true), status: :created
+        render json: event,
+               serializer: EventSerializer,
+               include: [:primary_event_location],
+               status: :created
       rescue ActiveRecord::RecordInvalid => e
         render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
       end
@@ -53,7 +62,6 @@ module Api
         return unless authorize_event!(@event, :update?)
 
         Event.transaction do
-          # 1) Optional lead coordinator swap (this is a role change, so treat it as such)
           if params[:new_lead_coordinator_id].present?
             roles_policy = EventPolicy.new(current_amigo, @event)
             unless roles_policy.manage_roles?
@@ -74,23 +82,20 @@ module Api
             @event.update!(lead_coordinator_id: new_id)
           end
 
-          # 2) Split core event attrs from nested location
           raw_params     = event_params.to_h.deep_dup
           location_attrs = raw_params.delete("location") || raw_params.delete(:location)
 
-          # 3) Update event core fields
           @event.update!(raw_params)
 
-          # 4) Upsert primary location if provided
           if location_attrs.present?
-            Events::UpsertPrimaryLocation.new.call(
-              event: @event,
-              raw_attrs: location_attrs
-            )
+            Events::UpsertPrimaryLocation.new.call(event: @event, raw_attrs: location_attrs)
           end
         end
 
-        render json: event_payload(@event, include_primary_location: true), status: :ok
+        render json: @event,
+               serializer: EventSerializer,
+               include: [:primary_event_location],
+               status: :ok
       rescue ActiveRecord::RecordInvalid => e
         render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
       end
@@ -107,7 +112,10 @@ module Api
 
       # GET /api/v1/events/my_events
       def my_events
-        coordinator_roles = EventAmigoConnector.roles.values_at("lead_coordinator", "assistant_coordinator")
+        disable_api_caching!
+
+        coordinator_roles =
+          EventAmigoConnector.roles.values_at("lead_coordinator", "assistant_coordinator")
 
         events = Event
           .left_outer_joins(:event_amigo_connectors)
@@ -120,7 +128,7 @@ module Api
           .distinct
           .order(created_at: :desc)
 
-        render json: events.map { |e| event_payload(e) }, status: :ok
+        render json: events, each_serializer: EventSerializer, status: :ok
       end
 
       # GET /api/v1/events/mission
@@ -138,8 +146,6 @@ module Api
         render json: { error: "Event not found" }, status: :not_found
       end
 
-      # FIX: return boolean so callers can `return unless authorize_event!(...)`
-      # This prevents double-render errors.
       def authorize_event!(record, action)
         policy = EventPolicy.new(current_amigo, record)
         return true if policy.public_send(action)
@@ -148,23 +154,21 @@ module Api
         false
       end
 
-      def debug_authentication
-        return unless Rails.env.development?
-
-        Rails.logger.debug "[EventsController##{action_name}] current_amigo: #{current_amigo&.id || 'nil'}"
-        Rails.logger.debug "[EventsController##{action_name}] Authorization header present? #{request.headers['Authorization'].present?}"
+      def disable_api_caching!
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
       end
 
-      # Plain JSON payload shaped for your specs (snake_case keys, top-level id)
-      def event_payload(event, include_primary_location: false)
-        payload = event.as_json
-
-        if include_primary_location
-          payload["primary_event_location"] =
-            event.primary_event_location&.as_json
-        end
-
-        payload
+      # Ensure CSRF cookie exists for browser clients (supports your Axios interceptors).
+      def set_csrf_cookie
+        token = form_authenticity_token
+        cookies["CSRF-TOKEN"] = {
+          value: token,
+          path: "/",
+          secure: request.ssl?,
+          same_site: :none
+        }
       end
 
       def event_params
