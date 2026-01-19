@@ -1,5 +1,4 @@
 # app/models/event_location_connector.rb
-
 class EventLocationConnector < ApplicationRecord
   belongs_to :event
   belongs_to :event_location
@@ -20,12 +19,12 @@ class EventLocationConnector < ApplicationRecord
     },
     if: :is_primary?
 
-  # Automatically set default status:
-  after_initialize :set_default_status, if: :new_record?
+  # Default status must be applied AFTER factories/params assign attributes (including nil)
+  before_validation :set_default_status, on: :create
 
   private
 
   def set_default_status
-    self.status ||= :pending
+    self.status = :pending if status.blank?
   end
 end

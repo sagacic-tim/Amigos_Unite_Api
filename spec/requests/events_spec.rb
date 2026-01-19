@@ -3,11 +3,47 @@
 
 require "rails_helper"
 
+# -----------------------------------------------------------------------------
+# JSON:API helpers (scoped to this file)
+# -----------------------------------------------------------------------------
+def json
+  JSON.parse(response.body)
+end
+
+def json_data
+  json.fetch("data")
+end
+
+def json_id(resource)
+  resource.fetch("id").to_i
+end
+
+def json_type(resource)
+  resource.fetch("type")
+end
+
+def json_attrs(resource)
+  resource.fetch("attributes")
+end
+
+def json_relationship(resource, name)
+  resource.fetch("relationships").fetch(name).fetch("data")
+end
+
+def json_included
+  Array(json["included"])
+end
+
+def expect_sets_csrf_cookie!
+  # Your controller mints a CSRF cookie on index/show/my_events via after_action.
+  set_cookie = response.headers["Set-Cookie"].to_s
+  expect(set_cookie).to match(/CSRF-TOKEN=/)
+end
+
 RSpec.describe "Events", type: :request do
   let!(:amigo) { create(:amigo) }
 
   # Prevent network calls from EventLocation callbacks during request specs.
-  # Use conditional stubs so verifying partial doubles does not explode if methods differ.
   before do
     ensure_stub = lambda do |klass, method_name, return_value = nil|
       if klass.instance_methods.include?(method_name)
@@ -22,51 +58,87 @@ RSpec.describe "Events", type: :request do
     # If your current implementation still uses older callback names:
     ensure_stub.call(EventLocation, :geocode_with_fallback, true)
 
-    # If anything attempts to fetch remote images, block it (defensive).
+    # Defensive: block any remote image fetches
     allow(URI).to receive(:open).and_raise("Network calls are disabled in request specs")
   end
 
+  # -----------------------------------------------------------------------------
+  # GET /api/v1/events (public)
+  # -----------------------------------------------------------------------------
   describe "GET /api/v1/events" do
-    it "returns ok with a valid bearer token" do
+    it "returns ok without a token (public index)" do
+      create(:event, lead_coordinator: amigo)
+
+      get "/api/v1/events", as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect_sets_csrf_cookie!
+
+      expect(json_data).to be_an(Array)
+      first = json_data.first
+      expect(first).to include("id", "type", "attributes")
+      expect(json_type(first)).to eq("events")
+      expect(json_attrs(first)).to include("event-name", "event-date", "event-time", "status")
+    end
+
+    it "returns ok with a valid bearer token as well" do
       create(:event, lead_coordinator: amigo)
 
       get "/api/v1/events", headers: auth_get_headers_for(amigo), as: :json
 
       expect(response).to have_http_status(:ok)
+      expect_sets_csrf_cookie!
 
-      body = JSON.parse(response.body)
-      expect(body).to be_an(Array)
-      expect(body.first).to include("event_name")
-    end
-
-    it "returns unauthorized without a token" do
-      get "/api/v1/events", as: :json
-      expect(response).to have_http_status(:unauthorized)
+      expect(json_data).to be_an(Array)
+      first = json_data.first
+      expect(first).to include("id", "type", "attributes")
+      expect(json_type(first)).to eq("events")
+      expect(json_attrs(first)).to include("event-name")
     end
   end
 
+  # -----------------------------------------------------------------------------
+  # GET /api/v1/events/:id (public)
+  # -----------------------------------------------------------------------------
   describe "GET /api/v1/events/:id" do
-    it "returns ok with a valid bearer token" do
+    it "returns ok without a token (public show) and includes relationships" do
+      event = create(:event, lead_coordinator: amigo)
+
+      get "/api/v1/events/#{event.id}", as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect_sets_csrf_cookie!
+
+      resource = json_data
+      expect(resource).to include("id", "type", "attributes")
+      expect(json_type(resource)).to eq("events")
+      expect(json_id(resource)).to eq(event.id)
+
+      attrs = json_attrs(resource)
+      expect(attrs.fetch("event-name")).to eq(event.event_name)
+
+      # Controller uses `include: [:primary_event_location]` and serializer emits relationships.
+      expect(resource).to include("relationships")
+      expect(resource.fetch("relationships")).to include("lead-coordinator", "primary-event-location")
+    end
+
+    it "returns ok with a valid bearer token as well" do
       event = create(:event, lead_coordinator: amigo)
 
       get "/api/v1/events/#{event.id}", headers: auth_get_headers_for(amigo), as: :json
 
       expect(response).to have_http_status(:ok)
 
-      body = JSON.parse(response.body)
-      expect(body.fetch("id")).to eq(event.id)
-      expect(body.fetch("event_name")).to eq(event.event_name)
-    end
-
-    it "returns unauthorized without a token" do
-      event = create(:event, lead_coordinator: amigo)
-
-      get "/api/v1/events/#{event.id}", as: :json
-
-      expect(response).to have_http_status(:unauthorized)
+      resource = json_data
+      expect(json_type(resource)).to eq("events")
+      expect(json_id(resource)).to eq(event.id)
+      expect(json_attrs(resource).fetch("event-name")).to eq(event.event_name)
     end
   end
 
+  # -----------------------------------------------------------------------------
+  # POST /api/v1/events (protected + CSRF)
+  # -----------------------------------------------------------------------------
   describe "POST /api/v1/events" do
     it "creates an event with CSRF (and creates lead connector + primary location)" do
       payload = {
@@ -94,27 +166,32 @@ RSpec.describe "Events", type: :request do
 
       post "/api/v1/events",
            params: payload,
-           headers: auth_headers_for(amigo),
+           headers: auth_headers_for(amigo), # JWT + CSRF
            as: :json
 
       expect(response).to have_http_status(:created)
 
-      body = JSON.parse(response.body)
-      created_id = body.fetch("id")
+      resource = json_data
+      created_id = json_id(resource)
 
       created = Event.find(created_id)
-
       expect(created.lead_coordinator_id).to eq(amigo.id)
       expect(created.event_amigo_connectors.lead_coordinator.count).to eq(1)
 
-      # Normalization behavior from Event#normalize_event_speakers
+      # normalization behavior from Event#normalize_event_speakers
       expect(created.event_speakers_performers).to eq(["Alice", "Bob"])
 
       # Location was provided, so primary location should exist
       expect(created.primary_event_location).to be_present
 
-      # If your controller includes the primary location on create, this asserts the contract:
-      expect(body).to include("primary_event_location")
+      # JSON:API contract: relationship exists and included may contain the location
+      expect(resource.fetch("relationships")).to include("primary-event-location")
+
+      # If included is present, ensure it contains an event-locations resource
+      inc = json_included
+      if inc.any?
+        expect(inc.any? { |r| r["type"] == "event-locations" }).to be(true)
+      end
     end
 
     it "returns unauthorized without CSRF" do
@@ -124,9 +201,13 @@ RSpec.describe "Events", type: :request do
            as: :json
 
       expect(response).to have_http_status(:unauthorized)
+      expect(json.fetch("error")).to be_present
     end
   end
 
+  # -----------------------------------------------------------------------------
+  # PATCH /api/v1/events/:id (protected + CSRF)
+  # -----------------------------------------------------------------------------
   describe "PATCH /api/v1/events/:id" do
     it "rejects update when actor is not lead/admin/assistant" do
       lead = create(:amigo)
@@ -154,6 +235,10 @@ RSpec.describe "Events", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(event.reload.description).to eq("Updated description")
+
+      resource = json_data
+      expect(json_id(resource)).to eq(event.id)
+      expect(json_attrs(resource).fetch("description")).to eq("Updated description")
     end
 
     it "upserts primary location when location attrs are present" do
@@ -181,11 +266,22 @@ RSpec.describe "Events", type: :request do
       expect(event.primary_event_location).to be_present
       expect(event.primary_event_location.business_name).to eq("Updated Venue")
 
-      body = JSON.parse(response.body)
-      expect(body).to include("primary_event_location")
+      resource = json_data
+      expect(resource.fetch("relationships")).to include("primary-event-location")
+
+      # If included exists, the primary location should appear there
+      inc = json_included
+      if inc.any?
+        loc = inc.find { |r| r["type"] == "event-locations" }
+        expect(loc).to be_present
+        expect(loc.fetch("attributes").fetch("business-name")).to eq("Updated Venue")
+      end
     end
   end
 
+  # -----------------------------------------------------------------------------
+  # DELETE /api/v1/events/:id (protected + CSRF)
+  # -----------------------------------------------------------------------------
   describe "DELETE /api/v1/events/:id" do
     it "rejects destroy when actor is assistant (not lead/admin)" do
       lead = create(:amigo)
@@ -214,6 +310,9 @@ RSpec.describe "Events", type: :request do
     end
   end
 
+  # -----------------------------------------------------------------------------
+  # GET /api/v1/events/my_events (protected)
+  # -----------------------------------------------------------------------------
   describe "GET /api/v1/events/my_events" do
     it "returns only events the current amigo manages (lead or assistant)" do
       lead_event = create(:event, lead_coordinator: amigo)
@@ -227,14 +326,19 @@ RSpec.describe "Events", type: :request do
       get "/api/v1/events/my_events", headers: auth_get_headers_for(amigo), as: :json
 
       expect(response).to have_http_status(:ok)
+      expect_sets_csrf_cookie!
 
-      body = JSON.parse(response.body)
-      expect(body).to be_an(Array)
+      expect(json_data).to be_an(Array)
 
-      ids = body.map { |h| h.fetch("id").to_i }
+      ids = json_data.map { |resource| json_id(resource) }
 
       expect(ids).to include(lead_event.id, other_event.id)
       expect(ids).not_to include(not_mine.id)
+    end
+
+    it "returns unauthorized without a token" do
+      get "/api/v1/events/my_events", as: :json
+      expect(response).to have_http_status(:unauthorized)
     end
   end
 end
