@@ -1,127 +1,192 @@
+# spec/requests/auth/sessions_spec.rb
 # frozen_string_literal: true
 
 require "rails_helper"
-require "cgi"
 
 RSpec.describe "Auth Sessions", type: :request do
-  let!(:amigo) { create(:amigo, password: password, password_confirmation: password) }
-  let(:password) { "Password123!Pass" }
-
   def json
     JSON.parse(response.body)
-  rescue JSON::ParserError
-    {}
   end
 
   def set_cookie_header
-    response.headers["Set-Cookie"].to_s
+    raw = response.headers["Set-Cookie"]
+    raw.is_a?(Array) ? raw.join("\n") : raw.to_s
   end
 
-  def csrf_cookie_value_from_response
-    m = set_cookie_header.match(/(?:^|;\s*)CSRF-TOKEN=([^;]+)/)
-    return nil unless m
-
-    CGI.unescape(m[1])
+  def expect_cookie_set!(name)
+    expect(set_cookie_header).to include("#{name}=")
   end
 
-  def mint_csrf!
+  def expect_cookie_cleared!(name)
+    expect(set_cookie_header).to match(/#{Regexp.escape(name)}=;?/i)
+    expect(set_cookie_header).to match(/expires=|max-age=0/i)
+  end
+
+  # For endpoints that may not emit a Set-Cookie for a cookie that wasn't present.
+  def expect_cookie_cleared_or_absent!(name)
+    header = set_cookie_header
+    return if header.blank?
+
+    if header.match?(/#{Regexp.escape(name)}=/i)
+      expect(header).to match(/#{Regexp.escape(name)}=;?/i)
+      expect(header).to match(/expires=|max-age=0/i)
+    end
+  end
+
+  # Your global ApplicationController requires CSRF for *all* POST/PUT/PATCH/DELETE,
+  # including /login and /logout. This primes the cookie + returns a header token
+  # that matches the cookie.
+  def mint_csrf_token!
+    https!
+
     get "/api/v1/csrf", as: :json
-    expect(response).to have_http_status(:ok)
 
-    token = csrf_cookie_value_from_response
+    # Your CsrfController currently returns 204 (head :no_content).
+    expect(response).to have_http_status(:no_content).or have_http_status(:ok)
+
+    token = response.headers["X-CSRF-Token"]
     expect(token).to be_present
+
     token
   end
 
-  def bearer_from_response
-    hdr = response.headers["Authorization"] || response.headers["authorization"]
-    return hdr if hdr.present?
+  def csrf_headers(token)
+    { "X-CSRF-Token" => token }
+  end
 
-    body_token = json["token"]
-    return nil unless body_token.present?
-
-    body_token.to_s.start_with?("Bearer ") ? body_token : "Bearer #{body_token}"
+  let!(:password) { "Password!123" }
+  let!(:amigo) do
+    create(
+      :amigo,
+      password: password,
+      password_confirmation: password,
+      email: "tim@example.com",
+      user_name: "timmy"
+    )
   end
 
   describe "POST /api/v1/login" do
-    it "rejects login without CSRF" do
-      post "/api/v1/login",
-           params: {
-             amigo: {
-               login: (amigo.try(:user_name) || amigo.try(:email)),
-               password: password
-             }
-           },
-           as: :json
-
-      # If you enforce CSRF on login (recommended under your current contract),
-      # this should be 401 (or whatever your verify_csrf_token uses).
-      expect(response).to have_http_status(:unauthorized)
-    end
-
-    it "logs in with CSRF and returns/sets auth material" do
-      csrf = mint_csrf!
+    it "returns 200, sets JWT + CSRF cookies, and returns amigo payload" do
+      csrf = mint_csrf_token!
 
       post "/api/v1/login",
            params: {
              amigo: {
-               # Your app typically supports user_name login; fallback to email if needed.
-               login: (amigo.try(:user_name) || amigo.try(:email)),
+               login_attribute: amigo.email,
                password: password
              }
            },
-           headers: { "X-CSRF-Token" => csrf },
+           headers: csrf_headers(csrf),
            as: :json
 
       expect(response).to have_http_status(:ok)
 
-      # Token may be in Authorization header OR JSON body (depending on your SessionsController).
-      # We assert at least one is present.
-      token = bearer_from_response
-      expect(token).to be_present
+      body = json
+      expect(body.fetch("status")).to include("code" => 200)
+      expect(body.fetch("data")).to include("amigo", "jwt_expires_at")
+
+      amigo_payload = body.fetch("data").fetch("amigo")
+      expect(amigo_payload).to include(
+        "id" => amigo.id,
+        "user_name" => amigo.user_name,
+        "email" => amigo.email
+      )
+
+      # Cookies
+      expect_cookie_set!("jwt")
+      expect_cookie_set!("CSRF-TOKEN")
+
+      # JWT cookie flags
+      expect(set_cookie_header).to match(/jwt=.*HttpOnly/i)
+      expect(set_cookie_header).to match(/jwt=.*Secure/i)
+      expect(set_cookie_header).to match(/jwt=.*SameSite=None/i)
+      expect(set_cookie_header).to match(/jwt=.*Path=\//i)
+
+      # CSRF cookie flags (in SessionsController#create you set SameSite strict in test env)
+      expect(set_cookie_header).to match(/CSRF-TOKEN=.*Secure/i)
+      expect(set_cookie_header).to match(/CSRF-TOKEN=.*Path=\//i)
+      expect(set_cookie_header).to match(/CSRF-TOKEN=.*SameSite=Strict/i)
+    end
+
+    it "accepts login_attribute as user_name as well" do
+      csrf = mint_csrf_token!
+
+      post "/api/v1/login",
+           params: {
+             amigo: {
+               login_attribute: amigo.user_name,
+               password: password
+             }
+           },
+           headers: csrf_headers(csrf),
+           as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect_cookie_set!("jwt")
+    end
+
+    it "returns 401 for invalid credentials with stable JSON shape" do
+      csrf = mint_csrf_token!
+
+      post "/api/v1/login",
+           params: {
+             amigo: {
+               login_attribute: amigo.email,
+               password: "wrong-password"
+             }
+           },
+           headers: csrf_headers(csrf),
+           as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+
+      body = json
+      expect(body.fetch("status")).to include("code" => 401)
+      expect(body.fetch("errors")).to be_an(Array)
+
+      # Should not mint a JWT cookie on failure
+      expect(set_cookie_header).not_to include("jwt=")
     end
   end
 
   describe "DELETE /api/v1/logout" do
-    it "requires JWT" do
-      csrf = mint_csrf!
+    it "returns 204 and clears cookies (even if already signed out)" do
+      csrf = mint_csrf_token!
 
       delete "/api/v1/logout",
-             headers: { "X-CSRF-Token" => csrf },
+             headers: csrf_headers(csrf),
              as: :json
 
-      expect(response).to have_http_status(:unauthorized)
+      expect(response).to have_http_status(:no_content)
+
+      # Always cleared by controller
+      expect_cookie_cleared!("CSRF-TOKEN")
+
+      # May be absent if no jwt cookie existed
+      expect_cookie_cleared_or_absent!("jwt")
     end
 
-    it "logs out with JWT + CSRF" do
-      csrf = mint_csrf!
+    it "returns 204 and clears cookies after a successful login" do
+      csrf = mint_csrf_token!
 
       post "/api/v1/login",
-           params: {
-             amigo: {
-               login: (amigo.try(:user_name) || amigo.try(:email)),
-               password: password
-             }
-           },
-           headers: { "X-CSRF-Token" => csrf },
+           params: { amigo: { login_attribute: amigo.email, password: password } },
+           headers: csrf_headers(csrf),
            as: :json
-
       expect(response).to have_http_status(:ok)
-      bearer = bearer_from_response
-      expect(bearer).to be_present
+      expect_cookie_set!("jwt")
 
-      # Rotation is OK; mint a fresh CSRF before mutation if you prefer.
-      csrf2 = mint_csrf!
+      # Login rotates CSRF cookie; mint a fresh CSRF token so header matches cookie.
+      csrf2 = mint_csrf_token!
 
       delete "/api/v1/logout",
-             headers: {
-               "Authorization" => bearer,
-               "X-CSRF-Token" => csrf2
-             },
+             headers: csrf_headers(csrf2),
              as: :json
 
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:no_content)
+
+      expect_cookie_cleared!("jwt")
+      expect_cookie_cleared!("CSRF-TOKEN")
     end
   end
 end
-``

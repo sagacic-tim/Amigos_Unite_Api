@@ -6,16 +6,17 @@ module Api
         skip_before_action :authenticate_amigo!, raise: false
 
         def show
-          session[:_csrf_token] = form_authenticity_token 
-          # force write (usually unnecessary, but for debugging you can try):
-          request.session_options[:skip] = false
-          cookies['CSRF-TOKEN'] = {
-            value:     session[:_csrf_token],
-            same_site: :none,
-            secure:    true,
+          token = form_authenticity_token
+
+          cookies["CSRF-TOKEN"] = {
+            value:     token,
+            path:      "/",                           # important: available to all routes
+            same_site: (request.ssl? ? :none : :lax), # none requires secure in browsers
+            secure:    request.ssl?,                  # do not force secure on http specs
             http_only: false
           }
-          response.set_header('X-CSRF-Token', session[:_csrf_token])
+
+          response.set_header("X-CSRF-Token", token)
           head :no_content
         end
       end
