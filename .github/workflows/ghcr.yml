@@ -1,3 +1,5 @@
+# .github/workflows/ghcr.yml
+
 name: Build, Test, Push (GHCR) - API
 
 on:
@@ -106,6 +108,7 @@ jobs:
           bundle exec rspec
 
   build_and_push:
+    name: ghcr / build_and_push
     needs: test
     runs-on: ubuntu-24.04
 
