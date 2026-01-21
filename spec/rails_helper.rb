@@ -19,6 +19,21 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 
 RSpec.configure do |config|
+
+    config.before(:each, type: :request) do
+    next unless defined?(Rack::Attack)
+
+    cache = Rack::Attack.cache
+    store =
+      if cache.respond_to?(:store)
+        cache.store
+      else
+        cache
+      end
+
+    store.clear if store.respond_to?(:clear)
+  end
+
   # If you keep fixtures temporarily, make them live under spec/fixtures.
   # If you do not use fixtures (recommended), this is harmless.
   config.fixture_paths = ["#{::Rails.root}/spec/fixtures"]

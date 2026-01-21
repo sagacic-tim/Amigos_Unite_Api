@@ -25,9 +25,20 @@ class EventPolicy
 
   private
 
-  # Role predicates (private helpers)
-  def admin?     = amigo&.admin?
-  def connector  = amigo ? (@connector ||= record.event_amigo_connectors.find_by(amigo_id: amigo.id)) : nil
-  def lead?      = connector&.lead_coordinator?
-  def assistant? = connector&.assistant_coordinator?
+  def admin?
+    amigo&.admin? || false
+  end
+
+  def connector
+    return nil unless amigo && record
+    @connector ||= record.event_amigo_connectors.find_by(amigo_id: amigo.id)
+  end
+
+  def lead?
+    !!connector&.lead_coordinator?
+  end
+
+  def assistant?
+    !!connector&.assistant_coordinator?
+  end
 end
