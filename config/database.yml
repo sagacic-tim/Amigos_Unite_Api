@@ -1,10 +1,16 @@
 default: &default
-  adapter:  postgis
+  adapter: postgresql
   encoding: unicode
-  pool:     <%= ENV.fetch("RAILS_MAX_THREADS") { 8 } %>
+
+  # Pool should generally align with RAILS_MAX_THREADS (per worker).
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+
+  # These are fallbacks. If DATABASE_URL is set, Rails will prefer it.
   username: <%= ENV.fetch("PGUSER", "drruby") %>
-  host:     <%= ENV.fetch("PGHOST", "/tmp") %>
+  password: <%= ENV["PGPASSWORD"] %>
+  host:     <%= ENV.fetch("PGHOST", "localhost") %>
   port:     <%= ENV.fetch("PGPORT", 5432) %>
+
   # If DATABASE_URL is set, Rails will prefer it over the other fields.
   url:      <%= ENV["DATABASE_URL"] %>
 
@@ -18,6 +24,12 @@ test:
 
 production:
   <<: *default
+
+  # Name is used if DATABASE_URL is not set.
   database: amigos_unite_api_production
-  username: <%= ENV.fetch("AMIGOS_UNITE_API_DB_USER", "amigos_unite_api") %>
-  password: <%= ENV["AMIGOS_UNITE_API_DATABASE_PASSWORD"] %>
+
+  # Optional production-specific overrides (still ignored if DATABASE_URL is set)
+  username: <%= ENV.fetch("AMIGOS_UNITE_API_DB_USER", ENV.fetch("PGUSER", "drruby")) %>
+  password: <%= ENV["AMIGOS_UNITE_API_DATABASE_PASSWORD"] || ENV["PGPASSWORD"] %>
+  host:     <%= ENV.fetch("AMIGOS_UNITE_API_DB_HOST", ENV.fetch("PGHOST", "localhost")) %>
+  port:     <%= ENV.fetch("AMIGOS_UNITE_API_DB_PORT", ENV.fetch("PGPORT", 5432)) %>

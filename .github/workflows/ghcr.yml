@@ -1,5 +1,4 @@
 # .github/workflows/ghcr.yml
-
 name: Build, Test, Push (GHCR) - API
 
 on:
@@ -47,18 +46,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Debug - show commit and lockfile identity
-        run: |
-          set -euxo pipefail
-          git rev-parse HEAD
-          echo "PWD=$(pwd)"
-          echo "---- find Gemfile/Gemfile.lock ----"
-          find . -maxdepth 4 -name Gemfile -o -name Gemfile.lock -print
-          echo "---- Gemfile.lock BUNDLED WITH ----"
-          sed -n '/^BUNDLED WITH/,$p' Gemfile.lock
-          echo "---- Gemfile.lock PLATFORMS ----"
-          sed -n '/^PLATFORMS/,/^DEPENDENCIES/p' Gemfile.lock
 
       - name: Install OS deps (Postgres + libvips)
         run: |
@@ -145,3 +132,43 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: deploy / vps
+    needs: build_and_push
+    runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: VPS_APP_DIR,GHCR_PULL_USER,GHCR_PULL_TOKEN
+          script: |
+            set -euo pipefail
+
+            APP_DIR="${VPS_APP_DIR:-/opt/amigos_unite_api}"
+            cd "$APP_DIR"
+
+            # Pull private GHCR images: login just-in-time with least-privilege bot token.
+            if [[ -n "${GHCR_PULL_USER:-}" && -n "${GHCR_PULL_TOKEN:-}" ]]; then
+              echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$GHCR_PULL_USER" --password-stdin
+            else
+              echo "ERROR: Missing GHCR_PULL_USER or GHCR_PULL_TOKEN (required for private GHCR images)." >&2
+              exit 1
+            fi
+
+            docker compose pull api sidekiq
+            docker logout ghcr.io || true
+
+            docker compose up -d --remove-orphans
+            docker compose exec -T api bin/rails db:migrate
+
+            docker image prune -af --filter "until=168h"
+        env:
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+          GHCR_PULL_USER: ${{ secrets.GHCR_PULL_USER }}
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}

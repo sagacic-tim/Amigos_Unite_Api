@@ -1,15 +1,20 @@
 # config/initializers/action_mailer.rb
 
 Rails.application.configure do
-  # Base mailer config
-  config.action_mailer.perform_deliveries    = true
-  config.action_mailer.raise_delivery_errors = true
-  config.action_mailer.logger                = Rails.logger
+  config.action_mailer.logger = Rails.logger
 
-  sendgrid_key = ENV["SENDGRID_API_KEY"]
+  sendgrid_key = ENV["SENDGRID_API_KEY"].to_s.strip
+  sendgrid_enabled = sendgrid_key.present?
 
-  if sendgrid_key.present?
-    # Normal SMTP configuration when the key is present
+  # If SendGrid is not configured, disable deliveries rather than crashing boot.
+  # This is essential for environments where the SendGrid account is inactive.
+  config.action_mailer.perform_deliveries = sendgrid_enabled
+
+  # Do not raise delivery errors by default; you can opt in with MAIL_RAISE_DELIVERY_ERRORS=true
+  config.action_mailer.raise_delivery_errors =
+    sendgrid_enabled && ENV.fetch("MAIL_RAISE_DELIVERY_ERRORS", "false") == "true"
+
+  if sendgrid_enabled
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {
       address:              "smtp.sendgrid.net",
@@ -23,20 +28,8 @@ Rails.application.configure do
       read_timeout:         20
     }
 
-    Rails.logger.info(
-      "[MAIL] SendGrid configured (key length=#{sendgrid_key.length}) env=#{Rails.env} pid=#{Process.pid}"
-    )
+    Rails.logger.info("[mail] SendGrid SMTP configured env=#{Rails.env} pid=#{Process.pid}")
   else
-    # No key available
-    if Rails.env.production?
-      Rails.logger.error "[MAIL] SENDGRID_API_KEY is MISSING in production pid=#{Process.pid}"
-      raise "SENDGRID_API_KEY is missing"
-    else
-      # In development/test, don’t crash the app – just log and disable deliveries.
-      config.action_mailer.perform_deliveries = false
-      Rails.logger.warn(
-        "[MAIL] SENDGRID_API_KEY is missing; skipping SMTP setup and email delivery in #{Rails.env}"
-      )
-    end
+    Rails.logger.warn("[mail] SENDGRID_API_KEY missing; email delivery disabled env=#{Rails.env} pid=#{Process.pid}")
   end
 end

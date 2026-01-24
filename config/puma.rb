@@ -1,53 +1,61 @@
 # config/puma.rb
 require "etc"
 
-# ---------- Basics ----------
-cpu_count   = Etc.nprocessors
-min_threads = ENV.fetch("RAILS_MIN_THREADS", "1").to_i
-max_threads = ENV.fetch("RAILS_MAX_THREADS", cpu_count.to_s).to_i
-threads min_threads, max_threads
-
+# ---------- Environment ----------
 env = ENV.fetch("RAILS_ENV", "development")
 environment env
 
+# ---------- Concurrency defaults (override via env vars) ----------
+# Defaults:
+#   RAILS_MIN_THREADS=1
+#   RAILS_MAX_THREADS=5
+#   PUMA_MAX_WORKERS=2
+cpu_count   = Etc.nprocessors
+min_threads = ENV.fetch("RAILS_MIN_THREADS", "1").to_i
+max_threads = ENV.fetch("RAILS_MAX_THREADS", "5").to_i
+threads min_threads, max_threads
+
+port_number = ENV.fetch("PORT", "3001")
+
 APP_ROOT = File.expand_path("..", __dir__)
 
-# If you want HTTPS in local development, set:
-#   PUMA_DEV_SSL=true
-# and ensure ./localhost.pem and ./localhost-key.pem exist at APP_ROOT.
+# ---------- Dev HTTPS toggle ----------
+# Set PUMA_DEV_SSL=true in development and provide:
+#   ./localhost.pem and ./localhost-key.pem at APP_ROOT
 use_dev_ssl = (env == "development" && ENV["PUMA_DEV_SSL"] == "true")
 
 if use_dev_ssl
-  # Longer timeout is nice in dev
   worker_timeout 3600
 
   cert_path = File.join(APP_ROOT, "localhost.pem")
   key_path  = File.join(APP_ROOT, "localhost-key.pem")
 
   if File.exist?(cert_path) && File.exist?(key_path)
-    ssl_bind "0.0.0.0", "3001",
+    ssl_bind "0.0.0.0", port_number,
              cert: cert_path,
              key:  key_path,
              verify_mode: "none"
   else
     warn "[puma] PUMA_DEV_SSL=true but cert/key not found; falling back to HTTP on PORT."
-    port ENV.fetch("PORT", "3001")
+    bind "tcp://0.0.0.0:#{port_number}"
   end
 else
-  # Container-friendly defaults:
-  # - In development: single process, no workers, just bind to PORT over HTTP.
-  # - In non-development: optional workers + preload.
+  # Container-friendly HTTP bind (explicit)
+  bind "tcp://0.0.0.0:#{port_number}"
 
+  # Workers only outside development (avoid surprise for local dev)
   if env != "development"
-    workers ENV.fetch("PUMA_MAX_WORKERS", cpu_count.to_s).to_i
+    workers ENV.fetch("PUMA_MAX_WORKERS", "2").to_i
     preload_app!
+
+    before_fork do
+      ActiveRecord::Base.connection_pool.disconnect! if defined?(ActiveRecord)
+    end
 
     on_worker_boot do
       ActiveRecord::Base.establish_connection if defined?(ActiveRecord)
     end
   end
-
-  port ENV.fetch("PORT", "3001")
 end
 
 plugin :tmp_restart
