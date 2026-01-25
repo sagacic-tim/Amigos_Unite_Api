@@ -1,4 +1,3 @@
-# .github/workflows/ghcr.yml
 name: Build, Test, Push (GHCR) - API
 
 on:
@@ -142,6 +141,10 @@ jobs:
     steps:
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+          GHCR_PULL_USER: ${{ secrets.GHCR_PULL_USER }}
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -153,22 +156,20 @@ jobs:
             APP_DIR="${VPS_APP_DIR:-/opt/amigos_unite_api}"
             cd "$APP_DIR"
 
-            # Pull private GHCR images: login just-in-time with least-privilege bot token.
             if [[ -n "${GHCR_PULL_USER:-}" && -n "${GHCR_PULL_TOKEN:-}" ]]; then
               echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$GHCR_PULL_USER" --password-stdin
             else
-              echo "ERROR: Missing GHCR_PULL_USER or GHCR_PULL_TOKEN (required for private GHCR images)." >&2
+              echo "ERROR: Missing GHCR_PULL_USER or GHCR_PULL_TOKEN." >&2
               exit 1
             fi
 
             docker compose pull api sidekiq
             docker logout ghcr.io || true
+            rm -f ~/.docker/config.json
 
             docker compose up -d --remove-orphans
             docker compose exec -T api bin/rails db:migrate
 
-            docker image prune -af --filter "until=168h"
-        env:
-          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
-          GHCR_PULL_USER: ${{ secrets.GHCR_PULL_USER }}
-          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+            curl -fsS -H "X-Forwarded-Proto: https" http://127.0.0.1:3001/api/v1/test > /dev/null
+
+            docker image prune -af --filter "until=168h" || true
