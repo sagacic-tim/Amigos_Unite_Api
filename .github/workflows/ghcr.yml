@@ -194,18 +194,18 @@ jobs:
             docker compose exec -T api bin/rails db:migrate
 
             # Wait for Rails/Puma to actually be ready (up to 60s).
-            for i in $(seq 1 60); do
+            for i in $(seq 1 120); do
               if curl -fsS -H "X-Forwarded-Proto: https" http://127.0.0.1:3001/api/v1/test >/dev/null; then
                 echo "API healthcheck OK"
+                ok=1
                 break
               fi
-              echo "Waiting for API... ($i/60)"
+              echo "Waiting for API... ($i/120)"
               sleep 1
             done
 
-            # Final, definitive check (and diagnostics if still failing).
-            if ! curl -fsS -H "X-Forwarded-Proto: https" http://127.0.0.1:3001/api/v1/test >/dev/null; then
-              echo "ERROR: API healthcheck still failing after wait. Diagnostics:" >&2
+            if [[ "${ok:-0}" != "1" ]]; then
+              echo "ERROR: API healthcheck still failing. Diagnostics:" >&2
               docker compose ps || true
               docker compose logs --tail=200 api || true
               exit 1
