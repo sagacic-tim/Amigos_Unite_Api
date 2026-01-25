@@ -1,3 +1,5 @@
+# .github/workflows/ghcr.yml
+
 name: Build, Test, Push (GHCR) - API
 
 on:
@@ -45,6 +47,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Debug - show commit and lockfile identity
+        run: |
+          set -euxo pipefail
+          git rev-parse HEAD
+          echo "PWD=$(pwd)"
+          echo "---- find Gemfile/Gemfile.lock ----"
+          find . -maxdepth 4 -name Gemfile -o -name Gemfile.lock -print
+          echo "---- Gemfile.lock BUNDLED WITH ----"
+          sed -n '/^BUNDLED WITH/,$p' Gemfile.lock
+          echo "---- Gemfile.lock PLATFORMS ----"
+          sed -n '/^PLATFORMS/,/^DEPENDENCIES/p' Gemfile.lock
 
       - name: Install OS deps (Postgres + libvips)
         run: |
@@ -149,12 +163,23 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          timeout: 30s
+          command_timeout: 15m
           envs: VPS_APP_DIR,GHCR_PULL_USER,GHCR_PULL_TOKEN
           script: |
             set -euo pipefail
 
             APP_DIR="${VPS_APP_DIR:-/opt/amigos_unite_api}"
             cd "$APP_DIR"
+
+            # Use ephemeral docker config so creds are not written to ~/.docker/config.json
+            export DOCKER_CONFIG="$(mktemp -d)"
+            cleanup() {
+              docker logout ghcr.io >/dev/null 2>&1 || true
+              rm -rf "$DOCKER_CONFIG"
+            }
+            trap cleanup EXIT
 
             if [[ -n "${GHCR_PULL_USER:-}" && -n "${GHCR_PULL_TOKEN:-}" ]]; then
               echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$GHCR_PULL_USER" --password-stdin
@@ -164,12 +189,26 @@ jobs:
             fi
 
             docker compose pull api sidekiq
-            docker logout ghcr.io || true
-            rm -f ~/.docker/config.json
 
             docker compose up -d --remove-orphans
             docker compose exec -T api bin/rails db:migrate
 
-            curl -fsS -H "X-Forwarded-Proto: https" http://127.0.0.1:3001/api/v1/test > /dev/null
+            # Wait for Rails/Puma to actually be ready (up to 60s).
+            for i in $(seq 1 60); do
+              if curl -fsS -H "X-Forwarded-Proto: https" http://127.0.0.1:3001/api/v1/test >/dev/null; then
+                echo "API healthcheck OK"
+                break
+              fi
+              echo "Waiting for API... ($i/60)"
+              sleep 1
+            done
+
+            # Final, definitive check (and diagnostics if still failing).
+            if ! curl -fsS -H "X-Forwarded-Proto: https" http://127.0.0.1:3001/api/v1/test >/dev/null; then
+              echo "ERROR: API healthcheck still failing after wait. Diagnostics:" >&2
+              docker compose ps || true
+              docker compose logs --tail=200 api || true
+              exit 1
+            fi
 
             docker image prune -af --filter "until=168h" || true
