@@ -163,6 +163,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: 22
           timeout: 30s
           command_timeout: 15m
@@ -173,7 +174,6 @@ jobs:
             APP_DIR="${VPS_APP_DIR:-/opt/amigos_unite_api}"
             cd "$APP_DIR"
 
-            # Use ephemeral docker config so creds are not written to ~/.docker/config.json
             export DOCKER_CONFIG="$(mktemp -d)"
             cleanup() {
               docker logout ghcr.io >/dev/null 2>&1 || true
@@ -189,11 +189,9 @@ jobs:
             fi
 
             docker compose pull api sidekiq
-
             docker compose up -d --remove-orphans
             docker compose exec -T api bin/rails db:migrate
 
-            # Wait for Rails/Puma to actually be ready (up to 60s).
             for i in $(seq 1 120); do
               if curl -fsS -H "X-Forwarded-Proto: https" http://127.0.0.1:3001/api/v1/test >/dev/null; then
                 echo "API healthcheck OK"

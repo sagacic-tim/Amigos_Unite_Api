@@ -1,0 +1,9 @@
+
+cat > docker-compose.yml <<'YAML'
+services:
+  web:
+    image: ghcr.io/sagacic-tim/amigos_unite_app:main
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+YAML
