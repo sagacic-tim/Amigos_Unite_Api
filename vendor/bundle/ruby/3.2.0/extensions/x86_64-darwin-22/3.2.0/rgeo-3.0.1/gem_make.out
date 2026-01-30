@@ -1,0 +1,46 @@
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/rgeo-3.0.1/ext/geos_c_impl
+/Users/drruby/.rbenv/versions/3.2.2/bin/ruby extconf.rb
+checking for geos-config... yes
+Using GEOS compile configuration from /usr/local/bin/geos-config
+checking for geos_c.h... yes
+checking for GEOSSetSRID_r() in geos_c.h... yes
+checking for GEOSPreparedContains_r() in geos_c.h... yes
+checking for GEOSPreparedDisjoint_r() in geos_c.h... yes
+checking for GEOSUnaryUnion_r() in geos_c.h... yes
+checking for GEOSCoordSeq_isCCW_r() in geos_c.h... yes
+checking for GEOSDensify() in geos_c.h... yes
+checking for rb_memhash() in ruby.h... yes
+checking for rb_gc_mark_movable() in ruby.h... yes
+creating Makefile
+
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/rgeo-3.0.1/ext/geos_c_impl
+make DESTDIR\= sitearchdir\=./.gem.20260129-48754-cdadq6 sitelibdir\=./.gem.20260129-48754-cdadq6 clean
+
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/rgeo-3.0.1/ext/geos_c_impl
+make DESTDIR\= sitearchdir\=./.gem.20260129-48754-cdadq6 sitelibdir\=./.gem.20260129-48754-cdadq6
+compiling analysis.c
+compiling coordinates.c
+compiling errors.c
+compiling factory.c
+compiling geometry.c
+compiling geometry_collection.c
+compiling globals.c
+globals.c:61:1: warning: function 'error_handler' could be declared with attribute 'noreturn' [-Wmissing-noreturn]
+   61 | {
+      | ^
+1 warning generated.
+compiling line_string.c
+compiling main.c
+compiling point.c
+compiling polygon.c
+compiling ruby_more.c
+linking shared-object rgeo/geos/geos_c_impl.bundle
+ld: warning: -multiply_defined is obsolete
+ld: warning: ignoring duplicate libraries: '-lruby.3.2'
+
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/rgeo-3.0.1/ext/geos_c_impl
+make DESTDIR\= sitearchdir\=./.gem.20260129-48754-cdadq6 sitelibdir\=./.gem.20260129-48754-cdadq6 install
+/usr/bin/install -c -m 0755 geos_c_impl.bundle ./.gem.20260129-48754-cdadq6/rgeo/geos
+
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/rgeo-3.0.1/ext/geos_c_impl
+make DESTDIR\= sitearchdir\=./.gem.20260129-48754-cdadq6 sitelibdir\=./.gem.20260129-48754-cdadq6 clean

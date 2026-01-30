@@ -182,6 +182,9 @@ group :development, :test do
   # in plain English.
   gem 'rspec-rails', '~> 7.1', '>= 7.1.1'
 
+  # foreman - Process manager for applications with multiple components
+  gem "foreman", "~> 0.90.0"
+
 end
 
 group :test do

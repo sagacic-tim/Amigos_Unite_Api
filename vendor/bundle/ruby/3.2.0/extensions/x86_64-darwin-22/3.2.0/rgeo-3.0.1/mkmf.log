@@ -1,0 +1,235 @@
+find_executable: checking for geos-config... -------------------- yes
+
+--------------------
+
+have_header: checking for geos_c.h... -------------------- yes
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -o conftest -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe conftest.c  -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib  -fstack-protector-strong -L/usr/local/opt/gmp/lib     -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lruby.3.2  -lpthread  "
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: int main(int argc, char **argv)
+4: {
+5:   return !!argv[argc];
+6: }
+/* end */
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe   -c conftest.c"
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <geos_c.h>
+/* end */
+
+--------------------
+
+have_func: checking for GEOSSetSRID_r() in geos_c.h... -------------------- yes
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -o conftest -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe conftest.c  -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib  -fstack-protector-strong -L/usr/local/opt/gmp/lib     -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lruby.3.2  -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lpthread  "
+ld: warning: ignoring duplicate libraries: '-lgeos_c'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <geos_c.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))GEOSSetSRID_r; return !p; }
+/* end */
+
+--------------------
+
+have_func: checking for GEOSPreparedContains_r() in geos_c.h... -------------------- yes
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -o conftest -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe conftest.c  -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib  -fstack-protector-strong -L/usr/local/opt/gmp/lib     -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lruby.3.2  -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lpthread  "
+ld: warning: ignoring duplicate libraries: '-lgeos_c'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <geos_c.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))GEOSPreparedContains_r; return !p; }
+/* end */
+
+--------------------
+
+have_func: checking for GEOSPreparedDisjoint_r() in geos_c.h... -------------------- yes
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -o conftest -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe conftest.c  -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib  -fstack-protector-strong -L/usr/local/opt/gmp/lib     -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lruby.3.2  -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lpthread  "
+ld: warning: ignoring duplicate libraries: '-lgeos_c'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <geos_c.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))GEOSPreparedDisjoint_r; return !p; }
+/* end */
+
+--------------------
+
+have_func: checking for GEOSUnaryUnion_r() in geos_c.h... -------------------- yes
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -o conftest -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe conftest.c  -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib  -fstack-protector-strong -L/usr/local/opt/gmp/lib     -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lruby.3.2  -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lpthread  "
+ld: warning: ignoring duplicate libraries: '-lgeos_c'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <geos_c.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))GEOSUnaryUnion_r; return !p; }
+/* end */
+
+--------------------
+
+have_func: checking for GEOSCoordSeq_isCCW_r() in geos_c.h... -------------------- yes
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -o conftest -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe conftest.c  -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib  -fstack-protector-strong -L/usr/local/opt/gmp/lib     -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lruby.3.2  -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lpthread  "
+ld: warning: ignoring duplicate libraries: '-lgeos_c'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <geos_c.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))GEOSCoordSeq_isCCW_r; return !p; }
+/* end */
+
+--------------------
+
+have_func: checking for GEOSDensify() in geos_c.h... -------------------- yes
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -o conftest -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe conftest.c  -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib  -fstack-protector-strong -L/usr/local/opt/gmp/lib     -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lruby.3.2  -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lpthread  "
+ld: warning: ignoring duplicate libraries: '-lgeos_c'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <geos_c.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))GEOSDensify; return !p; }
+/* end */
+
+--------------------
+
+have_func: checking for rb_memhash() in ruby.h... -------------------- yes
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -o conftest -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe conftest.c  -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib  -fstack-protector-strong -L/usr/local/opt/gmp/lib     -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lruby.3.2  -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lpthread  "
+ld: warning: ignoring duplicate libraries: '-lgeos_c'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <ruby.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))rb_memhash; return !p; }
+/* end */
+
+--------------------
+
+have_func: checking for rb_gc_mark_movable() in ruby.h... -------------------- yes
+
+DYLD_FALLBACK_LIBRARY_PATH=.:/Users/drruby/.rbenv/versions/3.2.2/lib "clang -o conftest -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/x86_64-darwin22 -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0/ruby/backward -I/Users/drruby/.rbenv/versions/3.2.2/include/ruby-3.2.0 -I. -I/usr/local/Cellar/geos/3.14.0/include -I/Users/drruby/.rbenv/versions/3.2.2/include  -I/usr/local/opt/gmp/include -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -fdeclspec -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wextra-tokens -Wdeprecated-declarations -Wdivision-by-zero -Wdiv-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wold-style-definition -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wundef  -fno-common -pipe conftest.c  -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib -L. -L/Users/drruby/.rbenv/versions/3.2.2/lib  -fstack-protector-strong -L/usr/local/opt/gmp/lib     -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lruby.3.2  -L/usr/local/Cellar/geos/3.14.0/lib -lgeos_c -lpthread  "
+ld: warning: ignoring duplicate libraries: '-lgeos_c'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <ruby.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))rb_gc_mark_movable; return !p; }
+/* end */
+
+--------------------
+

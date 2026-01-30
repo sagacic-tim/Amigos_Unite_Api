@@ -29,6 +29,7 @@ Rails.application.configure do
   config.active_record.migration_error = :page_load
   config.active_record.verbose_query_logs = true
 
+  # Ensure ActiveJob uses Sidekiq in dev
   config.active_job.queue_adapter = :sidekiq
 
   config.log_formatter = ::Logger::Formatter.new
@@ -47,6 +48,8 @@ Rails.application.configure do
   config.action_mailer.perform_caching = false
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.perform_deliveries = true
+  # Make mail delivery async by default in dev (parity with prod)
+  config.action_mailer.deliver_later_queue_name = :mailers
 
   config.action_controller.action_on_unpermitted_parameters = :raise
 end

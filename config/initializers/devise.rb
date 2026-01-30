@@ -2,9 +2,9 @@
 
 Devise.setup do |config|
   # Mailer configuration
-  config.mailer_sender = "tmichel@sagacicweb.com"
-  config.mailer = "Devise::Mailer"
-  config.parent_mailer = "ActionMailer::Base"
+  config.mailer_sender = "no-replies@amigosunite.org"
+  config.mailer = "DeviseMailer"
+  config.parent_mailer = "ApplicationMailer"
 
   # ORM
   require "devise/orm/active_record"

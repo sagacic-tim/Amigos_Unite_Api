@@ -19,8 +19,35 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 
 RSpec.configure do |config|
+  # ---------------------------------------------------------------------------
+  # Test hygiene: mail + jobs
+  # ---------------------------------------------------------------------------
 
-    config.before(:each, type: :request) do
+  # ActiveJob helpers allow deterministic enqueue assertions and cleanup.
+  config.include ActiveJob::TestHelper
+
+  # Ensure mail deliveries do not leak between examples.
+  config.before do
+    ActionMailer::Base.deliveries.clear
+  end
+
+  # Keep enqueued/performed jobs isolated per example.
+  # Also executes enqueued jobs so that mail deliveries (and other jobs) occur
+  # within the spec process, making assertions reliable.
+  config.around do |example|
+    perform_enqueued_jobs do
+      example.run
+    end
+  ensure
+    clear_enqueued_jobs
+    clear_performed_jobs
+  end
+
+  # ---------------------------------------------------------------------------
+  # Rack::Attack cache reset for request specs
+  # ---------------------------------------------------------------------------
+
+  config.before(:each, type: :request) do
     next unless defined?(Rack::Attack)
 
     cache = Rack::Attack.cache

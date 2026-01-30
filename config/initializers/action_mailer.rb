@@ -9,36 +9,118 @@ Rails.application.configure do
       ActiveSupport::Logger.new($stdout)
     end
 
-  # Keep Action Mailer logging pointed somewhere sane (avoid Rails.logger directly).
   config.action_mailer.logger = boot_logger
 
-  sendgrid_key = ENV["SENDGRID_API_KEY"].to_s.strip
-  sendgrid_enabled = sendgrid_key.present?
+  # --- Dev/Test env-file loader (so bin/rails runner works without Foreman/bin/dev) ---
+  def load_env_file!(path, boot_logger:)
+    return unless path && File.file?(path)
 
-  # If SendGrid is not configured, disable deliveries rather than failing boot.
-  config.action_mailer.perform_deliveries = sendgrid_enabled
+    File.foreach(path) do |raw|
+      line = raw.strip
+      next if line.empty? || line.start_with?("#")
 
-  # Do not raise delivery errors by default; opt-in with MAIL_RAISE_DELIVERY_ERRORS=true
+      # allow optional leading "export "
+      line = line.sub(/\Aexport\s+/, "")
+
+      # KEY=VALUE (VALUE may be quoted)
+      m = line.match(/\A([A-Za-z_][A-Za-z0-9_]*)=(.*)\z/)
+      next unless m
+
+      key = m[1]
+      val = m[2].to_s.strip
+
+      # Strip surrounding quotes (single or double)
+      if (val.start_with?("'") && val.end_with?("'")) || (val.start_with?('"') && val.end_with?('"'))
+        val = val[1..-2]
+      end
+
+      # Do not overwrite existing env
+      ENV[key] = val unless ENV.key?(key)
+    end
+
+    boot_logger.info("[mail] loaded env file #{path} (non-overriding) env=#{Rails.env}")
+  rescue => e
+    boot_logger.warn("[mail] failed to load env file #{path}: #{e.class}: #{e.message}")
+  end
+
+  if Rails.env.development? || Rails.env.test?
+    secrets_path = ENV["SECRETS_FILE"].to_s.strip
+    secrets_path = File.expand_path("~/.secrets/amigos_unite_api.env") if secrets_path.empty?
+    load_env_file!(secrets_path, boot_logger:)
+  end
+
+  # --- Provider selection ---
+  provider = ENV.fetch("MAIL_PROVIDER", "none").to_s.strip.downcase
+
+  # Defaults: safe (no delivery unless configured)
+  config.action_mailer.perform_deliveries = false
   config.action_mailer.raise_delivery_errors =
-    sendgrid_enabled && ENV.fetch("MAIL_RAISE_DELIVERY_ERRORS", "false") == "true"
+    ENV.fetch("MAIL_RAISE_DELIVERY_ERRORS", "false").to_s.strip == "true"
 
-  if sendgrid_enabled
-    config.action_mailer.delivery_method = :smtp
-    config.action_mailer.smtp_settings = {
-      address:              "smtp.sendgrid.net",
-      port:                 587,
-      domain:               ENV.fetch("MAILER_DOMAIN", "amigosunite.org"),
-      user_name:            "apikey", # literal per SendGrid
-      password:             sendgrid_key,
-      authentication:       :plain,
-      enable_starttls_auto: true,
-      open_timeout:         15,
-      read_timeout:         20
-    }
+  case provider
+  when "smtp"
+    smtp_host = ENV["SMTP_HOST"].to_s.strip
+    smtp_port = ENV.fetch("SMTP_PORT", "587").to_i
+    smtp_user = ENV["SMTP_USERNAME"].to_s.strip
+    smtp_pass = ENV["SMTP_PASSWORD"].to_s # do not strip; spaces could be intentional
 
-    boot_logger.info("[mail] SendGrid SMTP configured env=#{Rails.env} pid=#{Process.pid}")
+    missing = []
+    missing << "SMTP_HOST"     if smtp_host.empty?
+    missing << "SMTP_USERNAME" if smtp_user.empty?
+    missing << "SMTP_PASSWORD" if smtp_pass.empty?
+
+    if missing.any?
+      boot_logger.warn("[mail] MAIL_PROVIDER=smtp but missing #{missing.join(", ")}; deliveries disabled env=#{Rails.env}")
+    else
+      # Correct TLS behavior:
+      # - Port 465: implicit TLS => ssl: true, enable_starttls_auto: false
+      # - Port 587: STARTTLS => enable_starttls_auto: true
+      implicit_tls = (smtp_port == 465)
+
+      config.action_mailer.delivery_method = :smtp
+      config.action_mailer.perform_deliveries = true
+
+      config.action_mailer.smtp_settings = {
+        address: smtp_host,
+        port: smtp_port,
+        domain: ENV.fetch("MAILER_DOMAIN", ENV.fetch("APP_HOST", "localhost")),
+        user_name: smtp_user,
+        password: smtp_pass,
+        authentication: ENV.fetch("SMTP_AUTH", "login").to_sym,
+        ssl: implicit_tls,
+        enable_starttls_auto: implicit_tls ? false : (ENV.fetch("SMTP_STARTTLS", "true").to_s.strip == "true"),
+        open_timeout: 15,
+        read_timeout: 20
+      }
+
+      boot_logger.info("[mail] SMTP configured host=#{smtp_host} port=#{smtp_port} ssl=#{implicit_tls} env=#{Rails.env} pid=#{Process.pid}")
+    end
+
+  when "sendgrid"
+    # Keep this branch if you may return to SendGrid later.
+    sendgrid_key = ENV["SENDGRID_API_KEY"].to_s.strip
+    if sendgrid_key.empty?
+      boot_logger.warn("[mail] MAIL_PROVIDER=sendgrid but SENDGRID_API_KEY missing; deliveries disabled env=#{Rails.env}")
+    else
+      config.action_mailer.delivery_method = :smtp
+      config.action_mailer.perform_deliveries = true
+
+      config.action_mailer.smtp_settings = {
+        address: "smtp.sendgrid.net",
+        port: 587,
+        domain: ENV.fetch("MAILER_DOMAIN", ENV.fetch("APP_HOST", "localhost")),
+        user_name: "apikey",
+        password: sendgrid_key,
+        authentication: :plain,
+        enable_starttls_auto: true,
+        open_timeout: 15,
+        read_timeout: 20
+      }
+
+      boot_logger.info("[mail] SendGrid SMTP configured env=#{Rails.env} pid=#{Process.pid}")
+    end
+
   else
-    # Log, but never crash boot.
-    boot_logger.warn("[mail] SENDGRID_API_KEY missing; email delivery disabled env=#{Rails.env} pid=#{Process.pid}")
+    boot_logger.warn("[mail] MAIL_PROVIDER=#{provider}; email delivery disabled env=#{Rails.env} pid=#{Process.pid}")
   end
 end

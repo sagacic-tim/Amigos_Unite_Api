@@ -1,0 +1,21 @@
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/debug-1.11.0/ext/debug
+/Users/drruby/.rbenv/versions/3.2.2/bin/ruby extconf.rb
+creating Makefile
+
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/debug-1.11.0/ext/debug
+make DESTDIR\= sitearchdir\=./.gem.20260129-48754-f3lmg2 sitelibdir\=./.gem.20260129-48754-f3lmg2 clean
+
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/debug-1.11.0/ext/debug
+make DESTDIR\= sitearchdir\=./.gem.20260129-48754-f3lmg2 sitelibdir\=./.gem.20260129-48754-f3lmg2
+compiling debug.c
+compiling iseq_collector.c
+linking shared-object debug/debug.bundle
+ld: warning: -multiply_defined is obsolete
+ld: warning: ignoring duplicate libraries: '-lruby.3.2'
+
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/debug-1.11.0/ext/debug
+make DESTDIR\= sitearchdir\=./.gem.20260129-48754-f3lmg2 sitelibdir\=./.gem.20260129-48754-f3lmg2 install
+/usr/bin/install -c -m 0755 debug.bundle ./.gem.20260129-48754-f3lmg2/debug
+
+current directory: /Users/drruby/ruby_projects/amigos_unite_api/vendor/bundle/ruby/3.2.0/gems/debug-1.11.0/ext/debug
+make DESTDIR\= sitearchdir\=./.gem.20260129-48754-f3lmg2 sitelibdir\=./.gem.20260129-48754-f3lmg2 clean

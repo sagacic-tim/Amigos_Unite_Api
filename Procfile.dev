@@ -1,8 +1,9 @@
-# Preflight: shut down any existing Redis on :6379 (graceful first, then targeted kill)
-redis-cli -h 127.0.0.1 -p 6379 ping >/dev/null 2>&1 && redis-cli -h 127.0.0.1 -p 6379 shutdown NOSAVE || true
-pkill -f "redis-server.*:6379" >/dev/null 2>&1 || true
-lsof -nP -iTCP:6379 -sTCP:LISTEN >/dev/null 2>&1 && sleep 0.2 || true
+# Procfile.dev
 
 redis:  redis-server --port 6379 --tcp-backlog 128
-web:    bundle exec puma -C config/puma.rb
-worker: bundle exec sidekiq -C config/sidekiq.yml
+
+# Rails API (Puma)
+web:    env PORT=3001 bundle exec puma -C config/puma.rb
+
+# Sidekiq worker (use your config file for queues/concurrency)
+worker: env REDIS_URL=redis://127.0.0.1:6379/0 bundle exec sidekiq -C config/sidekiq.yml
