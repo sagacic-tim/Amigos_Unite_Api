@@ -5,16 +5,14 @@ module Api
       class PasswordsController < Devise::PasswordsController
         respond_to :json
 
-        # Your ApplicationController has global authenticate_amigo! except public endpoints,
-        # so ensure password reset endpoints are treated as public.
+        # Password reset is a public endpoint
         skip_before_action :authenticate_amigo!, raise: false
 
-        # If you enforce CSRF on all mutating requests, keep it consistent:
-        # - Either ensure SPA sends CSRF token for this endpoint, OR skip verification here.
-        # Given your design ("enforce CSRF for all mutating calls"), DO NOT skip it
-        # unless you intentionally want reset requests to be CSRF-free.
+        # Your ApplicationController enforces CSRF for ALL mutating API calls.
+        # The spec sets CSRF cookie + header, so we KEEP CSRF verification enabled.
+        # (Do NOT skip verify_csrf_token here.)
 
-        # POST /api/v1/amigos/password (Devise default path helper: amigo_password_path)
+        # POST /api/v1/amigos/password (helper: amigo_password_path)
         def create
           self.resource = resource_class.send_reset_password_instructions(resource_params)
 
@@ -35,9 +33,14 @@ module Api
 
         protected
 
-        # Ensure Devise finds the correct mapping under /api/v1
+        # Ensure Devise mapping is correct for API namespace
         def resource_name
           :amigo
+        end
+
+        # Devise expects params under :amigo for password reset
+        def resource_params
+          params.require(:amigo).permit(:email)
         end
       end
     end

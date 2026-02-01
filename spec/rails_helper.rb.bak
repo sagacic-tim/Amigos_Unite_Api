@@ -23,17 +23,17 @@ RSpec.configure do |config|
   # Test hygiene: mail + jobs
   # ---------------------------------------------------------------------------
 
+  # ActiveJob helpers allow deterministic enqueue assertions and cleanup.
   config.include ActiveJob::TestHelper
 
-  # Ensure the queue adapter supports have_enqueued_job deterministically.
-  config.before(:suite) do
-    ActiveJob::Base.queue_adapter = :test
-  end
-
+  # Ensure mail deliveries do not leak between examples.
   config.before do
     ActionMailer::Base.deliveries.clear
   end
 
+  # Keep enqueued/performed jobs isolated per example.
+  # Also executes enqueued jobs so that mail deliveries (and other jobs) occur
+  # within the spec process, making assertions reliable.
   config.around do |example|
     perform_enqueued_jobs do
       example.run
@@ -61,6 +61,8 @@ RSpec.configure do |config|
     store.clear if store.respond_to?(:clear)
   end
 
+  # If you keep fixtures temporarily, make them live under spec/fixtures.
+  # If you do not use fixtures (recommended), this is harmless.
   config.fixture_paths = ["#{::Rails.root}/spec/fixtures"]
 
   config.use_transactional_fixtures = true
@@ -74,6 +76,7 @@ RSpec.configure do |config|
     host! "localhost"
   end
 
+  # RSpec-only: load factories from spec/factories
   config.before(:suite) do
     FactoryBot.definition_file_paths = [Rails.root.join("spec/factories")]
     FactoryBot.reload
