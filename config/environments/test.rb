@@ -14,16 +14,19 @@ Rails.application.configure do
   config.cache_store = :null_store
 
   config.consider_all_requests_local = true
-  config.action_dispatch.show_exceptions = false
+
+  # Rails 7.1+ deprecates boolean false here; use :none instead.
+  config.action_dispatch.show_exceptions = :none
 
   config.action_controller.allow_forgery_protection = false
 
   config.active_storage.service = :test
 
   # URL / host for CI and tests
-  host      = "localhost"
-  protocol  = "http"
-  port      = 3001
+  host     = "localhost"
+  protocol = "http"
+  port     = 3001
+
   config.action_mailer.default_url_options = { host:, protocol:, port: }
   Rails.application.routes.default_url_options = { host:, protocol:, port: }
   config.default_url_options = { host:, protocol:, port: }
@@ -38,5 +41,7 @@ Rails.application.configure do
   config.active_support.deprecation = :stderr
   config.active_support.disallowed_deprecation = :raise
   config.active_support.disallowed_deprecation_warnings = []
-  config.log_level = :warn  # keeps test output cleaner in CI
+
+  # Keeps test output cleaner in CI
+  config.log_level = :warn
 end
