@@ -10,7 +10,7 @@ Rails.application.routes.draw do
 
   scope '/api/v1', module: 'api/v1', defaults: { format: :json } do
     # CSRF handshake
-    get    'csrf',        to: 'auth/csrf#show'
+    get 'csrf', to: 'auth/csrf#show'
 
     # Simple health-check/test endpoint
     get 'test', to: 'test#index'
@@ -20,13 +20,13 @@ Rails.application.routes.draw do
 
     devise_for :amigos,
       path: '',
-      skip: [:sessions, :registrations],
+      skip: %i[sessions registrations],
       path_names: { sign_up: 'signup' },
       controllers: {
-        registrations: 'auth/registrations',
-        confirmations: 'auth/confirmations',
-        passwords:     'auth/passwords',
-        unlocks:       'auth/unlocks'
+        registrations: 'api/v1/auth/registrations',
+        confirmations: 'api/v1/auth/confirmations',
+        passwords:     'api/v1/auth/passwords',
+        unlocks:       'api/v1/auth/unlocks'
       }
 
     devise_scope :amigo do
@@ -42,8 +42,8 @@ Rails.application.routes.draw do
     get 'places/:id/photos', to: 'places#photos'
 
     # Your application resources
-    get    'me',            to: 'amigos#me'
-    resources :amigos,      only: %i[index show create update destroy] do
+    get 'me', to: 'amigos#me'
+    resources :amigos, only: %i[index show create update destroy] do
       resource  :amigo_detail,    only: %i[show create update destroy]
       resources :amigo_locations, only: %i[index create show update destroy]
     end
@@ -52,12 +52,12 @@ Rails.application.routes.draw do
     resources :event_amigo_connectors, only: [:index]
 
     resources :events, except: %i[new edit] do
-      # NEW: /api/v1/events/my_events → Api::V1::EventsController#my_events
+      # /api/v1/events/my_events
       collection do
         get :my_events
       end
 
-      # NESTED: /api/v1/events/:event_id/event_amigo_connectors
+      # /api/v1/events/:event_id/event_amigo_connectors
       resources :event_amigo_connectors,    except: %i[new edit]
       resources :event_location_connectors, only: %i[index show create update destroy]
     end
