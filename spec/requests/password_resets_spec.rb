@@ -1,3 +1,4 @@
+# spec/requests/password_resets_spec.rb
 
 require "rails_helper"
 
