@@ -43,10 +43,23 @@ Rails.application.configure do
     boot_logger.warn("[mail] failed to load env file #{path}: #{e.class}: #{e.message}")
   end
 
-  if Rails.env.development? || Rails.env.test?
+  # Load env file only to support development ergonomics.
+  # In test/CI, we deliberately avoid relying on ~/.secrets to prevent SMTP leakage.
+  if Rails.env.development?
     secrets_path = ENV["SECRETS_FILE"].to_s.strip
     secrets_path = File.expand_path("~/.secrets/amigos_unite_api.env") if secrets_path.empty?
     load_env_file!(secrets_path, boot_logger:)
+  end
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # HARD GUARDBAND: tests (and CI) must use :test delivery so deliveries[] works
+  # ───────────────────────────────────────────────────────────────────────────
+  if Rails.env.test? || ENV["CI"].present?
+    config.action_mailer.delivery_method = :test
+    config.action_mailer.perform_deliveries = true
+    config.action_mailer.raise_delivery_errors = false
+    boot_logger.info("[mail] test/CI detected; forcing ActionMailer :test delivery env=#{Rails.env} pid=#{Process.pid}")
+    return
   end
 
   # --- Provider selection ---
@@ -97,7 +110,6 @@ Rails.application.configure do
     end
 
   when "sendgrid"
-    # Keep this branch if you may return to SendGrid later.
     sendgrid_key = ENV["SENDGRID_API_KEY"].to_s.strip
     if sendgrid_key.empty?
       boot_logger.warn("[mail] MAIL_PROVIDER=sendgrid but SENDGRID_API_KEY missing; deliveries disabled env=#{Rails.env}")
