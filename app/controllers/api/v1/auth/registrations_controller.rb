@@ -28,7 +28,7 @@ module Api
             # Expose CSRF token to SPA (same pattern as SessionsController)
             cookies['CSRF-TOKEN'] = {
               value:     form_authenticity_token,
-              same_site: Rails.env.development? ? :none : :strict,
+              same_site: :none,
               secure:    true,
               http_only: false,
               path:      '/'
