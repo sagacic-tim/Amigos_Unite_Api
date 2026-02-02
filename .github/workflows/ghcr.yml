@@ -165,7 +165,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: 22
-          timeout: 30s
+          timeout: 120s
           command_timeout: 15m
           envs: VPS_APP_DIR,GHCR_PULL_USER,GHCR_PULL_TOKEN
           script: |
