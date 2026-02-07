@@ -1,8 +1,9 @@
+#.github/workflows/deploy-smoke.yml
 
 name: Deploy Smoke Test (VPS + Private GHCR)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch: {}``
 
 permissions:
   contents: read
