@@ -50,3 +50,6 @@ node_modules
 
 #ignore Reddis Files:
 dump.rdb
+
+# Local secrets
+/docker/.env

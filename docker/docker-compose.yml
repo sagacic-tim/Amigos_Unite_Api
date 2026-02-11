@@ -1,9 +1,90 @@
-
-cat > docker-compose.yml <<'YAML'
 services:
   web:
     image: ghcr.io/sagacic-tim/amigos_unite_app:main
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:80"
-YAML
+    depends_on:
+      - api
+
+  api:
+    image: ghcr.io/sagacic-tim/amigos_unite_api:main
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"
+    environment:
+      # Rails
+      RAILS_ENV: "production"
+      RACK_ENV: "production"
+      APP_HOST: "api.amigosunite.org"
+      APP_PROTOCOL: "https"
+      FORCE_SSL: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+      RAILS_SERVE_STATIC_FILES: "true"
+
+      # REQUIRED: Rails master key for production credentials
+      # (You must set this to the correct value.)
+      RAILS_MASTER_KEY: "${RAILS_MASTER_KEY}"
+
+      # Redis (must match the redis service name below)
+      REDIS_URL: "redis://redis:6379/0"
+
+      # Mail (Hostinger SMTP on 465 implicit TLS)
+      MAIL_PROVIDER: "smtp"
+      SMTP_HOST: "smtp.hostinger.com"
+      SMTP_PORT: "465"
+      SMTP_USERNAME: "${SMTP_USERNAME}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD}"
+      MAILER_DOMAIN: "amigosunite.org"
+      MAIL_FROM: "no-replies@amigosunite.org"
+      CONTACT_INBOX: "no-replies@amigosunite.org"
+
+      # Optional diagnostics
+      MAIL_RAISE_DELIVERY_ERRORS: "true"
+
+    depends_on:
+      - redis
+
+  sidekiq:
+    image: ghcr.io/sagacic-tim/amigos_unite_api:main
+    restart: unless-stopped
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    environment:
+      # Rails
+      RAILS_ENV: "production"
+      RACK_ENV: "production"
+      APP_HOST: "api.amigosunite.org"
+      APP_PROTOCOL: "https"
+      FORCE_SSL: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+
+      RAILS_MASTER_KEY: "${RAILS_MASTER_KEY}"
+
+      # Redis
+      REDIS_URL: "redis://redis:6379/0"
+
+      # Mail (must be present here too, because Sidekiq performs the deliveries)
+      MAIL_PROVIDER: "smtp"
+      SMTP_HOST: "smtp.hostinger.com"
+      SMTP_PORT: "465"
+      SMTP_USERNAME: "${SMTP_USERNAME}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD}"
+      MAILER_DOMAIN: "amigosunite.org"
+      MAIL_FROM: "no-replies@amigosunite.org"
+      CONTACT_INBOX: "no-replies@amigosunite.org"
+
+      MAIL_RAISE_DELIVERY_ERRORS: "true"
+
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Optional: persistence
+    # volumes:
+    #   - redis-data:/data
+
+# Optional:
+# volumes:
+#   redis-data:
