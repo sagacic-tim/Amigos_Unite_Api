@@ -1,146 +1,159 @@
-Amigos Unite API
+*** Amigos Unite API ***
 
 Rails 7 API for community event coordination
 
-Overview
+** Overview **
 
 Amigos Unite API is a Ruby on Rails API-only backend that powers the Amigos Unite platform.
 
 It supports user authentication, community event creation, location management, and role-based participation.
 
 The API is designed to be consumed by multiple clients (web, mobile, future integrations) and follows a stateless, JWT-based authentication model suitable for distributed systems.
+___________________________________
 
-Core Features
+** Core Features **
 
-Amigo accounts
+  * Amigo accounts
 
-Secure signup, login, logout
+    Secure signup, login, logout
 
-JWT authentication (Devise + JWT)
+    JWT authentication (Devise + JWT)
 
-Event management
+  * Event management
 
-Create, update, and manage community events
+    Create, update, and manage community events
 
-Event statuses (planning, active, completed, canceled)
+    Event statuses (planning, active, completed, canceled)
 
-Role-based participation
+  * Role-based participation
 
-Lead coordinators, assistant coordinators, participants
+    Lead coordinators, assistant coordinators, participants
 
-Location support
+* Location support
 
-Event locations with structured address data
+    Event locations with structured address data
 
-Google Places integration for location search and images
+    Google Places integration for location search and images
 
-Security
+  * Security
 
-CSRF protection
+    CSRF protection
 
-Rate limiting via Rack::Attack
+    Rate limiting via Rack::Attack
 
-Token refresh flow
+    Token refresh flow
+___________________________________
 
-Tech Stack
+** Tech Stack **
 
-Language: Ruby 3.2.2
+  * Language: Ruby 3.2.2
 
-Framework: Rails 7.x (API-only)
+  * Framework: Rails 7.x (API-only)
 
-Database: PostgreSQL (15+ recommended)
+  * Database: PostgreSQL (15+ recommended)
 
-Authentication: Devise + JWT
+  * Authentication: Devise + JWT
 
-Background jobs: Sidekiq
+  * Background jobs: Sidekiq
 
-Image processing: libvips
+  * Image processing: libvips
 
-External APIs: Google Places API
+  * External APIs: Google Places API
 
-Deployment: Docker + GHCR + VPS
+  * Deployment: Docker + GHCR + VPS
+___________________________________
 
-System Requirements
+** System Requirements **
 
-Ruby 3.2.2
+  * Ruby 3.2.2
 
-PostgreSQL 15+
+  * PostgreSQL 15+
 
-libvips
+  * libvips
 
-Redis (for Sidekiq)
+  * Redis (for Sidekiq)
 
-Docker (recommended for production)
+  * Docker (recommended for production)
+___________________________________
 
-Configuration
-Credentials
+** Configuration **
 
-Secrets are stored using Rails encrypted credentials:
+  * Credentials
 
-config/credentials/development.yml.enc
-config/credentials/test.yml.enc
-config/credentials/production.yml.enc
+    Secrets are stored using Rails encrypted credentials:
 
+    config/credentials/development.yml.enc
+    config/credentials/test.yml.enc
+    config/credentials/production.yml.enc
 
-Required keys include:
 
-google_maps:
-  api_key: <GOOGLE_PLACES_API_KEY>
+    Required keys include:
 
-devise:
-  jwt_secret_key: <JWT_SECRET>
-  pepper: <DEVISE_PEPPER>
+      google_maps:
+        api_key: <GOOGLE_PLACES_API_KEY>
 
+      devise:
+      jwt_secret_key: <JWT_SECRET>
+      pepper: <DEVISE_PEPPER>
 
-The corresponding master.key (or environment-provided key) must be present for each environment.
+    The corresponding master.key (or environment-provided key) must be present for each environment.
+___________________________________
 
-Database Setup
-bin/rails db:create
-bin/rails db:migrate
+** Database Setup **
 
+  * bin/rails db:create
+  * bin/rails db:migrate
+  * PostgreSQL extensions such as PostGIS may be enabled depending on deployment configuration.
+___________________________________
 
-PostgreSQL extensions such as PostGIS may be enabled depending on deployment configuration.
+** Running the Test Suite **
 
-Running the Test Suite
-bundle exec rspec
+  * bundle exec rspec
 
+  * The test environment uses an isolated PostgreSQL database and validates:
 
-The test environment uses an isolated PostgreSQL database and validates:
+    Authentication flows
 
-Authentication flows
+    Event and location APIs
 
-Event and location APIs
+    Role-based permissions
+___________________________________
 
-Role-based permissions
+** API Architecture Notes **
 
-API Architecture Notes
+  * API responses are JSON-only
 
-API responses are JSON-only
+  * Stateless JWT authentication (no server sessions)
 
-Stateless JWT authentication (no server sessions)
+  * Designed for same-origin and cross-origin SPA clients
 
-Designed for same-origin and cross-origin SPA clients
+  * Google Places lookups are proxied through the API to protect API keys
+___________________________________
 
-Google Places lookups are proxied through the API to protect API keys
+** Deployment **
 
-Deployment
+  * Built and published as a Docker image via GitHub Container Registry (GHCR)
 
-Built and published as a Docker image via GitHub Container Registry (GHCR)
+  * Automated CI/CD using GitHub Actions:
 
-Automated CI/CD using GitHub Actions:
+    Test → Build → Push → Deploy
 
-Test → Build → Push → Deploy
+  * Production runs behind Nginx with TLS termination
+___________________________________
 
-Production runs behind Nginx with TLS termination
+** Project Goals **
 
-Project Goals
+  This API demonstrates:
 
-This API demonstrates:
+    * Clean domain modeling
 
-Clean domain modeling
+    * Secure authentication patterns
 
-Secure authentication patterns
+    * External API integration
 
-External API integration
+    * Production-grade deployment practices
 
-Production-grade deployment practices
+    * Continuous Integration / Continuous Development
+
+    * Team focused development
+
