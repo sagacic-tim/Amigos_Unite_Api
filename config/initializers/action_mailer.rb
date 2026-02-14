@@ -63,7 +63,9 @@ Rails.application.configure do
   end
 
   # --- Provider selection ---
-  provider = ENV.fetch("MAIL_PROVIDER", "none").to_s.strip.downcase
+  # In production, default to SMTP (Hostinger) unless explicitly set to sendgrid/none.
+  provider_default = Rails.env.production? ? "smtp" : "none"
+  provider = ENV.fetch("MAIL_PROVIDER", provider_default).to_s.strip.downcase
 
   # Defaults: safe (no delivery unless configured)
   config.action_mailer.perform_deliveries = false

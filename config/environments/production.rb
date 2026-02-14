@@ -51,20 +51,20 @@ Rails.application.configure do
   config.active_support.report_deprecations        = false
   config.active_record.dump_schema_after_migration = false
 
-  # ── Action Mailer (SendGrid optional; never crash production when missing) ──
-  sendgrid_key = ENV["SENDGRID_API_KEY"].to_s.strip
-  sendgrid_configured = sendgrid_key.present?
+  # ── Action Mailer ───────────────────────────────────────────────────────────
+  # Provider selection & SMTP settings are configured in:
+  #   config/initializers/action_mailer.rb
+  #
+  # Do NOT gate delivery here on SENDGRID_API_KEY; that would disable SMTP mode.
+  config.action_mailer.perform_caching = false
 
-  # Do not attempt SMTP deliveries unless key exists
-  config.action_mailer.perform_caching    = false
-  config.action_mailer.delivery_method    = :smtp
-  config.action_mailer.perform_deliveries = sendgrid_configured
-
-  # Only raise if explicitly enabled AND mail is configured
+  # Only raise if explicitly requested (initializer decides if deliveries are enabled)
   config.action_mailer.raise_delivery_errors =
-    sendgrid_configured && ENV.fetch("MAIL_RAISE_DELIVERY_ERRORS", "false") == "true"
+    ENV.fetch("MAIL_RAISE_DELIVERY_ERRORS", "false").to_s.strip == "true"
 
-  unless sendgrid_configured
-    boot_logger.warn("[mail] SENDGRID_API_KEY missing; email delivery disabled (production)")
+  # Optional: log if SendGrid key is missing ONLY when SendGrid is selected
+  if ENV.fetch("MAIL_PROVIDER", "none").to_s.strip.downcase == "sendgrid" &&
+     ENV["SENDGRID_API_KEY"].to_s.strip.empty?
+    boot_logger.warn("[mail] MAIL_PROVIDER=sendgrid but SENDGRID_API_KEY missing; deliveries will be disabled (production)")
   end
 end
