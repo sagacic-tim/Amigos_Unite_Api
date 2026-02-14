@@ -53,3 +53,7 @@ dump.rdb
 
 # Local secrets
 /docker/.env
+
+# macOS
+.DS_Store
+
