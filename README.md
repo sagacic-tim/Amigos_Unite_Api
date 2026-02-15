@@ -132,7 +132,7 @@ ___________________________________
 
 ** Deployment **
 
-  * Built and published as a Docker image via GitHub Container Registry (GHCR)
+  * Built and published as a Docker image via GitHub Registry Container (GHRC)
 
   * Automated CI/CD using GitHub Actions:
 
