@@ -17,7 +17,7 @@ RSpec.describe "Auth Refresh Token", type: :request do
     expect(set_cookie_header).to include("#{name}=")
   end
 
-  # Your global ApplicationController requires CSRF for all mutating API calls.
+  # The global ApplicationController requires CSRF for all mutating API calls.
   # This primes the CSRF cookie and gives us the header token that must match it.
   def mint_csrf_token!
     https!
@@ -80,7 +80,7 @@ RSpec.describe "Auth Refresh Token", type: :request do
       expect(set_cookie_header).to match(/jwt=.*SameSite=None/i)
       expect(set_cookie_header).to match(/jwt=.*Path=\//i)
 
-      # CSRF cookie is set with same_site dependent on env; in test it should be Strict (per your controller)
+      # CSRF cookie is set with same_site dependent on env; in test it should be Strict (per the controller)
       expect(set_cookie_header).to match(/CSRF-TOKEN=.*Secure/i)
       expect(set_cookie_header).to match(/CSRF-TOKEN=.*Path=\//i)
     end

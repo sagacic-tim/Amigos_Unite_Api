@@ -57,3 +57,13 @@ dump.rdb
 # macOS
 .DS_Store
 
+
+# Debug artifacts / exports
+*.zip
+cookies.txt
+
+# Redis persistence
+dump.rdb
+
+# Local snapshots
+auth_snapshot_*.md

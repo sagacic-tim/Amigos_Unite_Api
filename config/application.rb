@@ -1,8 +1,8 @@
 # config/application.rb
 require_relative "boot"
 
-# For API-only apps you can load just what you need, or keep rails/all.
-# Keeping rails/all is fine; api_only will slim the middleware stack.
+# For API-only apps we can load just what we need, or keep rails/all.
+# api_only slims the middleware stack.
 require "rails/all"
 
 Bundler.require(*Rails.groups)
@@ -20,7 +20,7 @@ module AmigosUniteApi
       ActionDispatch::Session::CookieStore,
       key:       "_amigos_unite_session",
       same_site: :none,  # cross-site SPA <-> API
-      secure:    true,   # you're on HTTPS (https://localhost, production)
+      secure:    true,   # HTTPS on both https://localhost and production
       httponly:  true,
       path:      "/"
     )

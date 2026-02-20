@@ -62,7 +62,7 @@ Rails.application.configure do
   config.action_mailer.raise_delivery_errors =
     ENV.fetch("MAIL_RAISE_DELIVERY_ERRORS", "false").to_s.strip == "true"
 
-  # Optional: log if SendGrid key is missing ONLY when SendGrid is selected
+  # Log if SendGrid key is missing ONLY when SendGrid is selected
   if ENV.fetch("MAIL_PROVIDER", "none").to_s.strip.downcase == "sendgrid" &&
      ENV["SENDGRID_API_KEY"].to_s.strip.empty?
     boot_logger.warn("[mail] MAIL_PROVIDER=sendgrid but SENDGRID_API_KEY missing; deliveries will be disabled (production)")
