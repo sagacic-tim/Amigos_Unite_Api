@@ -4,7 +4,7 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   host = "localhost"
   port = 3001
-  protocol = "https" # since you’re using force_ssl + mkcert locally
+  protocol = "https" 
 
   config.force_ssl = true
   config.action_mailer.default_url_options = { host:, protocol:, port: }

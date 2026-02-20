@@ -23,8 +23,9 @@ Rails.application.reloader.to_prepare do
     Warden::JWTAuth.configure do |config|
       config.secret = jwt_secret
 
-      # These mirror your Devise JWT dispatch settings; harmless if you’re not
-      # relying on Devise’s own JWT sign_in/sign_out flow.
+      # These mirror Devise JWT dispatch settings; harmless if not
+      # relying on Devise’s own JWT sign_in/sign_out flow. This needsto
+      # to be reviewed to determine if it is necessary
       config.dispatch_requests = [
         ['POST',   %r{^/api/v1/login$}],
         ['DELETE', %r{^/api/v1/logout$}]

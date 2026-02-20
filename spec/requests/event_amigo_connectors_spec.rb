@@ -72,8 +72,6 @@ RSpec.describe "EventAmigoConnectors", type: :request do
             headers: auth_headers_for(assistant),
             as: :json
 
-      # Your controller rescues RecordInvalid; NotAuthorizedError is unhandled here unless global rescues catch it.
-      # Expect unauthorized in normal flow (if NotAuthorizedError is mapped); if it 500s, you should add rescue.
       expect(response).to have_http_status(:unauthorized).or have_http_status(:internal_server_error)
     end
 

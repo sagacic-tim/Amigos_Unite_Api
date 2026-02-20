@@ -13,12 +13,12 @@ module AuthHelpers
 
   # Fetch CSRF token + populate the cookie jar.
   #
-  # Your ApplicationController requires:
+  # The ApplicationController requires:
   # - cookie "CSRF-TOKEN" present
   # - header "X-CSRF-Token" present
   # - both values match
   #
-  # We:
+  # We need to:
   # 1) force HTTPS so secure cookies work
   # 2) GET /api/v1/csrf (public) to set cookie (and optionally header)
   # 3) return the token we should echo back in X-CSRF-Token

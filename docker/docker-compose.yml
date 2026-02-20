@@ -22,8 +22,7 @@ services:
       RAILS_LOG_TO_STDOUT: "true"
       RAILS_SERVE_STATIC_FILES: "true"
 
-      # REQUIRED: Rails master key for production credentials
-      # (You must set this to the correct value.)
+      # REQUIRED: Rails master key for production credentials 
       RAILS_MASTER_KEY: "${RAILS_MASTER_KEY}"
 
       # Redis (must match the redis service name below)

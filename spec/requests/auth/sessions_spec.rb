@@ -33,7 +33,7 @@ RSpec.describe "Auth Sessions", type: :request do
     end
   end
 
-  # Your global ApplicationController requires CSRF for *all* POST/PUT/PATCH/DELETE,
+  # The global ApplicationController requires CSRF for *all* POST/PUT/PATCH/DELETE,
   # including /login and /logout. This primes the cookie + returns a header token
   # that matches the cookie.
   def mint_csrf_token!
@@ -41,7 +41,7 @@ RSpec.describe "Auth Sessions", type: :request do
 
     get "/api/v1/csrf", as: :json
 
-    # Your CsrfController currently returns 204 (head :no_content).
+    # The CsrfController currently returns 204 (head :no_content).
     expect(response).to have_http_status(:no_content).or have_http_status(:ok)
 
     token = response.headers["X-CSRF-Token"]

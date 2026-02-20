@@ -8,8 +8,8 @@ RSpec.describe "Auth Verify Token", type: :request do
     JSON.parse(response.body)
   end
 
-  # Your ApplicationController mints CSRF cookies on API GETs.
-  # We use this primarily to satisfy /login (POST requires CSRF).
+  # The ApplicationController mints CSRF cookies on API GETs.
+  # This is used primarily to satisfy /login (POST requires CSRF).
   def mint_csrf_token!
     https!
     get "/api/v1/csrf", as: :json

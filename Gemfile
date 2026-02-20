@@ -164,8 +164,8 @@ gem 'ruby-vips', '~> 2.2', '>= 2.2.2'
 # performance than other existing solutions.
 gem 'sidekiq', '~> 8.0', '>= 8.0.7', require: true
 
-# A Ruby client that tries to match Redis' API one-to-one, while stil
-# lproviding an idiomatic interface.
+# A Ruby client that tries to match Redis' API one-to-one, while still
+# providing an idiomatic interface.
 gem 'redis', '~> 5.4', '>= 5.4.1'
 
 group :development, :test do

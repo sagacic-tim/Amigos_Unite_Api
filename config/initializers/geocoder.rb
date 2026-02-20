@@ -10,12 +10,6 @@ def google_maps_api_key
   creds = Rails.application.credentials
   return nil unless creds.respond_to?(:[])
 
-  # Common patterns:
-  #
-  #   google_maps: "MY_API_KEY"
-  #   google_maps:
-  #     api_key: "MY_API_KEY"
-  #
   google_maps = creds[:google_maps] || creds["google_maps"]
 
   case google_maps
@@ -66,9 +60,6 @@ Geocoder.configure(
   # HTTPS headers (you can set referer headers here if needed for Google)
   http_headers: {}
 
-  # Optional extras you had commented out can stay that way:
-  # google_use_premise: true,
-  # coordinates_order: [:lat, :lon]
 )
 
 # Optional manual fallback to open-source Nominatim
