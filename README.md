@@ -1,159 +1,125 @@
 *** Amigos Unite API ***
 
-Rails 7 API for community event coordination
+    Production-Grade Rails 7 Backend for Distributed Event Coordination
 
-** Overview **
+** Overview
 
-Amigos Unite API is a Ruby on Rails API-only backend that powers the Amigos Unite platform.
+    Amigos Unite API is a Ruby on Rails 7 API-only backend designed using an API-first architecture. It powers a distributed event coordination platform with stateless JWT authentication, role-based authorization, containerized deployment, and CI/CD automation.
 
-It supports user authentication, community event creation, location management, and role-based participation.
+    The system is designed to support SPA clients, mobile clients, and future service integrations.
 
-The API is designed to be consumed by multiple clients (web, mobile, future integrations) and follows a stateless, JWT-based authentication model suitable for distributed systems.
-___________________________________
+** Architecture Overview
 
-** Core Features **
+The backend follows a layered architecture:
 
-  * Amigo accounts
+    Client (React SPA)
 
-    Secure signup, login, logout
+    • RESTful Rails 7 API
+    • PostgreSQL Persistence
+    • Redis (Sidekiq Background Jobs)
+    • External Services (Google Places API)
 
-    JWT authentication (Devise + JWT)
+    Authentication is implemented via Devise + JWT using a stateless model. No server-side sessions are maintained.
 
-  * Event management
+    External API keys are protected through server-side proxying.
 
-    Create, update, and manage community events
+** Core Capabilities
 
-    Event statuses (planning, active, completed, canceled)
+     • Secure user authentication (Devise + JWT)
+     • Role-based event coordination (lead, assistant, participant)
+     • Structured event lifecycle management
+     • PostgreSQL relational domain modeling
+     • Background job processing (Sidekiq)
+     • Rate limiting via Rack::Attack
+     • CSRF protection strategy
+     • Token refresh handling
 
-  * Role-based participation
+** Primary API Surface (Representative)
 
-    Lead coordinators, assistant coordinators, participants
+    POST   /api/v1/amigos
+    POST   /api/v1/login
+    GET    /api/v1/events
+    POST   /api/v1/events
+    PATCH  /api/v1/events/:id
+    POST   /api/v1/event_amigo_connectors
+    POST   /api/v1/event_location_connectors
+    POST   /api/v1/amigo_location_connectors
 
-* Location support
+    All responses are JSON-only.
 
-    Event locations with structured address data
+** Tech Stack
 
-    Google Places integration for location search and images
+    • Ruby 3.2.2
+    • Rails 7.x (API-only)
+    • PostgreSQL 15+
+    • Devise + JWT
+    • Sidekiq + Redis
+    • libvips (image processing)
+    • Google Places API
+    • Docker / Docker Compose
+    • GitHub Actions CI/CD
+    • GitHub Container Registry (GHCR)
+    • Linux (Ubuntu VPS)
+    • Nginx reverse proxy with TLS
 
-  * Security
+** Local Development
 
-    CSRF protection
+    Without Docker
 
-    Rate limiting via Rack::Attack
+        → bundle install
+        → bin/rails db:create
+        → bin/rails db:migrate
+        → bin/rails s
 
-    Token refresh flow
-___________________________________
+    With Docker
 
-** Tech Stack **
+        → docker compose up --build
 
-  * Language: Ruby 3.2.2
+** Environment Configuration
 
-  * Framework: Rails 7.x (API-only)
+    Required environment variables (production):
 
-  * Database: PostgreSQL (15+ recommended)
+    • RAILS_MASTER_KEY
+    • DATABASE_URL
+    • REDIS_URL
+    • GOOGLE_PLACES_API_KEY
+    • JWT_SECRET_KEY
 
-  * Authentication: Devise + JWT
+    Secrets are managed using Rails encrypted credentials.
 
-  * Background jobs: Sidekiq
+** Testing
 
-  * Image processing: libvips
+    → bundle exec rspec
 
-  * External APIs: Google Places API
+    Test suite validates:
 
-  * Deployment: Docker + GHCR + VPS
-___________________________________
+    • Authentication flows
+    • Authorization logic
+    • Event lifecycle
+    • Location integration
 
-** System Requirements **
+** CI/CD & Deployment
 
-  * Ruby 3.2.2
+    On push to main:
 
-  * PostgreSQL 15+
+    1. Run test suite
+    2. Build Docker image
+    3. Publish image to GHCR
+    4. Deploy via image pull to VPS
+    5. Restart containers
 
-  * libvips
+    Production deployment example:
 
-  * Redis (for Sidekiq)
+        docker pull ghcr.io/<namespace>/amigos_unite_api:latest
+        docker compose up -d
 
-  * Docker (recommended for production)
-___________________________________
+** Engineering Focus
 
-** Configuration **
+    This project demonstrates:
 
-  * Credentials
-
-    Secrets are stored using Rails encrypted credentials:
-
-    config/credentials/development.yml.enc
-    config/credentials/test.yml.enc
-    config/credentials/production.yml.enc
-
-
-    Required keys include:
-
-      google_maps:
-        api_key: <GOOGLE_PLACES_API_KEY>
-
-      devise:
-      jwt_secret_key: <JWT_SECRET>
-      pepper: <DEVISE_PEPPER>
-
-    The corresponding master.key (or environment-provided key) must be present for each environment.
-___________________________________
-
-** Database Setup **
-
-  * bin/rails db:create
-  * bin/rails db:migrate
-  * PostgreSQL extensions such as PostGIS may be enabled depending on deployment configuration.
-___________________________________
-
-** Running the Test Suite **
-
-  * bundle exec rspec
-
-  * The test environment uses an isolated PostgreSQL database and validates:
-
-    Authentication flows
-
-    Event and location APIs
-
-    Role-based permissions
-___________________________________
-
-** API Architecture Notes **
-
-  * API responses are JSON-only
-
-  * Stateless JWT authentication (no server sessions)
-
-  * Designed for same-origin and cross-origin SPA clients
-
-  * Google Places lookups are proxied through the API to protect API keys
-___________________________________
-
-** Deployment **
-
-  * Built and published as a Docker image via GitHub Registry Container (GHRC)
-
-  * Automated CI/CD using GitHub Actions:
-
-    Test → Build → Push → Deploy
-
-  * Production runs behind Nginx with TLS termination
-___________________________________
-
-** Project Goals **
-
-  This API demonstrates:
-
-    * Clean domain modeling
-
-    * Secure authentication patterns
-
-    * External API integration
-
-    * Production-grade deployment practices
-
-    * Continuous Integration / Continuous Development
-
-    * Team focused development
-
+    • Clean domain modeling
+    • Secure stateless authentication
+    • Role-based authorization
+    • Containerized infrastructure
+    • CI/CD automation
+    • Production deployment ownership
