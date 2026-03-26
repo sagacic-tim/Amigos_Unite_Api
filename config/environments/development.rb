@@ -2,11 +2,13 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
-  host = "localhost"
-  port = 3001
-  protocol = "https" 
+  host     = ENV.fetch("APP_HOST", "localhost")
+  protocol = ENV.fetch("APP_PROTOCOL", "https")
+  port     = ENV.fetch("APP_PORT", "3001").to_i
 
-  config.force_ssl = true
+  # Only force SSL when the dev server is actually running HTTPS
+  config.force_ssl = (protocol == "https")
+
   config.action_mailer.default_url_options = { host:, protocol:, port: }
   Rails.application.routes.default_url_options = { host:, protocol:, port: }
   config.default_url_options = { host:, protocol:, port: }
