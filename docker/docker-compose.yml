@@ -1,104 +1,61 @@
 # docker-compose.yml
+# Production compose file for amigos_unite_api on the VPS.
+# Lives at /opt/amigos_unite_api/docker-compose.yml
+# Companion: /opt/amigos_unite_app/docker-compose.yml runs the frontend.
+#
+# Persistent data directories (created manually on VPS before first run):
+#   /opt/amigos_unite_api/data/postgres  → PostgreSQL data
+#   /opt/amigos_unite_api/data/redis     → Redis AOF persistence
+#   /opt/amigos_unite_api/data/storage   → Active Storage uploads
 #
 services:
-  web:
-    image: ghcr.io/sagacic-tim/amigos_unite_app:main
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:8080:80"
-    depends_on:
-      - api
-
-  api:
-    image: ghcr.io/sagacic-tim/amigos_unite_api:main
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:3001:3001"
+  db:
+    image: postgres:17
     environment:
-      # Rails
-      RAILS_ENV: "production"
-      RACK_ENV: "production"
-      APP_HOST: "api.amigosunite.org"
-      APP_PROTOCOL: "https"
-      FORCE_SSL: "true"
-      RAILS_LOG_TO_STDOUT: "true"
-      RAILS_SERVE_STATIC_FILES: "true"
-
-      # REQUIRED: Rails master key for production credentials 
-      RAILS_MASTER_KEY: "${RAILS_MASTER_KEY}"
-
-      # Redis (must match the redis service name below)
-      REDIS_URL: "redis://redis:6379/0"
-
-      # AbuseIPDB — IP reputation checking (get key at abuseipdb.com)
-      ABUSEIPDB_API_KEY: "${ABUSEIPDB_API_KEY}"
-
-      # Google Cloud Vision — content moderation for uploaded images
-      # Value is the full service account JSON as a single-line string
-      GOOGLE_CLOUD_CREDENTIALS: "${GOOGLE_CLOUD_CREDENTIALS}"
-
-      # Mail (Hostinger SMTP on 465 implicit TLS)
-      MAIL_PROVIDER: "smtp"
-      SMTP_HOST: "smtp.hostinger.com"
-      SMTP_PORT: "465"
-      SMTP_USERNAME: "${SMTP_USERNAME}"
-      SMTP_PASSWORD: "${SMTP_PASSWORD}"
-      MAILER_DOMAIN: "amigosunite.org"
-      MAIL_FROM: "no-replies@amigosunite.org"
-      CONTACT_INBOX: "no-replies@amigosunite.org"
-
-      # Optional diagnostics
-      MAIL_RAISE_DELIVERY_ERRORS: "true"
-
-    depends_on:
-      - redis
-
-  sidekiq:
-    image: ghcr.io/sagacic-tim/amigos_unite_api:main
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${PGPASSWORD}"
+      POSTGRES_DB: amigos_unite_api_production
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d amigos_unite_api_production"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
-    command: bundle exec sidekiq -C config/sidekiq.yml
-    environment:
-      # Rails
-      RAILS_ENV: "production"
-      RACK_ENV: "production"
-      APP_HOST: "api.amigosunite.org"
-      APP_PROTOCOL: "https"
-      FORCE_SSL: "true"
-      RAILS_LOG_TO_STDOUT: "true"
-
-      RAILS_MASTER_KEY: "${RAILS_MASTER_KEY}"
-
-      # Redis
-      REDIS_URL: "redis://redis:6379/0"
-
-      # AbuseIPDB
-      ABUSEIPDB_API_KEY: "${ABUSEIPDB_API_KEY}"
-
-      # Google Cloud Vision
-      GOOGLE_CLOUD_CREDENTIALS: "${GOOGLE_CLOUD_CREDENTIALS}"
-
-      # Mail (must be present here too, because Sidekiq performs the deliveries)
-      MAIL_PROVIDER: "smtp"
-      SMTP_HOST: "smtp.hostinger.com"
-      SMTP_PORT: "465"
-      SMTP_USERNAME: "${SMTP_USERNAME}"
-      SMTP_PASSWORD: "${SMTP_PASSWORD}"
-      MAILER_DOMAIN: "amigosunite.org"
-      MAIL_FROM: "no-replies@amigosunite.org"
-      CONTACT_INBOX: "no-replies@amigosunite.org"
-
-      MAIL_RAISE_DELIVERY_ERRORS: "true"
-
-    depends_on:
-      - redis
 
   redis:
     image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ./data/redis:/data
     restart: unless-stopped
-    # Optional: persistence
-    # volumes:
-    #   - redis-data:/data
 
-# Optional:
-# volumes:
-#   redis-data:
+  api:
+    image: ghcr.io/sagacic-tim/amigos_unite_api:main
+    env_file:
+      - .env
+    volumes:
+      - ./data/storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "127.0.0.1:3001:3001"
+    restart: unless-stopped
+
+  sidekiq:
+    image: ghcr.io/sagacic-tim/amigos_unite_api:main
+    env_file:
+      - .env
+    volumes:
+      - ./data/storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: ["bundle", "exec", "sidekiq"]
+    restart: unless-stopped
