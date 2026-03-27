@@ -1,6 +1,6 @@
 # app/jobs/process_image_job.rb
 class ProcessImageJob < ApplicationJob
-  queue_as :default
+  queue_as :media
 
   def perform(event_location_id)
     event_location = EventLocation.find_by(id: event_location_id)

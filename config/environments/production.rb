@@ -18,6 +18,8 @@ Rails.application.configure do
   # ── Static files / storage ──
   config.public_file_server.enabled = ENV["RAILS_SERVE_STATIC_FILES"].present?
   config.active_storage.service     = :local
+  config.active_storage.queues.analysis = :media
+  config.active_storage.queues.purge    = :media
 
   # ── SSL (TLS terminated by host Nginx; ensure it sets X-Forwarded-Proto=https) ──
   config.force_ssl = ENV.fetch("FORCE_SSL", "true") == "true"
