@@ -42,6 +42,12 @@
 /portlock/
 node_modules
 
+# Bundler cache — gems are installed in CI/Docker, not committed
+/vendor/bundle
+
+# Editor/tool backup files
+*.bak
+
 /config/credentials/development.key
 
 /config/credentials/production.key
