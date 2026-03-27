@@ -1,3 +1,5 @@
+# docker-compose.yml
+#
 services:
   web:
     image: ghcr.io/sagacic-tim/amigos_unite_app:main
@@ -27,6 +29,13 @@ services:
 
       # Redis (must match the redis service name below)
       REDIS_URL: "redis://redis:6379/0"
+
+      # AbuseIPDB — IP reputation checking (get key at abuseipdb.com)
+      ABUSEIPDB_API_KEY: "${ABUSEIPDB_API_KEY}"
+
+      # Google Cloud Vision — content moderation for uploaded images
+      # Value is the full service account JSON as a single-line string
+      GOOGLE_CLOUD_CREDENTIALS: "${GOOGLE_CLOUD_CREDENTIALS}"
 
       # Mail (Hostinger SMTP on 465 implicit TLS)
       MAIL_PROVIDER: "smtp"
@@ -61,6 +70,12 @@ services:
 
       # Redis
       REDIS_URL: "redis://redis:6379/0"
+
+      # AbuseIPDB
+      ABUSEIPDB_API_KEY: "${ABUSEIPDB_API_KEY}"
+
+      # Google Cloud Vision
+      GOOGLE_CLOUD_CREDENTIALS: "${GOOGLE_CLOUD_CREDENTIALS}"
 
       # Mail (must be present here too, because Sidekiq performs the deliveries)
       MAIL_PROVIDER: "smtp"

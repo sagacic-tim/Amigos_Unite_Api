@@ -316,6 +316,10 @@ class Amigo < ApplicationRecord
 
     touch(:avatar_synced_at)
     old_blob.purge_later
+
+    # Moderate the newly processed avatar in the background.
+    # Image is purged automatically if it fails Vision SafeSearch.
+    ModerateImageJob.perform_later('Amigo', id, 'avatar')
   rescue => e
     Rails.logger.error "Avatar processing failed for Amigo ##{id}: #{e.message}"
   end

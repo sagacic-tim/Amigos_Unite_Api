@@ -24,6 +24,9 @@ module Api
         @location.location_image_attribution = params[:attribution]
         @location.save!
 
+        # Moderate in background — image is purged automatically if it fails SafeSearch
+        ModerateImageJob.perform_later('EventLocation', @location.id, 'location_image')
+
         render json: EventLocationSerializer.new(@location).as_json, status: :created
       end
 

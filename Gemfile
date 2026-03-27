@@ -51,7 +51,7 @@ gem 'blind_index', '~> 2.5'
   # Protect your Rails and Rack apps from bad clients. Rack::Attacklets
   # lets you easily decide when to allow, block and throttle based only
   # properties of the request.
-gem 'rack-attack', '~> 6.7'
+gem 'rack-attack', '~> 6.8'
 
   # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '~> 1.18', '>= 1.18.4', require: false
@@ -124,6 +124,9 @@ gem 'google_maps_service_ruby', '~> 0.7.0'
 # Makes http fun again! Ain't no party like a httparty,
 # because a httparty don't stop.
 gem 'httparty', '~> 0.22.0'
+
+# Google Cloud Vision — SafeSearch content moderation for uploaded images
+gem 'google-cloud-vision', '~> 2.0', '>= 2.0.3'
 
 # The activerecord-postgis-adapter provides access to features
 # of the PostGIS geospatial database from ActiveRecord. It
