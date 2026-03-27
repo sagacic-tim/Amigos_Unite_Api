@@ -166,7 +166,7 @@ jobs:
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: 22
           timeout: 120s
-          command_timeout: 15m
+          command_timeout: 25m
           envs: VPS_APP_DIR,GHCR_PULL_USER,GHCR_PULL_TOKEN
           script: |
             set -euo pipefail
